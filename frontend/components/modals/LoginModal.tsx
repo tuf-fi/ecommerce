@@ -1,0 +1,293 @@
+"use client";
+
+import { useRef, useState } from "react";
+import Image from "next/image";
+import Modal from "../ui/Modal";
+import { useStore } from "@/library/store";
+import { contactImage, newsletterImage } from "@/components/ui/images";
+
+type Mode = "login" | "signup" | "forgot";
+
+export default function LoginModal() {
+    const { activeModal, closeModal } = useStore();
+    const open = activeModal === "login";
+
+    return (
+        <Modal open={open} onClose={closeModal} maxWidth="max-w-[760px]">
+            {open && <LoginContent />}
+        </Modal>
+    );
+}
+
+function LoginContent() {
+    const { signIn, showToast } = useStore();
+    const [mode, setMode] = useState<Mode>("login");
+    const [name, setName] = useState("");
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+
+    function submit(e: React.FormEvent) {
+        e.preventDefault();
+        // TODO: replace with real authentication / registration (JWT + httpOnly cookies) against the backend API.
+        signIn(email);
+    }
+
+    function signUpWithGoogle() {
+        // TODO: replace with real Google OAuth (e.g. NextAuth's Google provider).
+        signIn("google.user@gmail.com");
+    }
+
+    const imagePanel = (
+        <div className="relative hidden h-full overflow-hidden sm:block">
+            <Image
+                src={mode === "signup" ? newsletterImage : contactImage}
+                alt=""
+                fill
+                sizes="380px"
+                className="object-cover"
+            />
+            <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+            <div className="absolute bottom-0 left-0 p-8">
+                <h4 className="text-lg font-medium text-white">Cindyrella</h4>
+                <p className="text-[12.5px] text-white/75">
+                    {mode === "signup" ? "Join the ritual, from day one." : "Welcome back to the ritual."}
+                </p>
+            </div>
+        </div>
+    );
+
+    const loginOrSignupForm = (
+        <div className="p-8 sm:p-10">
+            <h3 className="mb-1 text-xl font-medium text-ink">
+                {mode === "login" ? "Welcome back" : "Create an account"}
+            </h3>
+            <p className="mb-6 text-[12px] text-grey">
+                {mode === "login" ? "Demo only — any details will work." : "Demo only — this just signs you in."}
+            </p>
+
+            <form onSubmit={submit}>
+                {mode === "signup" && (
+                    <div className="mb-4">
+                        <label className="mb-1.5 block font-mono text-[10.5px] uppercase tracking-[.14em] text-grey">Full Name</label>
+                        <input
+                            required
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            placeholder="Your name"
+                            className="w-full border-b border-ink/25 bg-transparent py-2 text-sm text-ink outline-none transition focus:border-pink-dark"
+                        />
+                    </div>
+                )}
+
+                <div className="mb-4">
+                    <label className="mb-1.5 block font-mono text-[10.5px] uppercase tracking-[.14em] text-grey">Email</label>
+                    <input
+                        type="email"
+                        required
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="you@email.com"
+                        className="w-full border-b border-ink/25 bg-transparent py-2 text-sm text-ink outline-none transition focus:border-pink-dark"
+                    />
+                </div>
+
+                <div className="mb-5">
+                    <label className="mb-1.5 block font-mono text-[10.5px] uppercase tracking-[.14em] text-grey">Password</label>
+                    <input
+                        type="password"
+                        required
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className="w-full border-b border-ink/25 bg-transparent py-2 text-sm text-ink outline-none transition focus:border-pink-dark"
+                    />
+                </div>
+
+                {mode === "login" && (
+                    <div className="mb-6 flex items-center justify-between text-[12px]">
+                        <label className="flex items-center gap-1.5 text-grey">
+                            <input type="checkbox" className="accent-pink-btn" />
+                            Remember me
+                        </label>
+                        <button type="button" onClick={() => setMode("forgot")} className="text-pink-dark underline underline-offset-2">
+                            Forgot password?
+                        </button>
+                    </div>
+                )}
+
+                <button type="submit" className="w-full bg-navy py-3.5 text-[13px] font-semibold tracking-wide text-white transition hover:bg-pink-dark">
+                    {mode === "login" ? "Sign In" : "Sign Up"}
+                </button>
+            </form>
+
+            {mode === "signup" && (
+                <>
+                    <div className="my-5 flex items-center gap-3">
+                        <div className="h-px flex-1 bg-ink/10" />
+                        <span className="font-mono text-[10px] uppercase tracking-[.14em] text-grey">or continue with</span>
+                        <div className="h-px flex-1 bg-ink/10" />
+                    </div>
+
+                    <button
+                        type="button"
+                        onClick={signUpWithGoogle}
+                        className="flex w-full items-center justify-center gap-2.5 border border-ink/15 py-3.5 text-[13px] font-semibold text-ink transition hover:bg-off"
+                    >
+                        <svg width="16" height="16" viewBox="0 0 24 24">
+                            <path fill="#4285F4" d="M23.49 12.27c0-.85-.08-1.67-.22-2.45H12v4.64h6.47a5.53 5.53 0 0 1-2.4 3.63v2.99h3.87c2.27-2.09 3.55-5.17 3.55-8.81z" />
+                            <path fill="#34A853" d="M12 24c3.24 0 5.95-1.07 7.94-2.92l-3.87-2.99c-1.07.72-2.45 1.15-4.07 1.15-3.13 0-5.78-2.11-6.73-4.96H1.27v3.09A11.998 11.998 0 0 0 12 24z" />
+                            <path fill="#FBBC05" d="M5.27 14.28A7.2 7.2 0 0 1 4.89 12c0-.79.14-1.56.38-2.28V6.63H1.27A12 12 0 0 0 0 12c0 1.94.46 3.77 1.27 5.37l4-3.09z" />
+                            <path fill="#EA4335" d="M12 4.77c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.94 1.19 15.24 0 12 0 7.31 0 3.26 2.69 1.27 6.63l4 3.09C6.22 6.87 8.87 4.77 12 4.77z" />
+                        </svg>
+                        Sign up with Google
+                    </button>
+                </>
+            )}
+
+            <p className="mt-5 text-center text-[12.5px] text-grey">
+                {mode === "login" ? (
+                    <>
+                        Don&apos;t have an account?{" "}
+                        <button onClick={() => setMode("signup")} className="text-pink-dark underline underline-offset-2">
+                            Sign Up
+                        </button>
+                    </>
+                ) : (
+                    <>
+                        Already have an account?{" "}
+                        <button onClick={() => setMode("login")} className="text-pink-dark underline underline-offset-2">
+                            Sign In
+                        </button>
+                    </>
+                )}
+            </p>
+        </div>
+    );
+
+    return (
+        <div className="relative h-[680px] overflow-hidden">
+            <div
+                className={`absolute inset-y-0 left-0 z-10 hidden w-1/2 transition-transform duration-500 ease-in-out sm:block ${
+                    mode === "signup" ? "sm:translate-x-full" : "sm:translate-x-0"
+                }`}
+            >
+                {imagePanel}
+            </div>
+
+            <div
+                className={`absolute inset-y-0 left-0 z-0 w-full overflow-y-auto bg-white transition-transform duration-500 ease-in-out sm:left-1/2 sm:w-1/2 ${
+                    mode === "signup" ? "sm:-translate-x-full" : "sm:translate-x-0"
+                }`}
+            >
+                {mode === "forgot" ? <ForgotPasswordForm onBack={() => setMode("login")} showToast={showToast} /> : loginOrSignupForm}
+            </div>
+        </div>
+    );
+}
+
+function ForgotPasswordForm({
+    onBack,
+    showToast,
+}: {
+    onBack: () => void;
+    showToast: (type: "success" | "error", message: string) => void;
+}) {
+    const [email, setEmail] = useState("");
+    const [sent, setSent] = useState(false);
+    const [code, setCode] = useState<string[]>(Array(6).fill(""));
+    const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+    const codeComplete = code.every((c) => c !== "");
+
+    function sendCode(e: React.FormEvent) {
+        e.preventDefault();
+        // TODO: send a real one-time code via the backend/email service.
+        setSent(true);
+        showToast("success", `Code sent to ${email}.`);
+    }
+
+    function resendCode() {
+        showToast("success", `Code resent to ${email}.`);
+    }
+
+    function updateDigit(index: number, value: string) {
+        const digit = value.replace(/\D/g, "").slice(-1);
+        const next = [...code];
+        next[index] = digit;
+        setCode(next);
+        if (digit && index < 5) inputRefs.current[index + 1]?.focus();
+    }
+
+    function handleKeyDown(index: number, e: React.KeyboardEvent<HTMLInputElement>) {
+        if (e.key === "Backspace" && !code[index] && index > 0) {
+            inputRefs.current[index - 1]?.focus();
+        }
+    }
+
+    function verifyCode() {
+        // TODO: verify the code against the backend, then let the user set a new password.
+        showToast("success", "Code verified — you can now sign in.");
+        onBack();
+    }
+
+    return (
+        <div className="p-8 sm:p-10">
+            <h3 className="mb-1 text-xl font-medium text-ink">Reset your password</h3>
+            <p className="mb-6 text-[12px] text-grey">
+                {sent ? `Enter the 6-digit code we sent to ${email}.` : "Enter your email and we'll send you a verification code."}
+            </p>
+
+            {!sent ? (
+                <form onSubmit={sendCode}>
+                    <div className="mb-6">
+                        <label className="mb-1.5 block font-mono text-[10.5px] uppercase tracking-[.14em] text-grey">Email</label>
+                        <input
+                            type="email"
+                            required
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            placeholder="you@email.com"
+                            className="w-full border-b border-ink/25 bg-transparent py-2 text-sm text-ink outline-none transition focus:border-pink-dark"
+                        />
+                    </div>
+                    <button type="submit" className="w-full bg-navy py-3.5 text-[13px] font-semibold tracking-wide text-white transition hover:bg-pink-dark">
+                        Send Code
+                    </button>
+                </form>
+            ) : (
+                <div>
+                    <div className="mb-6 flex justify-between gap-2">
+                        {code.map((digit, i) => (
+                            <input
+                                key={i}
+                                ref={(el) => { inputRefs.current[i] = el; }}
+                                value={digit}
+                                onChange={(e) => updateDigit(i, e.target.value)}
+                                onKeyDown={(e) => handleKeyDown(i, e)}
+                                inputMode="numeric"
+                                maxLength={1}
+                                className="h-14 w-12 border border-ink/20 text-center text-lg text-ink outline-none transition focus:border-pink-dark"
+                            />
+                        ))}
+                    </div>
+
+                    <button
+                        onClick={verifyCode}
+                        disabled={!codeComplete}
+                        className="w-full bg-navy py-3.5 text-[13px] font-semibold tracking-wide text-white transition hover:bg-pink-dark disabled:cursor-not-allowed disabled:bg-ink/20 disabled:hover:bg-ink/20"
+                    >
+                        Enter Code
+                    </button>
+
+                    <button onClick={resendCode} className="mt-4 w-full text-center text-[12.5px] text-pink-dark underline underline-offset-2">
+                        Resend Code
+                    </button>
+                </div>
+            )}
+
+            <button onClick={onBack} className="mt-5 block w-full text-center text-[12.5px] text-grey underline underline-offset-2">
+                Back to Sign In
+            </button>
+        </div>
+    );
+}

@@ -1,0 +1,173 @@
+// TODO: replace with real order data from the backend API once orders/checkout exist.
+export type OrderStatus = "To Pay" | "To Ship" | "To Receive" | "Completed" | "Cancelled" | "Return Refund";
+
+export type Order = {
+    status: OrderStatus;
+    product: string;
+    productId: number;
+    qty: number;
+    total: number;
+    steps: string[];
+    current: number;
+    eta: string;
+    date: string;
+};
+
+export const ORDER_STATUS_TABS = ["All", "To Pay", "To Ship", "To Receive", "Completed", "Cancelled", "Return Refund"] as const;
+
+export const SAMPLE_ORDERS: Record<string, Order> = {
+    "LM-2296": {
+        status: "To Pay",
+        product: "Overnight Retinol Serum",
+        productId: 1,
+        qty: 1,
+        total: 2800,
+        steps: ["Placed", "Payment"],
+        current: 0,
+        eta: "Complete payment within 24 hours",
+        date: "2026-08-30",
+    },
+    "LM-2295": {
+        status: "To Pay",
+        product: "Vitamin C Brightening Drop",
+        productId: 5,
+        qty: 1,
+        total: 2450,
+        steps: ["Placed", "Payment"],
+        current: 0,
+        eta: "Complete payment within 24 hours",
+        date: "2026-08-29",
+    },
+    "LM-2293": {
+        status: "To Ship",
+        product: "Barrier Repair Cream",
+        productId: 2,
+        qty: 1,
+        total: 2150,
+        steps: ["Placed", "Paid", "Shipped", "Delivered"],
+        current: 1,
+        eta: "Preparing for shipment",
+        date: "2026-08-27",
+    },
+    "LM-2294": {
+        status: "To Receive",
+        product: "Quiet Glow Gel Cream",
+        productId: 3,
+        qty: 2,
+        total: 3780,
+        steps: ["Placed", "Paid", "Shipped", "Delivered"],
+        current: 2,
+        eta: "Arriving Aug 28",
+        date: "2026-08-24",
+    },
+    "LM-2291": {
+        status: "To Receive",
+        product: "Ceramide Sleep Balm",
+        productId: 8,
+        qty: 1,
+        total: 2050,
+        steps: ["Placed", "Paid", "Shipped", "Delivered"],
+        current: 2,
+        eta: "Arriving Aug 25",
+        date: "2026-08-21",
+    },
+    "LM-2290": {
+        status: "Completed",
+        product: "The Ritual Edit, Full Set",
+        productId: 7,
+        qty: 1,
+        total: 4600,
+        steps: ["Placed", "Paid", "Shipped", "Delivered"],
+        current: 3,
+        eta: "Delivered Aug 23",
+        date: "2026-08-18",
+    },
+    "LM-2288": {
+        status: "Cancelled",
+        product: "Rice Milk Body Wash",
+        productId: 4,
+        qty: 1,
+        total: 980,
+        steps: [],
+        current: 0,
+        eta: "Cancelled before payment",
+        date: "2026-08-12",
+    },
+    "LM-2285": {
+        status: "Return Refund",
+        product: "Niacinamide Pore Refiner",
+        productId: 6,
+        qty: 1,
+        total: 1650,
+        steps: [],
+        current: 0,
+        eta: "Refund processing — 3–5 business days",
+        date: "2026-08-05",
+    },
+    "LM-2281": {
+        status: "Completed",
+        product: "Overnight Retinol Serum",
+        productId: 1,
+        qty: 1,
+        total: 2800,
+        steps: ["Placed", "Paid", "Shipped", "Delivered"],
+        current: 3,
+        eta: "Delivered Jul 30",
+        date: "2026-07-27",
+    },
+    "LM-2277": {
+        status: "Completed",
+        product: "Quiet Glow Gel Cream",
+        productId: 3,
+        qty: 3,
+        total: 5670,
+        steps: ["Placed", "Paid", "Shipped", "Delivered"],
+        current: 3,
+        eta: "Delivered Jul 18",
+        date: "2026-07-14",
+    },
+    "LM-2270": {
+        status: "Completed",
+        product: "Rice Milk Body Wash",
+        productId: 4,
+        qty: 2,
+        total: 1960,
+        steps: ["Placed", "Paid", "Shipped", "Delivered"],
+        current: 3,
+        eta: "Delivered Jul 5",
+        date: "2026-07-01",
+    },
+    "LM-2261": {
+        status: "Completed",
+        product: "Barrier Repair Cream",
+        productId: 2,
+        qty: 1,
+        total: 2150,
+        steps: ["Placed", "Paid", "Shipped", "Delivered"],
+        current: 3,
+        eta: "Delivered Jun 19",
+        date: "2026-06-15",
+    },
+    "LM-2249": {
+        status: "Cancelled",
+        product: "Vitamin C Brightening Drop",
+        productId: 5,
+        qty: 1,
+        total: 2450,
+        steps: [],
+        current: 0,
+        eta: "Cancelled before payment",
+        date: "2026-05-28",
+    },
+    "LM-2233": {
+        status: "Completed",
+        product: "Niacinamide Pore Refiner",
+        productId: 6,
+        qty: 1,
+        total: 1650,
+        steps: ["Placed", "Paid", "Shipped", "Delivered"],
+        current: 3,
+        eta: "Delivered May 3",
+        date: "2026-04-29",
+    },
+};

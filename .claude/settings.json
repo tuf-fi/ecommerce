@@ -1,0 +1,40 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Bash(npx tsc *)",
+      "Bash(sleep 5; cat /tmp/nextdev.log 2>/dev/null | tail -n 40)",
+      "Read(//tmp/**)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3001/)",
+      "Bash(which chromium-cli *)",
+      "Read(//c/Users/jbesayte/AppData/Local/Temp/claude/bundled-skills/2.1.247/**)",
+      "Read(//c//**)",
+      "Bash(command -v chromium-cli)",
+      "Bash(where chromium-cli *)",
+      "Bash(node -e \"try{require.resolve\\('playwright'\\)}catch\\(e\\){console.log\\('no playwright'\\)}\")",
+      "Bash(mkdir -p \"c:\\\\Users\\\\jbesayte\\\\Desktop\\\\ecommerce\\\\frontend\\\\app\\\\admin\\\\\\(panel\\)\\\\content\\\\pages\\\\[slug]\")",
+      "Bash(mkdir -p \"c:\\\\Users\\\\jbesayte\\\\Desktop\\\\ecommerce\\\\frontend\\\\app\\\\admin\\\\\\(panel\\)\\\\content\\\\promotions\\\\[id]\")",
+      "Bash(mkdir -p \"c:\\\\Users\\\\jbesayte\\\\Desktop\\\\ecommerce\\\\frontend\\\\app\\\\admin\\\\\\(panel\\)\\\\content\\\\blog\\\\[id]\")",
+      "Bash(echo \"EXIT CODE: $?\")",
+      "Bash(npm run *)",
+      "Bash(echo \"EXIT: $?\")",
+      "Bash(chromium-cli --help)",
+      "Bash(npx --no-install playwright --version)",
+      "Bash(npx --no-install playwright-core --version)",
+      "Bash(mkdir -p /c/Users/jbesayte/AppData/Local/Temp/claude/c--Users-jbesayte-Desktop-ecommerce/a7b51c79-600c-44f3-b375-07172c3b3b55/scratchpad/pwtest)",
+      "Read(//c/Users/jbesayte/AppData/Local/Temp/claude/c--Users-jbesayte-Desktop-ecommerce/a7b51c79-600c-44f3-b375-07172c3b3b55/scratchpad/**)",
+      "Bash(npm init *)",
+      "Bash(curl -sf http://localhost:3000 -o /dev/null -w \"HTTP %{http_code}\\\\n\")",
+      "Read(//c/Users/jbesayte/AppData/Local/Temp/claude/c--Users-jbesayte-Desktop-ecommerce/a7b51c79-600c-44f3-b375-07172c3b3b55/scratchpad/pwtest/**)",
+      "Bash(node test.js)",
+      "Bash(ls -la \"/c/Users/jbesayte/AppData/Local/Temp/claude/c--Users-jbesayte-Desktop-ecommerce/a7b51c79-600c-44f3-b375-07172c3b3b55/scratchpad/pwtest/\"*.png)",
+      "Bash(rm -f *.png)",
+      "Bash(ls \"/c/Users/jbesayte/AppData/Local/Temp/claude/c--Users-jbesayte-Desktop-ecommerce/a7b51c79-600c-44f3-b375-07172c3b3b55/scratchpad/pwtest/\"*.png)",
+      "Bash(echo \"TSC EXIT: $?\")",
+      "Bash(rm -f *.png FAILURE.png)",
+      "Bash(node regression.js)",
+      "Bash(echo \"TSC: $?\")",
+      "Bash(echo \"TSC:$?\")"
+    ]
+  }
+}
