@@ -47,7 +47,7 @@ export default function LivePreviewPane({ label, children }: { label: string; ch
     const [device, setDevice] = useState<Device>("desktop");
 
     return (
-        <div className="flex min-h-full flex-col border-t border-ink/10 bg-white lg:border-t-0 lg:border-l">
+        <div className="flex flex-col border-b border-ink/10 bg-white">
             <div className="flex flex-none items-center justify-between gap-3 border-b border-ink/10 px-5 py-3.5 font-mono text-[10.5px] tracking-[.06em] text-grey uppercase">
                 <div className="flex items-center gap-1.5">
                     <span className="h-1.5 w-1.5 flex-none animate-pulse rounded-full bg-success" />
@@ -70,7 +70,15 @@ export default function LivePreviewPane({ label, children }: { label: string; ch
                     ))}
                 </div>
             </div>
-            <div className="flex-1 overflow-y-auto p-6.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {/* No padding around the content itself — the device toggle only ever
+                changes this box's *width*; whatever renders inside it fills that
+                width edge to edge, exactly like the real page would.
+                This outer div only exists so the `mx-auto` one below is normal
+                block flow, not a flex item — as a direct flex child, its auto
+                margins would disable stretch and shrink it to fit-content,
+                collapsing to 0 width since Hero's own children are all
+                absolutely positioned and contribute no intrinsic width. */}
+            <div>
                 <div
                     className={`${DEVICE_WIDTH[device]} mx-auto transition-[max-width] duration-300 ${
                         device === "desktop" ? "" : "border border-ink/10"

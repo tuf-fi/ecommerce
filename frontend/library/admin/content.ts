@@ -1,6 +1,7 @@
-import { journalImages } from "@/components/ui/images";
+import { journalImages, ritualImages, concernImages } from "@/components/ui/images";
 import { faqs } from "../faq";
-import { BlogPost, Faq, NavMenuItem, Promo, StaticPage, Testimonial } from "./types";
+import { BlogPost, Concern, Faq, FooterLinkItem, Promo, Ritual, SiteNavLink, StaticPage, Testimonial } from "./types";
+import { SECTION_KEYS, SectionKey } from "./sections";
 
 // Blog posts don't store a slug — it's derived from the title so renaming a
 // post can't leave a stale slug behind pointing at the old URL.
@@ -16,6 +17,14 @@ export const HOMEPAGE_HERO_DEFAULT = {
     cta: "Shop the edit",
     subtext: "A quiet, considered approach to skincare — formulated with intent, not trend.",
     image: null as string | null,
+};
+
+export const ABOUT_DEFAULT = {
+    founder: "2026",
+    location: "Metro Manila, PH",
+    focus: "Considered skincare, formulated in small batches",
+    lead: "A studio built on restraint.",
+    body: "Cindyrella is a considered skincare studio based in Metro Manila, built on the idea that a routine should be simple, effective, and honest about what's in it. We formulate in small batches, around fewer and better ingredients, and we'd rather make five products we believe in than fifty we don't.",
 };
 
 export const PROMOS: Promo[] = [
@@ -36,15 +45,6 @@ export const PROMOS: Promo[] = [
 ];
 
 export const STATIC_PAGES: StaticPage[] = [
-    {
-        id: 1,
-        slug: "about",
-        name: "About",
-        category: "Landing Page",
-        updated: "Aug 12, 2026",
-        content:
-            "Cindyrella is a considered skincare studio, built around slow formulation and a small, deliberate catalogue.\n\nWe don't chase trends — every product exists because it earns its place in a routine.",
-    },
     {
         id: 2,
         slug: "shipping-returns",
@@ -83,20 +83,119 @@ export const STATIC_PAGES: StaticPage[] = [
 // Default headline/accent shown atop the Shop, Wishlist, and Cart pages —
 // editable from the admin's Pages tab (see PageIntroEditor) the same way the
 // homepage Hero is, just without an image/CTA since these are listing pages.
-export const PAGE_INTRO_DEFAULTS: Record<"shop" | "wishlist" | "cart", { headline: string; accent: string }> = {
+export const PAGE_INTRO_DEFAULTS: Record<"shop" | "wishlist" | "cart" | "journal", { headline: string; accent: string }> = {
     shop: { headline: "Everything we make,", accent: "in one place." },
     wishlist: { headline: "Formulas you're", accent: "still thinking about." },
     cart: { headline: "Everything you're", accent: "taking home." },
+    journal: { headline: "Notes on ingredients, routines,", accent: "and the thinking behind them." },
 };
 
-export const NAV_MENU: NavMenuItem[] = [
-    { id: 1, label: "Serums", link: "#serums" },
-    { id: 2, label: "Treatment", link: "#treatment" },
-    { id: 3, label: "Moisturizers", link: "#moisturizers" },
-    { id: 4, label: "Body", link: "#body" },
-    { id: 5, label: "Journal", link: "/journal" },
-    { id: 6, label: "Contact", link: "#contact" },
+// Every section starts visible — this map only exists so an admin can switch
+// one *off*, and a brand-new install should look exactly like the designed
+// homepage. Built from SECTION_KEYS rather than written out by hand so adding
+// a thirteenth section can't leave a hole here.
+export const SECTION_VISIBILITY_DEFAULT: Record<SectionKey, boolean> = Object.fromEntries(
+    SECTION_KEYS.map((key) => [key, true])
+) as Record<SectionKey, boolean>;
+
+// The homepage Contact section's headline, split the same way the page-intro
+// headlines are: a plain first line and an accented second one.
+export const CONTACT_DEFAULT = {
+    headline: "Let's",
+    accent: "talk skin.",
+};
+
+// One plain string for the main line rather than a headline/accent pair — the
+// original markup emphasized a single word mid-sentence, which no two-field
+// split expresses honestly. The emphasis is dropped in exchange for the whole
+// line being editable.
+export const PHILOSOPHY_DEFAULT = {
+    eyebrow: "N° 002 — Philosophy",
+    headline: "Good skin isn't fixed overnight. It's the sum of small, consistent choices, applied with care.",
+    subtext:
+        "Every formula is built around fewer, better ingredients — layered in an order that actually works with your skin, not against it.",
+};
+
+// The Shop All section's only genuine editorial string — its filters and
+// product grid are product data, not content.
+export const CATALOGUE_DEFAULT = {
+    ctaLabel: "Go to Shop",
+};
+
+export const NEWSLETTER_DEFAULT = {
+    headline: "Join the",
+    accent: "ritual.",
+    body: "First access to new formulas, routine tips, and members-only offers — straight to your inbox.",
+    socialProof: "Loved by 12,000+ skincare routines",
+};
+
+// Read by both the Contact section and the Footer, which each used to carry
+// their own hardcoded copy of it.
+export const CONTACT_INFO_DEFAULT = {
+    email: "hello@cindyrella.ph",
+    phone: "+63 917 000 0000",
+    addressLine1: "Makati City,",
+    addressLine2: "Metro Manila",
+    hoursLine1: "Monday – Saturday",
+    hoursLine2: "9am – 6pm",
+};
+
+// TODO: replace with real @cindyrella handles once the social accounts exist —
+// "#" is the literal value both the Contact section and the Footer shipped
+// with, i.e. a link that deliberately goes nowhere.
+export const SOCIAL_LINKS_DEFAULT = {
+    instagramUrl: "#",
+    instagramEnabled: true,
+    tiktokUrl: "#",
+    tiktokEnabled: true,
+    pinterestUrl: "#",
+    pinterestEnabled: true,
+    facebookUrl: "#",
+    facebookEnabled: true,
+    xUrl: "#",
+    xEnabled: true,
+};
+
+// Seeded from the list Navbar.tsx actually rendered. "Home" isn't here: it
+// duplicates the wordmark's scroll-to-top rather than pointing at a section,
+// so it stays hardcoded in the navbar.
+export const NAV_LINKS_DEFAULT: SiteNavLink[] = [
+    { id: 1, label: "About", section: "about" },
+    { id: 2, label: "Best Sellers", section: "bestSellers", group: "more" },
+    { id: 3, label: "Rituals", section: "moments" },
+    { id: 4, label: "Concern", section: "glossary" },
+    { id: 5, label: "Products", section: "catalogue" },
+    { id: 6, label: "Journal", section: "journal" },
+    { id: 7, label: "FAQ", section: "faq", group: "more" },
+    { id: 8, label: "Testimonials", section: "testimonials", group: "more" },
+    { id: 9, label: "Contact", section: "contact", group: "more" },
 ];
+
+// TODO: point these at real filtered listings once /shop reads a `?category=`
+// param (it only reads `?concern=` today) — "#" is the value the footer
+// shipped with for all five.
+export const FOOTER_SHOP_LINKS_DEFAULT: FooterLinkItem[] = [
+    { id: 1, label: "Serums", href: "#" },
+    { id: 2, label: "Treatment", href: "#" },
+    { id: 3, label: "Moisturizers", href: "#" },
+    { id: 4, label: "Body", href: "#" },
+    { id: 5, label: "Sets", href: "#" },
+];
+
+export const FOOTER_COMPANY_LINKS_DEFAULT: FooterLinkItem[] = [
+    { id: 1, label: "About", href: "/#about" },
+    { id: 2, label: "Journal", href: "/journal" },
+    { id: 3, label: "Glossary", href: "/#concern" },
+    { id: 4, label: "FAQ", href: "/#faq" },
+    { id: 5, label: "Contact", href: "/#contact" },
+    { id: 6, label: "Shipping & Returns", href: "/pages/shipping-returns" },
+    { id: 7, label: "Privacy Policy", href: "/pages/privacy-policy" },
+    { id: 8, label: "Terms of Service", href: "/pages/terms" },
+];
+
+// TODO: these are display-only badges until PayMongo is wired up — the real
+// list should come from whichever methods the account actually has enabled.
+export const FOOTER_PAYMENT_METHODS_DEFAULT: string[] = ["GCash", "Maya", "Visa", "Mastercard"];
 
 const JOURNAL_TITLES = Object.keys(journalImages) as (keyof typeof journalImages)[];
 
@@ -144,6 +243,37 @@ export const BLOG_POSTS: BlogPost[] = [
 ];
 
 export const FAQS: Faq[] = faqs.map((f, i) => ({ id: i + 1, q: f.q, a: f.a }));
+
+// Product ids reference PRODUCTS in library/products.ts. Each ritual is a
+// curated, shoppable subset — not just decorative copy — so "Shop Now" has
+// real products to add to the bag.
+export const RITUALS_DEFAULT: Ritual[] = [
+    {
+        id: 1,
+        eyebrow: "Ritual One",
+        title: "The Glass Skin Routine",
+        copy: "Five steps, applied in order — for skin that looks lit from underneath.",
+        image: ritualImages["The Glass Skin Routine"],
+        productIds: [1, 5, 3],
+    },
+    {
+        id: 2,
+        eyebrow: "Ritual Two",
+        title: "Barrier First",
+        copy: "Rebuild what stripping actively broke, before you treat anything else.",
+        image: ritualImages["Barrier First"],
+        productIds: [2, 9, 8],
+    },
+];
+
+export const CONCERNS_DEFAULT: Concern[] = [
+    { id: 1, key: "dryness", title: "Dryness", image: concernImages.Dryness },
+    { id: 2, key: "breakouts", title: "Breakouts", image: concernImages.Breakouts },
+    { id: 3, key: "dullness", title: "Dullness", image: concernImages.Dullness },
+    { id: 4, key: "fine-lines", title: "Fine Lines", image: concernImages["Fine Lines"] },
+    { id: 5, key: "redness", title: "Redness", image: concernImages.Redness },
+    { id: 6, key: "texture", title: "Texture", image: concernImages.Texture },
+];
 
 // No photo uploaded yet for any of these — TestimonialCard/the admin table
 // both fall back to an initials avatar when `image` is null, same pattern as

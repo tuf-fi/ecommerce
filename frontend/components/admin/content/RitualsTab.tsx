@@ -3,52 +3,31 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useContent } from "@/library/content";
-import { Testimonial } from "@/library/admin/types";
+import { Ritual } from "@/library/admin/types";
 import Tooltip from "@/components/ui/Tooltip";
 import ConfirmModal from "@/components/ui/ConfirmModal";
-import Pagination from "@/components/ui/Pagination";
-import TestimonialModal from "@/components/admin/modals/TestimonialModal";
-import TestimonialViewModal from "@/components/admin/modals/TestimonialViewModal";
+import RitualModal from "@/components/admin/modals/RitualModal";
 import { BTN_ADD, ICON_BTN, ICON_BTN_DANGER } from "@/components/admin/formClasses";
 
-const PAGE_SIZE = 10;
-
-// Same initials fallback as app/admin/(panel)/staff/page.tsx, for testimonials
-// with no uploaded photo.
-function initials(name: string) {
-    return name
-        .split(" ")
-        .map((p) => p[0])
-        .join("")
-        .slice(0, 2)
-        .toUpperCase();
-}
-
-export default function TestimonialsTab() {
+export default function RitualsTab() {
     const router = useRouter();
-    const { testimonials, addTestimonial, updateTestimonial, deleteTestimonial, moveTestimonial } = useContent();
-    const [editing, setEditing] = useState<Testimonial | null>(null);
+    const { rituals, addRitual, updateRitual, deleteRitual, moveRitual } = useContent();
+    const [editing, setEditing] = useState<Ritual | null>(null);
     const [modalOpen, setModalOpen] = useState(false);
-    const [viewing, setViewing] = useState<Testimonial | null>(null);
     const [deleteId, setDeleteId] = useState<number | null>(null);
-    const deleting = testimonials.find((t) => t.id === deleteId) ?? null;
+    const deleting = rituals.find((r) => r.id === deleteId) ?? null;
 
-    const [page, setPage] = useState(1);
-    const totalPages = Math.max(1, Math.ceil(testimonials.length / PAGE_SIZE));
-    const currentPage = Math.min(page, totalPages);
-    const paged = testimonials.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
-
-    function handleSave(data: Omit<Testimonial, "id">, id?: number) {
-        if (id) updateTestimonial(id, data);
-        else addTestimonial(data);
+    function handleSave(data: Omit<Ritual, "id">, id?: number) {
+        if (id) updateRitual(id, data);
+        else addRitual(data);
     }
 
     return (
         <div>
-            {/* Reached via its own /admin/content/pages/testimonials route (see
-                the dispatcher in pages/[slug]/page.tsx), same as Hero/About/FAQ
-                — needs its own way back for the same reason those do, since
-                this route renders with no tab bar above it. */}
+            {/* Reached via its own /admin/content/pages/rituals route (see the
+                dispatcher in pages/[slug]/page.tsx), same as Testimonials —
+                needs its own way back for the same reason, since this route
+                renders with no tab bar above it. */}
             <div className="mb-6">
                 <button onClick={() => router.push("/admin/content?tab=pages")} className="text-[12.5px] font-medium text-ink hover:text-pink-dark">
                     ← Back to Pages
@@ -56,7 +35,7 @@ export default function TestimonialsTab() {
             </div>
 
             <div className="mb-5 flex items-center justify-between">
-                <h3 className="m-0 text-[15px] font-medium text-ink">Testimonials</h3>
+                <h3 className="m-0 text-[15px] font-medium text-ink">Rituals</h3>
                 <button
                     onClick={() => {
                         setEditing(null);
@@ -64,7 +43,7 @@ export default function TestimonialsTab() {
                     }}
                     className={BTN_ADD}
                 >
-                    + Add Testimonial
+                    + Add Ritual
                 </button>
             </div>
 
@@ -72,7 +51,7 @@ export default function TestimonialsTab() {
                 <table className="w-full border-collapse">
                     <thead>
                         <tr className="bg-off/50">
-                            {["ID", "Name", "Company", ""].map((h) => (
+                            {["ID", "Title", "Products", ""].map((h) => (
                                 <th key={h} scope="col" className="border-b border-ink/10 px-5 py-3.5 text-left font-mono text-[10px] tracking-[.12em] text-grey uppercase">
                                     {h}
                                 </th>
@@ -80,38 +59,22 @@ export default function TestimonialsTab() {
                         </tr>
                     </thead>
                     <tbody>
-                        {testimonials.length === 0 && (
+                        {rituals.length === 0 && (
                             <tr>
                                 <td colSpan={4} className="px-5 py-16 text-center text-[13px] text-grey">
-                                    No testimonials yet.
+                                    No rituals yet.
                                 </td>
                             </tr>
                         )}
-                        {testimonials.map((t, i) => (
-                            <tr
-                                key={t.id}
-                                onClick={() => setViewing(t)}
-                                role="button"
-                                tabIndex={0}
-                                aria-label={`View testimonial from ${t.name}`}
-                                onKeyDown={(e) => {
-                                    if (e.key === "Enter" || e.key === " ") {
-                                        e.preventDefault();
-                                        setViewing(t);
-                                    }
-                                }}
-                                className="cursor-pointer transition hover:bg-off/40"
-                            >
+                        {rituals.map((r, i) => (
+                            <tr key={r.id} className="transition hover:bg-off/40">
                                 <td className="border-b border-ink/10 px-5 py-3">
                                     <div className="flex items-center gap-2.5">
-                                        <span className="font-mono text-[12px] text-grey">{t.id}</span>
+                                        <span className="font-mono text-[12px] text-grey">{r.id}</span>
                                         <div className="flex flex-col gap-0.5 text-grey">
                                             <button
                                                 disabled={i === 0}
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    moveTestimonial(t.id, "up");
-                                                }}
+                                                onClick={() => moveRitual(r.id, "up")}
                                                 aria-label="Move up"
                                                 className="flex h-4 w-4 items-center justify-center hover:text-ink disabled:opacity-25"
                                             >
@@ -120,11 +83,8 @@ export default function TestimonialsTab() {
                                                 </svg>
                                             </button>
                                             <button
-                                                disabled={i === testimonials.length - 1}
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    moveTestimonial(t.id, "down");
-                                                }}
+                                                disabled={i === rituals.length - 1}
+                                                onClick={() => moveRitual(r.id, "down")}
                                                 aria-label="Move down"
                                                 className="flex h-4 w-4 items-center justify-center hover:text-ink disabled:opacity-25"
                                             >
@@ -137,28 +97,25 @@ export default function TestimonialsTab() {
                                 </td>
                                 <td className="border-b border-ink/10 px-5 py-3">
                                     <div className="flex items-center gap-3">
-                                        <span className="flex h-9 w-9 flex-none items-center justify-center overflow-hidden rounded-full bg-blue-soft font-mono text-[11px] text-ink">
-                                            {t.image ? (
+                                        <span className="h-9 w-9 flex-none overflow-hidden bg-gradient-to-br from-blue-soft to-pink-soft">
+                                            {r.image && (
                                                 // eslint-disable-next-line @next/next/no-img-element
-                                                <img src={t.image} alt="" className="h-full w-full object-cover" />
-                                            ) : (
-                                                initials(t.name)
+                                                <img src={typeof r.image === "string" ? r.image : r.image.src} alt="" className="h-full w-full object-cover" />
                                             )}
                                         </span>
-                                        <span className="text-[13.5px] font-medium text-ink">{t.name}</span>
+                                        <span className="text-[13.5px] font-medium text-ink">{r.title}</span>
                                     </div>
                                 </td>
-                                <td className="border-b border-ink/10 px-5 py-3 text-[13px] text-grey">{t.company}</td>
+                                <td className="border-b border-ink/10 px-5 py-3 text-[13px] text-grey">{r.productIds.length}</td>
                                 <td className="border-b border-ink/10 px-5 py-3">
                                     <div className="flex items-center justify-end gap-2">
                                         <Tooltip label="Edit">
                                             <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setEditing(t);
+                                                onClick={() => {
+                                                    setEditing(r);
                                                     setModalOpen(true);
                                                 }}
-                                                aria-label="Edit testimonial"
+                                                aria-label="Edit ritual"
                                                 className={ICON_BTN}
                                             >
                                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -168,14 +125,7 @@ export default function TestimonialsTab() {
                                             </button>
                                         </Tooltip>
                                         <Tooltip label="Remove">
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setDeleteId(t.id);
-                                                }}
-                                                aria-label="Remove testimonial"
-                                                className={ICON_BTN_DANGER}
-                                            >
+                                            <button onClick={() => setDeleteId(r.id)} aria-label="Remove ritual" className={ICON_BTN_DANGER}>
                                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                                                     <path d="M4 7h16" />
                                                     <path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
@@ -192,15 +142,13 @@ export default function TestimonialsTab() {
                 </table>
             </div>
 
-            <TestimonialViewModal open={viewing !== null} testimonial={viewing} onClose={() => setViewing(null)} />
-
-            {modalOpen && <TestimonialModal item={editing} onClose={() => setModalOpen(false)} onSave={handleSave} />}
+            {modalOpen && <RitualModal item={editing} onClose={() => setModalOpen(false)} onSave={handleSave} />}
 
             <ConfirmModal
                 open={deleteId !== null}
-                title="Remove this testimonial?"
-                description={deleting ? `"${deleting.name}" will be removed from the testimonials section.` : undefined}
-                onConfirm={() => deleteId !== null && deleteTestimonial(deleteId)}
+                title="Remove this ritual?"
+                description={deleting ? `"${deleting.title}" will be removed from the homepage Rituals section.` : undefined}
+                onConfirm={() => deleteId !== null && deleteRitual(deleteId)}
                 onClose={() => setDeleteId(null)}
             />
         </div>

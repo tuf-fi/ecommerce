@@ -4,12 +4,17 @@ import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useContent } from "@/library/content";
 import { Promo } from "@/library/admin/types";
-import LivePreviewPane from "@/components/admin/LivePreviewPane";
 import PromoBanner from "@/components/layout/PromoBanner";
 import Toggle from "@/components/ui/Toggle";
 import Tooltip from "@/components/ui/Tooltip";
 import ConfirmModal from "@/components/ui/ConfirmModal";
-import { BTN_PRIMARY, FIELD_INPUT, FIELD_LABEL, ICON_BTN, ICON_BTN_DANGER } from "@/components/admin/formClasses";
+import ContentEditorShell, { ContentNotFound } from "@/components/admin/content/ContentEditorShell";
+import { FIELD_INPUT, FIELD_LABEL, ICON_BTN, ICON_BTN_DANGER } from "@/components/admin/formClasses";
+import { useAsyncAction, wait } from "@/library/useAsyncAction";
+import { useMounted } from "@/library/useMounted";
+import Skeleton, { SkeletonGroup } from "@/components/ui/Skeleton";
+
+const BACK_HREF = "/admin/content?tab=promotions";
 
 // Keyed by existing?.id ?? "new" from the parent, so switching between two
 // different promotions (or from a promotion into "add new") remounts this
@@ -19,49 +24,61 @@ function PromoEditorForm({
     isNew,
     onSave,
     onDelete,
-    onBack,
 }: {
     existing: Promo | null;
     isNew: boolean;
     onSave: (data: Omit<Promo, "id">, id?: number) => void;
     onDelete: (id: number) => void;
-    onBack: () => void;
 }) {
+    const router = useRouter();
     const [mode, setMode] = useState<"view" | "edit">(isNew ? "edit" : "view");
     const [text, setText] = useState(existing?.text ?? "");
     const [code, setCode] = useState(existing?.code ?? "");
     const [active, setActive] = useState(existing?.active ?? false);
     const [image, setImage] = useState<string | null>(existing?.image ?? null);
     const [confirmOpen, setConfirmOpen] = useState(false);
+    const [dirty, setDirty] = useState(false);
 
     function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
         const file = e.target.files?.[0];
         if (!file) return;
         const reader = new FileReader();
-        reader.onload = () => setImage(reader.result as string);
+        reader.onload = () => {
+            setImage(reader.result as string);
+            setDirty(true);
+        };
         reader.readAsDataURL(file);
     }
 
-    function handleSave() {
+    const [saving, handleSave] = useAsyncAction(async () => {
+        await wait();
         if (isNew) {
             onSave({ text, code, image, active });
-            onBack();
+            setDirty(false);
+            router.push(BACK_HREF);
         } else if (existing) {
             onSave({ text, code, image, active }, existing.id);
+            setDirty(false);
             setMode("view");
         }
-    }
+    });
 
     const disabled = mode === "view";
 
     return (
-        <div>
-            <div className="mb-6 flex items-center justify-between">
-                <button onClick={onBack} className="text-[12.5px] font-medium text-ink hover:text-pink-dark">
-                    ← Back to Promotions
-                </button>
-                <div className="flex items-center gap-2.5">
-                    {!isNew && mode === "view" && (
+        <ContentEditorShell
+            title={isNew ? "Add Promotion" : "Promotion"}
+            backLabel="Promotions"
+            backHref={BACK_HREF}
+            saving={saving}
+            onSave={handleSave}
+            saveLabel="Save Promotion"
+            showSaveBar={mode === "edit"}
+            dirty={dirty}
+            previewLabel="Top Banner (all pages)"
+            topRightExtra={
+                !isNew && mode === "view" ? (
+                    <>
                         <Tooltip label="Delete">
                             <button onClick={() => setConfirmOpen(true)} aria-label="Delete promotion" className={ICON_BTN_DANGER}>
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -72,8 +89,6 @@ function PromoEditorForm({
                                 </svg>
                             </button>
                         </Tooltip>
-                    )}
-                    {!isNew && mode === "view" && (
                         <Tooltip label="Edit">
                             <button onClick={() => setMode("edit")} aria-label="Edit promotion" className={ICON_BTN}>
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -82,68 +97,75 @@ function PromoEditorForm({
                                 </svg>
                             </button>
                         </Tooltip>
+                    </>
+                ) : undefined
+            }
+            preview={
+                active ? (
+                    <PromoBanner promo={{ id: existing?.id ?? 0, text, code, image, active }} />
+                ) : (
+                    <p className="p-6 text-center text-[12.5px] text-grey">
+                        This promotion is turned off — it won&apos;t show on the site until &quot;Display this promo&quot; is on.
+                    </p>
+                )
+            }
+        >
+            <div className="mb-5 flex items-center gap-3.5">
+                <label className={`relative h-16 w-16 flex-none overflow-hidden bg-gradient-to-br from-blue-soft to-pink-soft ${disabled ? "" : "cursor-pointer"}`}>
+                    {image ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={image} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                        <span className="flex h-full w-full items-center justify-center text-center font-mono text-[9px] text-ink/60">+ Image</span>
                     )}
-                    {mode === "edit" && (
-                        <button onClick={handleSave} className={BTN_PRIMARY + " px-6 py-3"}>
-                            Save Promotion
-                        </button>
-                    )}
-                </div>
+                    {!disabled && <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />}
+                </label>
+                <span className="text-[11.5px] text-grey">Optional — reserved for future visual promo cards</span>
             </div>
 
-            <div className="grid grid-cols-1 overflow-hidden border border-ink/10 bg-white lg:grid-cols-2">
-                <div className="p-7">
-                    <h3 className="mb-4 text-lg font-medium text-ink">{isNew ? "Add Promotion" : "Promotion"}</h3>
-
-                    <div className="mb-5 flex items-center gap-3.5">
-                        <label className={`relative h-16 w-16 flex-none overflow-hidden bg-gradient-to-br from-blue-soft to-pink-soft ${disabled ? "" : "cursor-pointer"}`}>
-                            {image ? (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img src={image} alt="" className="h-full w-full object-cover" />
-                            ) : (
-                                <span className="flex h-full w-full items-center justify-center text-center font-mono text-[9px] text-ink/60">+ Image</span>
-                            )}
-                            {!disabled && <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />}
-                        </label>
-                        <span className="text-[11.5px] text-grey">Optional — reserved for future visual promo cards</span>
-                    </div>
-
-                    <div className="mb-4">
-                        <label className={FIELD_LABEL}>Promo Text</label>
-                        <textarea
-                            rows={2}
-                            disabled={disabled}
-                            value={text}
-                            onChange={(e) => setText(e.target.value)}
-                            placeholder="e.g. 10% off your first order"
-                            className={`${FIELD_INPUT} resize-y`}
-                        />
-                    </div>
-                    <div className="mb-5">
-                        <label className={FIELD_LABEL}>Promo Code (optional)</label>
-                        <input
-                            disabled={disabled}
-                            value={code}
-                            onChange={(e) => setCode(e.target.value)}
-                            placeholder="e.g. RITUAL10"
-                            className={FIELD_INPUT}
-                        />
-                    </div>
-                    <div className="flex items-center justify-between bg-off/60 px-4 py-3">
-                        <label className="text-[13px] text-ink">Display this promo</label>
-                        <Toggle checked={active} onChange={disabled ? () => {} : setActive} />
-                    </div>
-                </div>
-
-                <LivePreviewPane label="Top Banner (all pages)">
-                    {active ? (
-                        <PromoBanner promo={{ id: existing?.id ?? 0, text, code, image, active }} />
-                    ) : (
-                        <p className="p-6 text-center text-[12.5px] text-grey">
-                            This promotion is turned off — it won&apos;t show on the site until &quot;Display this promo&quot; is on.
-                        </p>
-                    )}
-                </LivePreviewPane>
+            <div className="mb-4">
+                <label htmlFor="promo-text" className={FIELD_LABEL}>Promo Text</label>
+                <textarea
+                    id="promo-text"
+                    rows={2}
+                    disabled={disabled}
+                    value={text}
+                    onChange={(e) => {
+                        setText(e.target.value);
+                        setDirty(true);
+                    }}
+                    placeholder="e.g. 10% off your first order"
+                    className={`${FIELD_INPUT} resize-y`}
+                />
+            </div>
+            <div className="mb-5">
+                <label htmlFor="promo-code" className={FIELD_LABEL}>Promo Code (optional)</label>
+                <input
+                    id="promo-code"
+                    disabled={disabled}
+                    value={code}
+                    onChange={(e) => {
+                        setCode(e.target.value);
+                        setDirty(true);
+                    }}
+                    placeholder="e.g. RITUAL10"
+                    className={FIELD_INPUT}
+                />
+            </div>
+            <div className="flex items-center justify-between bg-off/60 px-4 py-3">
+                <label htmlFor="promo-display-toggle" className="text-[13px] text-ink">Display this promo</label>
+                <Toggle
+                    id="promo-display-toggle"
+                    checked={active}
+                    onChange={
+                        disabled
+                            ? () => {}
+                            : (v) => {
+                                  setActive(v);
+                                  setDirty(true);
+                              }
+                    }
+                />
             </div>
 
             <ConfirmModal
@@ -152,34 +174,25 @@ function PromoEditorForm({
                 description={existing ? `"${existing.text}" will no longer show on the site.` : undefined}
                 onConfirm={() => {
                     if (existing) onDelete(existing.id);
-                    onBack();
+                    router.push(BACK_HREF);
                 }}
                 onClose={() => setConfirmOpen(false)}
             />
-        </div>
+        </ContentEditorShell>
     );
 }
 
 export default function PromoEditorPage() {
     const params = useParams<{ id: string }>();
-    const router = useRouter();
     const { promos, addPromo, updatePromo, deletePromo } = useContent();
+    const mounted = useMounted();
     const isNew = params.id === "new";
     const existing = isNew ? null : (promos.find((p) => p.id === Number(params.id)) ?? null);
 
-    function backToPromotions() {
-        router.push("/admin/content?tab=promotions");
-    }
+    if (!mounted) return <PromoEditorSkeleton />;
 
     if (!isNew && !existing) {
-        return (
-            <div className="p-11 text-center text-[13px] text-grey">
-                Promotion not found.{" "}
-                <button onClick={backToPromotions} className="text-pink-dark underline">
-                    Back to Promotions
-                </button>
-            </div>
-        );
+        return <ContentNotFound message="Promotion not found." backLabel="Back to Promotions" backHref={BACK_HREF} />;
     }
 
     function handleSave(data: Omit<Promo, "id">, id?: number) {
@@ -187,14 +200,61 @@ export default function PromoEditorPage() {
         else addPromo(data);
     }
 
+    return <PromoEditorForm key={existing?.id ?? "new"} existing={existing} isNew={isNew} onSave={handleSave} onDelete={deletePromo} />;
+}
+
+// Mirrors ContentEditorShell's stacked shape (back link, then one bordered
+// box holding the live-preview bar + a thin banner-shaped preview area on
+// top, and the form below) plus PromoEditorForm's own fields: image square,
+// promo text textarea, code input, and the active toggle row.
+function PromoEditorSkeleton() {
     return (
-        <PromoEditorForm
-            key={existing?.id ?? "new"}
-            existing={existing}
-            isNew={isNew}
-            onSave={handleSave}
-            onDelete={deletePromo}
-            onBack={backToPromotions}
-        />
+        <SkeletonGroup>
+            <div className="mb-6 flex items-center justify-between gap-4">
+                <Skeleton className="h-[12.5px] w-28" />
+            </div>
+
+            <div className="overflow-hidden border border-ink/10 bg-white">
+                <div className="border-b border-ink/10">
+                    <div className="flex items-center justify-between gap-3 border-b border-ink/10 px-5 py-3.5">
+                        <Skeleton tone="soft" className="h-[10.5px] w-44" />
+                        <div className="flex items-center gap-1">
+                            <Skeleton tone="soft" className="h-6 w-6" />
+                            <Skeleton tone="soft" className="h-6 w-6" />
+                            <Skeleton tone="soft" className="h-6 w-6" />
+                        </div>
+                    </div>
+                    <Skeleton tone="faint" className="h-10 w-full" />
+                </div>
+
+                <div className="px-7 pt-10 pb-7">
+                    <div className="mb-4 flex items-center justify-between gap-4">
+                        <Skeleton className="h-[18px] w-28" />
+                    </div>
+
+                    <div className="mb-5 flex items-center gap-3.5">
+                        <Skeleton tone="faint" className="h-16 w-16 flex-none" />
+                        <Skeleton tone="soft" className="h-[11.5px] w-56" />
+                    </div>
+
+                    <div className="mb-4">
+                        <Skeleton tone="soft" className="mb-1.5 h-[10.5px] w-20" />
+                        <Skeleton tone="outline" className="h-16 w-full" />
+                    </div>
+                    <div className="mb-5">
+                        <Skeleton tone="soft" className="mb-1.5 h-[10.5px] w-28" />
+                        <Skeleton tone="outline" className="h-11 w-full" />
+                    </div>
+                    <div className="flex items-center justify-between bg-off/60 px-4 py-3">
+                        <Skeleton tone="soft" className="h-[13px] w-32" />
+                        <Skeleton tone="outline" className="h-6 w-11" />
+                    </div>
+                </div>
+            </div>
+
+            <div className="mt-6 flex items-center justify-end gap-4">
+                <Skeleton tone="outline" className="h-[46px] w-44" />
+            </div>
+        </SkeletonGroup>
     );
 }

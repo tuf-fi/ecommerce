@@ -15,7 +15,7 @@ import { BTN_ADD, ICON_BTN, ICON_BTN_DANGER } from "@/components/admin/formClass
 const PAGE_SIZE = 10;
 
 export default function BlogTab() {
-    const { blogPosts, updateBlogPost, deleteBlogPost } = useContent();
+    const { blogPosts, updateBlogPost, deleteBlogPost, sectionVisibility, updateSectionVisibility } = useContent();
     const [search, setSearch] = useState("");
     const [page, setPage] = useState(1);
     const [viewing, setViewing] = useState<BlogPost | null>(null);
@@ -42,6 +42,33 @@ export default function BlogTab() {
 
     return (
         <div>
+            {/* The Journal section's visibility toggle (and its /journal page
+                intro copy) live here rather than in the Pages list, since the
+                Journal already has its own tab. The toggle gates only the
+                homepage section — /journal itself stays live. */}
+            <div className="mb-6 flex items-center justify-between gap-6 border border-ink/10 bg-white px-5 py-4">
+                <div>
+                    <div className="text-[13.5px] font-medium text-ink">Show the Journal section on the homepage</div>
+                    <p className="mt-0.5 text-[12px] text-grey">
+                        Hiding it also removes its link from the site navigation. The /journal page and its posts stay published.
+                    </p>
+                </div>
+                <Toggle checked={sectionVisibility.journal} onChange={(v) => updateSectionVisibility("journal", v)} />
+            </div>
+
+            <div className="mb-6 flex items-center justify-between gap-6 border border-ink/10 bg-white px-5 py-4">
+                <div>
+                    <div className="text-[13.5px] font-medium text-ink">/journal page heading</div>
+                    <p className="mt-0.5 text-[12px] text-grey">Edit the headline shown at the top of the Journal listing page.</p>
+                </div>
+                <Link href="/admin/content/pages/journal" className={`flex-none ${ICON_BTN}`} aria-label="Edit Journal page intro">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                        <path d="M12 20h9" />
+                        <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5Z" />
+                    </svg>
+                </Link>
+            </div>
+
             <div className="mb-5 flex items-center justify-between gap-4">
                 <SearchField value={search} onChange={setSearch} placeholder="Search posts" />
                 <Link href="/admin/content/blog/new" className={`flex-none ${BTN_ADD}`}>
@@ -54,7 +81,7 @@ export default function BlogTab() {
                     <thead>
                         <tr className="bg-off/50">
                             {["Title", "Status", "Date", ""].map((h) => (
-                                <th key={h} className="border-b border-ink/10 px-5 py-3.5 text-left font-mono text-[10px] tracking-[.12em] text-grey uppercase">
+                                <th key={h} scope="col" className="border-b border-ink/10 px-5 py-3.5 text-left font-mono text-[10px] tracking-[.12em] text-grey uppercase">
                                     {h}
                                 </th>
                             ))}

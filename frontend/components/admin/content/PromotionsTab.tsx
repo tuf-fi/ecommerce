@@ -35,7 +35,7 @@ export default function PromotionsTab() {
                     <thead>
                         <tr className="bg-off/50">
                             {["Promotion", "Code", "Active", ""].map((h) => (
-                                <th key={h} className="border-b border-ink/10 px-5 py-3.5 text-left font-mono text-[10px] tracking-[.12em] text-grey uppercase">
+                                <th key={h} scope="col" className="border-b border-ink/10 px-5 py-3.5 text-left font-mono text-[10px] tracking-[.12em] text-grey uppercase">
                                     {h}
                                 </th>
                             ))}

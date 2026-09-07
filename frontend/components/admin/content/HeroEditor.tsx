@@ -1,68 +1,102 @@
 "use client";
 
+import { useState } from "react";
 import { toast } from "sonner";
-import { useContent } from "@/library/content";
+import { HeroContent, useContent } from "@/library/content";
 import Hero from "@/components/sections/Hero";
-import LivePreviewPane from "../LivePreviewPane";
-import { BTN_PRIMARY, FIELD_INPUT, FIELD_LABEL } from "../formClasses";
+import ContentEditorShell from "./ContentEditorShell";
+import { FIELD_INPUT, FIELD_LABEL } from "../formClasses";
+import { useAsyncAction, wait } from "@/library/useAsyncAction";
 
-export default function HeroEditor({ onBack }: { onBack: () => void }) {
+// Edits are staged in local `draft` state and only written to the shared
+// content store (which the live customer-facing site also reads) inside
+// handleSave — see PageContentEditor.tsx for the reference pattern. The live
+// preview below still updates on every keystroke because it's fed `draft`
+// directly (via Hero's `previewData` prop), not the shared context.
+export default function HeroEditor() {
     const { hero, updateHero } = useContent();
+    const [draft, setDraft] = useState<HeroContent>(hero);
+    const [dirty, setDirty] = useState(false);
+
+    const [saving, handleSave] = useAsyncAction(async () => {
+        await wait();
+        updateHero(draft);
+        setDirty(false);
+        toast.success("Hero content saved.");
+    });
+
+    function handleChange(patch: Partial<HeroContent>) {
+        setDraft((d) => ({ ...d, ...patch }));
+        setDirty(true);
+    }
 
     function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
         const file = e.target.files?.[0];
         if (!file) return;
         const reader = new FileReader();
-        reader.onload = () => updateHero({ image: reader.result as string });
+        reader.onload = () => {
+            handleChange({ image: reader.result as string });
+        };
         reader.readAsDataURL(file);
     }
 
     return (
-        <div>
-            <div className="mb-6 flex items-center justify-between">
-                <button onClick={onBack} className="text-[12.5px] font-medium text-ink hover:text-pink-dark">
-                    ← Back to Pages
-                </button>
-                <button onClick={() => toast.success("Hero content saved.")} className={BTN_PRIMARY + " px-6 py-3"}>
-                    Save Changes
-                </button>
+        <ContentEditorShell
+            title="Hero"
+            backLabel="Pages"
+            backHref="/admin/content?tab=pages"
+            saving={saving}
+            onSave={handleSave}
+            dirty={dirty}
+            previewLabel="cindyrella.ph"
+            preview={<Hero preview previewData={draft} />}
+        >
+            {/* Small square, not a full-width preview — the actual image is
+                already visible full-size in the live preview above. */}
+            <div className="mb-5 flex items-center gap-3.5">
+                <label
+                    htmlFor="hero-image"
+                    className="relative h-16 w-16 flex-none cursor-pointer overflow-hidden bg-gradient-to-br from-blue-soft to-pink-soft"
+                >
+                    {draft.image ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={draft.image} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                        <span className="flex h-full w-full items-center justify-center text-center font-mono text-[9px] text-ink/60">+ Image</span>
+                    )}
+                    <input id="hero-image" type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
+                </label>
+                <span className="text-[11.5px] text-grey">Shown full-size in the live preview above</span>
             </div>
-            <div className="grid grid-cols-1 overflow-hidden border border-ink/10 bg-white lg:grid-cols-2">
-                <div className="p-7">
-                    <h3 className="mb-4 text-lg font-medium text-ink">Hero</h3>
-                    <label className="relative mb-5 block h-40 w-full cursor-pointer overflow-hidden bg-gradient-to-br from-blue-soft to-pink-soft">
-                        {hero.image ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={hero.image} alt="" className="h-full w-full object-cover" />
-                        ) : (
-                            <span className="flex h-full w-full items-center justify-center font-mono text-[12px] text-ink/60">+ Add hero image</span>
-                        )}
-                        <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
-                    </label>
 
-                    <div className="mb-4">
-                        <label className={FIELD_LABEL}>Hero Headline</label>
-                        <input value={hero.headline} onChange={(e) => updateHero({ headline: e.target.value })} className={FIELD_INPUT} />
-                    </div>
-                    <div className="mb-4">
-                        <label className={FIELD_LABEL}>Hero CTA Button Text</label>
-                        <input value={hero.cta} onChange={(e) => updateHero({ cta: e.target.value })} className={FIELD_INPUT} />
-                    </div>
-                    <div>
-                        <label className={FIELD_LABEL}>Hero Subtext</label>
-                        <textarea
-                            rows={2}
-                            value={hero.subtext}
-                            onChange={(e) => updateHero({ subtext: e.target.value })}
-                            className={`${FIELD_INPUT} resize-y leading-relaxed`}
-                        />
-                    </div>
-                </div>
-
-                <LivePreviewPane label="cindyrella.ph">
-                    <Hero preview />
-                </LivePreviewPane>
+            <div className="mb-4">
+                <label htmlFor="hero-headline" className={FIELD_LABEL}>Hero Headline</label>
+                <input
+                    id="hero-headline"
+                    value={draft.headline}
+                    onChange={(e) => handleChange({ headline: e.target.value })}
+                    className={FIELD_INPUT}
+                />
             </div>
-        </div>
+            <div className="mb-4">
+                <label htmlFor="hero-cta" className={FIELD_LABEL}>Hero CTA Button Text</label>
+                <input
+                    id="hero-cta"
+                    value={draft.cta}
+                    onChange={(e) => handleChange({ cta: e.target.value })}
+                    className={FIELD_INPUT}
+                />
+            </div>
+            <div>
+                <label htmlFor="hero-subtext" className={FIELD_LABEL}>Hero Subtext</label>
+                <textarea
+                    id="hero-subtext"
+                    rows={2}
+                    value={draft.subtext}
+                    onChange={(e) => handleChange({ subtext: e.target.value })}
+                    className={`${FIELD_INPUT} resize-y leading-relaxed`}
+                />
+            </div>
+        </ContentEditorShell>
     );
 }

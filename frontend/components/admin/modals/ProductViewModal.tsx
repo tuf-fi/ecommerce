@@ -1,14 +1,24 @@
 "use client";
 
-import Link from "next/link";
 import Image from "next/image";
 import Modal from "@/components/ui/Modal";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { ViewHeader, DetailRow, DetailBody } from "@/components/admin/modals/ViewModalLayout";
 import { AdminProduct } from "@/library/admin/types";
-import { productStock, productStockStatus, productPriceRange } from "@/library/adminStore";
+import { productStock, productStockStatus, productPriceRange, isExpiringSoon } from "@/library/adminStore";
 
-export default function LowStockViewModal({
+const STOCK_LABEL: Record<"in" | "low" | "out", string> = {
+    in: "In stock",
+    low: "Low stock",
+    out: "Out of stock",
+};
+const STOCK_TONE: Record<"in" | "low" | "out", "success" | "warning" | "alert"> = {
+    in: "success",
+    low: "warning",
+    out: "alert",
+};
+
+export default function ProductViewModal({
     open,
     product,
     onClose,
@@ -19,19 +29,15 @@ export default function LowStockViewModal({
 }) {
     if (!product) return null;
 
+    const status = productStockStatus(product);
     const { min, max } = productPriceRange(product);
 
     return (
-        <Modal open={open} onClose={onClose} maxWidth="max-w-[380px]">
+        <Modal open={open} onClose={onClose} maxWidth="max-w-[420px]">
             <ViewHeader
-                eyebrow="Low Stock Alert"
+                eyebrow="Product"
                 title={product.name}
-                meta={
-                    <StatusBadge
-                        label={productStockStatus(product) === "out" ? "Out of stock" : `${productStock(product)} left`}
-                        tone={productStockStatus(product) === "out" ? "alert" : "warning"}
-                    />
-                }
+                meta={<StatusBadge label={STOCK_LABEL[status]} tone={STOCK_TONE[status]} />}
                 thumbnail={
                     <div className="relative h-12 w-12 flex-none overflow-hidden border border-ink/10 bg-gradient-to-br from-blue-soft to-pink-soft">
                         <Image src={product.image} alt="" fill sizes="48px" unoptimized={typeof product.image === "string"} className="object-cover" />
@@ -41,7 +47,20 @@ export default function LowStockViewModal({
             <DetailBody>
                 <DetailRow label="SKU" value={<span className="font-mono">{product.sku}</span>} />
                 <DetailRow label="Category" value={product.category} />
-                <DetailRow label="Price" value={min === max ? `₱${min.toLocaleString()}` : `₱${min.toLocaleString()}–₱${max.toLocaleString()}`} />
+                <DetailRow
+                    label="Price"
+                    value={min === max ? `₱${min.toLocaleString()}` : `₱${min.toLocaleString()}–₱${max.toLocaleString()}`}
+                />
+                <DetailRow label="Stock" value={`${productStock(product)} units`} />
+                <DetailRow
+                    label="Expiry"
+                    value={
+                        <span className="inline-flex items-center gap-2">
+                            {product.expiry ?? "—"}
+                            {isExpiringSoon(product.expiry) && <StatusBadge label="Expiring soon" tone="warning" />}
+                        </span>
+                    }
+                />
                 {product.sizes && product.sizes.length > 0 && (
                     <DetailRow
                         label="Sizes"
@@ -69,14 +88,6 @@ export default function LowStockViewModal({
                     />
                 )}
             </DetailBody>
-            <div className="sticky bottom-0 border-t border-ink/10 bg-white px-8 py-5">
-                <Link
-                    href="/admin/inventory"
-                    className="block w-full border border-ink/15 py-3 text-center text-[12.5px] font-semibold uppercase tracking-wide text-ink transition hover:bg-off/60"
-                >
-                    Go to Inventory
-                </Link>
-            </div>
         </Modal>
     );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import Modal from "@/components/ui/Modal";
+import { ViewHeader } from "@/components/admin/modals/ViewModalLayout";
 import JournalArticle from "@/components/sections/JournalArticle";
 import { BlogPost } from "@/library/admin/types";
 
@@ -11,7 +12,8 @@ export default function BlogViewModal({ post, onClose }: { post: BlogPost | null
 
     return (
         <Modal open onClose={onClose} maxWidth="max-w-[520px]">
-            <div className="p-8">
+            <ViewHeader eyebrow="Blog Post · Preview" title={post.title} />
+            <div className="pb-2">
                 <JournalArticle post={post} preview />
             </div>
         </Modal>
