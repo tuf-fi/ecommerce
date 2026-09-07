@@ -3,11 +3,8 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import Toggle from "@/components/ui/Toggle";
-import { FIELD_LABEL, FIELD_INPUT, BTN_PRIMARY } from "@/components/admin/formClasses";
-
-const CARD = "mb-6 bg-white";
-const CARD_HEADER = "border-b border-ink/10 pb-4.5";
-const CARD_TITLE = "m-0 text-[15px] font-medium text-ink";
+import PageHeading from "@/components/ui/PageHeading";
+import { useAsyncAction, wait } from "@/library/useAsyncAction";
 
 export default function AdminSecuritySettingsPage() {
     const [currentPassword, setCurrentPassword] = useState("");
@@ -16,7 +13,7 @@ export default function AdminSecuritySettingsPage() {
 
     const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
 
-    function handleChangePassword(e: React.FormEvent) {
+    const [submitting, handleChangePassword] = useAsyncAction(async (e: React.FormEvent) => {
         e.preventDefault();
         if (!currentPassword || !newPassword || !confirmPassword) {
             toast.error("Fill in all password fields.");
@@ -27,11 +24,12 @@ export default function AdminSecuritySettingsPage() {
             return;
         }
         // TODO: verify current password and update it against the backend API.
+        await wait();
         setCurrentPassword("");
         setNewPassword("");
         setConfirmPassword("");
         toast.success("Password updated.");
-    }
+    });
 
     function handleToggleTwoFactor(value: boolean) {
         // TODO: wire up real 2FA enrollment (TOTP/SMS) once the backend exists.
@@ -41,56 +39,71 @@ export default function AdminSecuritySettingsPage() {
 
     return (
         <div>
-            <div className={CARD}>
-                <div className={CARD_HEADER}>
-                    <h3 className={CARD_TITLE}>Change Password</h3>
-                </div>
-                <form onSubmit={handleChangePassword} className="max-w-[420px] py-7">
+            <PageHeading>Change Password</PageHeading>
+            <div className="grid grid-cols-1 gap-12 lg:grid-cols-[240px_1fr]">
+                <p className="max-w-[220px] text-[12.5px] leading-relaxed text-grey">
+                    Use at least 8 characters — a mix of letters and numbers keeps this account safest.
+                </p>
+
+                <form onSubmit={handleChangePassword} className="max-w-[420px]">
                     <div className="mb-4">
-                        <label className={FIELD_LABEL}>Current Password</label>
+                        <label htmlFor="current-password" className="mb-1.5 block font-mono text-[10.5px] uppercase tracking-[.14em] text-grey">Current Password</label>
                         <input
+                            id="current-password"
                             type="password"
                             value={currentPassword}
                             onChange={(e) => setCurrentPassword(e.target.value)}
-                            className={FIELD_INPUT}
+                            placeholder="••••••••"
                             autoComplete="current-password"
+                            className="w-full border border-ink/10 px-4 py-3 text-sm text-ink outline-none transition focus:border-navy/30 focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-1"
                         />
                     </div>
                     <div className="mb-4">
-                        <label className={FIELD_LABEL}>New Password</label>
+                        <label htmlFor="new-password" className="mb-1.5 block font-mono text-[10.5px] uppercase tracking-[.14em] text-grey">New Password</label>
                         <input
+                            id="new-password"
                             type="password"
                             value={newPassword}
                             onChange={(e) => setNewPassword(e.target.value)}
-                            className={FIELD_INPUT}
+                            placeholder="••••••••"
                             autoComplete="new-password"
+                            className="w-full border border-ink/10 px-4 py-3 text-sm text-ink outline-none transition focus:border-navy/30 focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-1"
                         />
                     </div>
                     <div className="mb-5">
-                        <label className={FIELD_LABEL}>Confirm New Password</label>
+                        <label htmlFor="confirm-password" className="mb-1.5 block font-mono text-[10.5px] uppercase tracking-[.14em] text-grey">Confirm New Password</label>
                         <input
+                            id="confirm-password"
                             type="password"
                             value={confirmPassword}
                             onChange={(e) => setConfirmPassword(e.target.value)}
-                            className={FIELD_INPUT}
+                            placeholder="••••••••"
                             autoComplete="new-password"
+                            className="w-full border border-ink/10 px-4 py-3 text-sm text-ink outline-none transition focus:border-navy/30 focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-1"
                         />
                     </div>
-                    <button type="submit" className={BTN_PRIMARY}>
-                        Update Password
+                    <button
+                        type="submit"
+                        disabled={submitting}
+                        className="inline-flex items-center gap-2 bg-navy px-7 py-3 text-[13px] font-semibold tracking-wide text-white transition hover:bg-pink-dark disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-navy"
+                    >
+                        {!submitting && (
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                <path d="M20 6 9 17l-5-5" />
+                            </svg>
+                        )}
+                        {submitting ? "Updating…" : "Update Password"}
                     </button>
                 </form>
             </div>
 
-            <div className={CARD}>
-                <div className={CARD_HEADER}>
-                    <h3 className={CARD_TITLE}>Two-Factor Authentication</h3>
-                </div>
-                <div className="flex items-center justify-between gap-6 py-7">
-                    <p className="m-0 max-w-[420px] text-[13px] leading-relaxed text-grey">
+            <div className="mt-12">
+                <PageHeading>Two-Factor Authentication</PageHeading>
+                <div className="flex items-center justify-between gap-6">
+                    <p className="max-w-[420px] text-[13px] leading-relaxed text-grey">
                         Add an extra verification step when signing in to this account.
                     </p>
-                    <Toggle checked={twoFactorEnabled} onChange={handleToggleTwoFactor} />
+                    <Toggle checked={twoFactorEnabled} onChange={handleToggleTwoFactor} ariaLabel="Two-Factor Authentication" />
                 </div>
             </div>
         </div>

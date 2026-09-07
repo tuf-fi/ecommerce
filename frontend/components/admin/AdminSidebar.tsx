@@ -1,8 +1,28 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { AnimatePresence, motion } from "framer-motion";
 import { useAdminStore } from "@/library/adminStore";
+import { EASE } from "@/components/ui/motion/constants";
+import Tooltip from "@/components/ui/Tooltip";
+
+function CollapseIcon({ collapsed }: { collapsed: boolean }) {
+    return (
+        <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            className={`transition-transform duration-200 ${collapsed ? "rotate-180" : ""}`}
+        >
+            <path d="M15 18l-6-6 6-6" />
+        </svg>
+    );
+}
 
 const NAV_GROUPS = [
     {
@@ -114,51 +134,120 @@ const NAV_GROUPS = [
 
 export default function AdminSidebar() {
     const pathname = usePathname();
-    const { adminName } = useAdminStore();
+    const { adminName, sidebarCollapsed, toggleSidebar, mobileSidebarOpen, closeMobileSidebar } = useAdminStore();
+
+    // Close the mobile drawer on any route change, lock body scroll while
+    // it's open, and let Escape close it — same conventions as Navbar's
+    // mobile panel.
+    useEffect(() => { closeMobileSidebar(); }, [pathname, closeMobileSidebar]);
+    useEffect(() => {
+        document.body.style.overflow = mobileSidebarOpen ? "hidden" : "";
+        return () => { document.body.style.overflow = ""; };
+    }, [mobileSidebarOpen]);
+    useEffect(() => {
+        if (!mobileSidebarOpen) return;
+        function handleKeyDown(e: KeyboardEvent) {
+            if (e.key === "Escape") closeMobileSidebar();
+        }
+        document.addEventListener("keydown", handleKeyDown);
+        return () => document.removeEventListener("keydown", handleKeyDown);
+    }, [mobileSidebarOpen, closeMobileSidebar]);
+
+    const allHrefs = NAV_GROUPS.flatMap((g) => g.items.map((i) => i.href));
+    const activeHref = allHrefs
+        .filter((href) => pathname === href || pathname.startsWith(href + "/"))
+        .sort((a, b) => b.length - a.length)[0];
 
     return (
-        <aside className="fixed top-0 bottom-0 left-0 z-30 flex w-60 flex-col bg-navy px-4.5 py-6.5 text-white">
-            <div className="mb-1 font-display text-[19px] font-medium tracking-wide">Cindyrella</div>
-            <div className="mb-8 font-mono text-[10px] tracking-[.08em] text-grey-light uppercase">Admin Panel</div>
+        <>
+            {/* Backdrop — mobile drawer only; the desktop sidebar never dims the page. */}
+            <AnimatePresence>
+                {mobileSidebarOpen && (
+                    <motion.button
+                        aria-label="Close menu"
+                        onClick={closeMobileSidebar}
+                        className="fixed inset-0 z-40 bg-navy/50 backdrop-blur-sm lg:hidden"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.22, ease: EASE }}
+                    />
+                )}
+            </AnimatePresence>
 
-            <nav className="scrollbar-hairline flex min-h-0 flex-1 flex-col overflow-y-auto">
-                {(() => {
-                    const allHrefs = NAV_GROUPS.flatMap((g) => g.items.map((i) => i.href));
-                    const activeHref = allHrefs
-                        .filter((href) => pathname === href || pathname.startsWith(href + "/"))
-                        .sort((a, b) => b.length - a.length)[0];
+            <aside
+                className={`fixed top-0 bottom-0 left-0 z-50 flex w-64 flex-col overflow-hidden bg-navy px-4.5 py-6.5 text-white transition-transform duration-300 ease-in-out lg:z-30 lg:w-60 lg:transition-[width,transform] lg:duration-200 ${
+                    mobileSidebarOpen ? "translate-x-0" : "-translate-x-full"
+                } lg:translate-x-0 ${sidebarCollapsed ? "lg:w-[68px]" : "lg:w-60"}`}
+            >
+                {/* Mobile-only close button */}
+                <button
+                    onClick={closeMobileSidebar}
+                    aria-label="Close menu"
+                    className="absolute top-3 right-0 flex h-11 w-11 items-center justify-center text-white/60 transition hover:bg-white/10 hover:text-white lg:hidden"
+                >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                        <path d="M6 6l12 12M18 6 6 18" />
+                    </svg>
+                </button>
 
-                    return NAV_GROUPS.map((group) => (
+                {/* Desktop-only collapse toggle */}
+                <button
+                    onClick={toggleSidebar}
+                    aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+                    className="absolute top-6.5 right-3 hidden h-6 w-6 items-center justify-center rounded-full text-white/60 transition hover:bg-white/10 hover:text-white lg:flex"
+                >
+                    <CollapseIcon collapsed={sidebarCollapsed} />
+                </button>
+
+                <div className={`mb-1 font-display text-[19px] font-medium tracking-wide whitespace-nowrap ${sidebarCollapsed ? "lg:text-center" : ""}`}>
+                    <span className={sidebarCollapsed ? "hidden lg:inline" : "hidden"}>C</span>
+                    <span className={sidebarCollapsed ? "lg:hidden" : ""}>Cindyrella</span>
+                </div>
+                <div className="mb-8 font-mono text-[10px] tracking-[.08em] text-grey-light uppercase">
+                    <span className={sidebarCollapsed ? "lg:hidden" : ""}>Admin Panel</span>
+                </div>
+
+                <nav className="flex min-h-0 flex-1 flex-col overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                    {NAV_GROUPS.map((group) => (
                         <div key={group.label} className="mt-5 first:mt-0">
-                            <div className="mb-1 px-3 font-mono text-[10px] tracking-[.14em] text-white/35 uppercase">
+                            <div className={`mb-1 px-3 font-mono text-[10px] tracking-[.14em] text-white/35 uppercase ${sidebarCollapsed ? "lg:hidden" : ""}`}>
                                 {group.label}
                             </div>
                             <div className="flex flex-col gap-0.5">
                                 {group.items.map((item) => {
                                     const active = item.href === activeHref;
-                                    return (
+                                    const link = (
                                         <Link
-                                            key={item.href}
                                             href={item.href}
-                                            className={`flex items-center gap-2.5 px-3 py-2.5 text-[13px] transition ${
+                                            className={`flex w-full items-center gap-2.5 px-3 py-2.5 text-[13px] whitespace-nowrap transition ${
+                                                sidebarCollapsed ? "lg:justify-center lg:px-0" : ""
+                                            } ${
                                                 active ? "bg-white font-medium text-navy" : "text-white/75 hover:bg-white/10 hover:text-white"
                                             }`}
                                         >
                                             <span className={active ? "opacity-100" : "opacity-75"}>{item.icon}</span>
-                                            {item.label}
+                                            <span className={sidebarCollapsed ? "lg:hidden" : ""}>{item.label}</span>
                                         </Link>
+                                    );
+                                    return sidebarCollapsed ? (
+                                        <Tooltip key={item.href} label={item.label}>
+                                            {link}
+                                        </Tooltip>
+                                    ) : (
+                                        <div key={item.href}>{link}</div>
                                     );
                                 })}
                             </div>
                         </div>
-                    ));
-                })()}
-            </nav>
+                    ))}
+                </nav>
 
-            <div className="mt-4 border-t border-white/15 pt-4 text-[12px] text-grey-light">
-                <b className="block text-[13px] font-medium text-white">{adminName || "Admin"}</b>
-                Administrator
-            </div>
-        </aside>
+                <div className={`mt-4 border-t border-white/15 pt-4 text-[12px] whitespace-nowrap text-grey-light ${sidebarCollapsed ? "lg:hidden" : ""}`}>
+                    <b className="block text-[13px] font-medium text-white">{adminName || "Admin"}</b>
+                    Administrator
+                </div>
+            </aside>
+        </>
     );
 }

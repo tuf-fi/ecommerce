@@ -42,7 +42,7 @@ function initials(name: string) {
 
 export default function AdminTopbar() {
     const { title, path } = useAdminTitle();
-    const { adminName, logout, notifications, markNotificationRead, markAllNotificationsRead } = useAdminStore();
+    const { adminName, logout, notifications, markNotificationRead, markAllNotificationsRead, openMobileSidebar } = useAdminStore();
     const router = useRouter();
     const [notifOpen, setNotifOpen] = useState(false);
     const [profileOpen, setProfileOpen] = useState(false);
@@ -60,6 +60,20 @@ export default function AdminTopbar() {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
+    // Let Escape close whichever dropdown is open — same convention as
+    // AdminSidebar's mobile drawer.
+    useEffect(() => {
+        if (!notifOpen && !profileOpen) return;
+        function handleKeyDown(e: KeyboardEvent) {
+            if (e.key === "Escape") {
+                setNotifOpen(false);
+                setProfileOpen(false);
+            }
+        }
+        document.addEventListener("keydown", handleKeyDown);
+        return () => document.removeEventListener("keydown", handleKeyDown);
+    }, [notifOpen, profileOpen]);
+
     function handleNotificationClick(n: (typeof notifications)[number]) {
         markNotificationRead(n.id);
         setNotifOpen(false);
@@ -75,16 +89,29 @@ export default function AdminTopbar() {
     }
 
     return (
-        <div className="sticky top-0 z-20 flex items-center justify-between border-b border-ink/10 bg-white px-10 py-5.5">
-            <div>
-                <h1 className="m-0 font-display text-[21px] font-normal text-ink">{title}</h1>
-                <div className="mt-0.5 font-mono text-[11px] text-grey">{path}</div>
+        <div className="sticky top-0 z-20 flex items-center justify-between gap-4 border-b border-ink/10 bg-white px-5 py-5.5 sm:px-10">
+            <div className="flex min-w-0 items-center gap-3">
+                <button
+                    onClick={openMobileSidebar}
+                    aria-label="Open menu"
+                    className="flex h-9 w-9 flex-none items-center justify-center text-ink/75 transition hover:bg-off lg:hidden"
+                >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                        <path d="M3 6h18M3 12h18M3 18h18" />
+                    </svg>
+                </button>
+                <div className="min-w-0">
+                    <h1 className="m-0 truncate font-display text-[21px] font-normal text-ink">{title}</h1>
+                    <div className="mt-0.5 truncate font-mono text-[11px] text-grey">{path}</div>
+                </div>
             </div>
 
-            <div className="flex items-center gap-4.5">
+            <div className="flex flex-none items-center gap-4.5">
                 <div className="relative" ref={notifRef}>
                     <button
                         aria-label="Notifications"
+                        aria-haspopup="true"
+                        aria-expanded={notifOpen}
                         onClick={() => {
                             setNotifOpen((o) => !o);
                             setProfileOpen(false);
@@ -135,6 +162,8 @@ export default function AdminTopbar() {
 
                 <div className="relative" ref={profileRef}>
                     <button
+                        aria-haspopup="true"
+                        aria-expanded={profileOpen}
                         onClick={() => {
                             setProfileOpen((o) => !o);
                             setNotifOpen(false);

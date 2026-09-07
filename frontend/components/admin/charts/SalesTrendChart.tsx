@@ -1,132 +1,143 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { TrendPoint } from "@/library/admin/dashboard";
+import { useMemo } from "react";
+import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { LocationTrendPoint } from "@/library/admin/dashboard";
 
-const WIDTH = 600;
-const HEIGHT = 200;
-const PAD = 24;
-const DRAW_SECONDS = 1.1;
+// Four lines is the ceiling where a shared crosshair tooltip still reads at a
+// glance; a 5th location and beyond fold into one "Other" line rather than
+// inventing a 5th hue.
+const MAX_SERIES = 4;
+const OTHER_LABEL = "Other";
 
-export default function SalesTrendChart({ data }: { data: TrendPoint[] }) {
-    const [hover, setHover] = useState<number | null>(null);
-    const lineRef = useRef<SVGPathElement>(null);
-    const [lineLength, setLineLength] = useState(0);
-    const [drawn, setDrawn] = useState(false);
+// Chart-only colours, kept beside the chart that uses them instead of in
+// tailwind.config.ts — same convention as StockHealthDonut, since these encode
+// data rather than brand UI. Validated on a light surface for colour-vision
+// separation and >=3:1 contrast. `gold` is absent by design: it belongs to
+// star ratings only.
+// Keyed by location rather than by position, so a location keeps its colour
+// even if the volume ordering behind SALES_LOCATIONS shifts.
+const LOCATION_COLORS: Record<string, string> = {
+    "Quezon City": "#A81753",
+    "Marikina City": "#1F5FA8",
+    "Mandaluyong City": "#2A9D8F",
+    "Bacoor, Cavite": "#6B4FA0",
+};
 
-    const max = Math.max(...data.map((d) => d.value)) * 1.15;
-    const stepX = (WIDTH - PAD * 2) / (Math.max(data.length - 1, 1));
+const FALLBACK_COLORS = ["#A81753", "#1F5FA8", "#2A9D8F", "#6B4FA0"];
 
-    const points = data.map((d, i) => ({
-        x: PAD + i * stepX,
-        y: HEIGHT - PAD - (d.value / max) * (HEIGHT - PAD * 2),
-        ...d,
-    }));
+const MONO_TICK = { fill: "var(--color-grey)", fontSize: 10, fontFamily: "var(--font-ibm-plex-mono), monospace" };
 
-    const linePath = points.map((p, i) => `${i === 0 ? "M" : "L"}${p.x},${p.y}`).join(" ");
-    const areaPath = `${linePath} L${points[points.length - 1].x},${HEIGHT - PAD} L${points[0].x},${HEIGHT - PAD} Z`;
+type Series = { name: string; color: string };
 
-    useLayoutEffect(() => {
-        setLineLength(lineRef.current?.getTotalLength() ?? 0);
-        setDrawn(false);
-    }, [linePath]);
+type TooltipEntry = { dataKey?: string | number; value?: number | string };
 
-    // rAF gives the "hidden" state above a real paint before flipping to
-    // revealed, so the transition below has something to animate from.
-    useEffect(() => {
-        if (lineLength === 0) return;
-        const raf = requestAnimationFrame(() => setDrawn(true));
-        return () => cancelAnimationFrame(raf);
-    }, [lineLength]);
+function pesoTick(value: number): string {
+    return value >= 1000 ? `₱${Math.round(value / 1000)}k` : `₱${value}`;
+}
+
+function SalesTooltip({ active, payload, label, colorOf }: { active?: boolean; payload?: TooltipEntry[]; label?: string; colorOf: (name: string) => string }) {
+    if (!active || !payload?.length) return null;
+
+    const rows = payload
+        .map((entry) => ({ name: String(entry.dataKey ?? ""), value: Number(entry.value ?? 0) }))
+        .sort((a, b) => b.value - a.value);
 
     return (
-        <div className="relative">
-            <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} className="w-full" style={{ height: 220 }}>
-                <defs>
-                    <linearGradient id="salesTrendFill" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="var(--color-pink)" stopOpacity="0.35" />
-                        <stop offset="100%" stopColor="var(--color-pink)" stopOpacity="0" />
-                    </linearGradient>
-                </defs>
-                {/* The area fill wipes in sync with the line via a left-anchored
-                    clip — same duration/easing as the stroke-dashoffset reveal
-                    below, so both read as one left-to-right sweep. */}
-                <path
-                    d={areaPath}
-                    fill="url(#salesTrendFill)"
-                    style={{
-                        clipPath: drawn ? "inset(0 0% 0 0)" : "inset(0 100% 0 0)",
-                        // Gated on `drawn`, same reasoning as the line below: on a
-                        // fresh mount there's no prior painted style to animate
-                        // from, so an unconditional transition here is harmless —
-                        // but on a filter change this same element is reused
-                        // (not remounted), so setting drawn back to false to hide
-                        // it again would itself animate as a "wipe out", then get
-                        // cut short the instant the reveal re-triggers. Keeping
-                        // transition off until drawn is true makes the hide step
-                        // instant and the reveal the only thing that animates —
-                        // in sync with the line on every trigger, not just mount.
-                        transition: drawn ? `clip-path ${DRAW_SECONDS}s cubic-bezier(.4,0,.2,1)` : "none",
-                    }}
-                />
-                <path
-                    ref={lineRef}
-                    d={linePath}
-                    fill="none"
-                    stroke="var(--color-pink)"
-                    strokeWidth="2"
-                    style={{
-                        strokeDasharray: lineLength,
-                        strokeDashoffset: drawn ? 0 : lineLength,
-                        // Gated on `drawn`, not `lineLength`: the render that first
-                        // measures the path's length also moves dashoffset from 0
-                        // (its initial, pre-measurement value) up to lineLength to
-                        // establish the hidden state. If transition were already
-                        // active for that render (as it was when gated on
-                        // `lineLength`, which turns truthy in that same render),
-                        // THAT setup step would itself animate — and get cut off the
-                        // instant `drawn` flips true, which is what made the real
-                        // reveal look like it never played.
-                        transition: drawn ? `stroke-dashoffset ${DRAW_SECONDS}s cubic-bezier(.4,0,.2,1)` : "none",
-                    }}
-                />
-                {points.map((p, i) => {
-                    // Each dot pops in right as the sweep reaches its x position.
-                    const delay = (i / Math.max(points.length - 1, 1)) * DRAW_SECONDS;
-                    return (
-                        <circle
-                            key={p.label}
-                            cx={p.x}
-                            cy={p.y}
-                            r={hover === i ? 5 : 3.5}
-                            fill="var(--color-pink-dark)"
-                            className="cursor-pointer"
-                            style={{
-                                opacity: drawn ? 1 : 0,
-                                transformBox: "fill-box",
-                                transformOrigin: "center",
-                                transform: drawn ? "scale(1)" : "scale(0.3)",
-                                transition: `opacity 0.3s ease ${delay}s, transform 0.3s ease ${delay}s, r 0.15s ease`,
-                            }}
-                            onMouseEnter={() => setHover(i)}
-                            onMouseLeave={() => setHover(null)}
-                        />
-                    );
-                })}
-                {points.map((p) => (
-                    <text key={p.label} x={p.x} y={HEIGHT - 4} textAnchor="middle" className="fill-grey font-mono" style={{ fontSize: 10 }}>
-                        {p.label}
-                    </text>
-                ))}
-            </svg>
-            {hover !== null && (
-                <div
-                    className="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-[130%] rounded bg-ink px-2.5 py-1.5 font-mono text-[11px] whitespace-nowrap text-white"
-                    style={{ left: `${(points[hover].x / WIDTH) * 100}%`, top: `${(points[hover].y / HEIGHT) * 100}%` }}
-                >
-                    ₱{points[hover].value.toLocaleString()}
+        <div className="rounded bg-ink px-3 py-2 whitespace-nowrap shadow-card">
+            <div className="mb-1.5 font-mono text-[10px] tracking-[.08em] text-grey-light uppercase">{label}</div>
+            {rows.map((row) => (
+                <div key={row.name} className="flex items-center gap-2.5 py-[1px]">
+                    <span className="h-[2px] w-3 flex-none rounded-full" style={{ backgroundColor: colorOf(row.name) }} />
+                    <span className="flex-1 text-[11px] text-grey-light">{row.name}</span>
+                    <span className="font-mono text-[11.5px] font-medium text-white tabular-nums">₱{row.value.toLocaleString()}</span>
                 </div>
-            )}
+            ))}
+        </div>
+    );
+}
+
+// Line keys rather than filled swatches: the legend mirrors the mark it stands
+// for, and the label itself stays in text ink so it never has to survive as
+// coloured type.
+//
+// Rendered as a normal block above the chart rather than through recharts'
+// own <Legend>, which reserves a fixed height for it — a fixed reservation
+// that's too short the moment this wraps to a second line at narrower
+// widths, letting the wrapped row overlap the chart's y-axis ticks below it.
+// A plain flow element just pushes the chart down by however much room the
+// legend actually needs, at any width.
+function LineKeyLegend({ series }: { series: Series[] }) {
+    return (
+        <div className="mb-3 flex flex-wrap items-center gap-x-5 gap-y-2">
+            {series.map((s) => (
+                <span key={s.name} className="flex items-center gap-1.5">
+                    <span className="h-[2px] w-4 flex-none rounded-full" style={{ backgroundColor: s.color }} />
+                    <span className="font-mono text-[10.5px] tracking-[.06em] text-ink uppercase">{s.name}</span>
+                </span>
+            ))}
+        </div>
+    );
+}
+
+export default function SalesTrendChart({ data, locations }: { data: LocationTrendPoint[]; locations: string[] }) {
+    const { series, rows } = useMemo(() => {
+        const withinCap = locations.length <= MAX_SERIES;
+        const named = withinCap ? locations : locations.slice(0, MAX_SERIES - 1);
+        const bucketed = withinCap ? [] : locations.slice(MAX_SERIES - 1);
+
+        const list: Series[] = named.map((name, i) => ({
+            name,
+            color: LOCATION_COLORS[name] ?? FALLBACK_COLORS[i % FALLBACK_COLORS.length],
+        }));
+        if (bucketed.length) list.push({ name: OTHER_LABEL, color: FALLBACK_COLORS[MAX_SERIES - 1] });
+
+        const flattened = data.map((point) => {
+            const row: Record<string, string | number> = { label: point.label };
+            for (const name of named) row[name] = point.values[name] ?? 0;
+            if (bucketed.length) row[OTHER_LABEL] = bucketed.reduce((sum, name) => sum + (point.values[name] ?? 0), 0);
+            return row;
+        });
+
+        return { series: list, rows: flattened };
+    }, [data, locations]);
+
+    const colorOf = (name: string) => series.find((s) => s.name === name)?.color ?? FALLBACK_COLORS[0];
+
+    if (!rows.length || !series.length) return null;
+
+    return (
+        <div>
+            <LineKeyLegend series={series} />
+            <ResponsiveContainer width="100%" height={206}>
+                <LineChart data={rows} margin={{ top: 4, right: 8, bottom: 0, left: -8 }}>
+                    <CartesianGrid vertical={false} stroke="var(--color-ink)" strokeOpacity={0.07} />
+                    <XAxis dataKey="label" tickLine={false} axisLine={false} tick={MONO_TICK} dy={6} />
+                    <YAxis tickLine={false} axisLine={false} tick={MONO_TICK} tickFormatter={pesoTick} width={54} />
+                    <Tooltip
+                        cursor={{ stroke: "var(--color-ink)", strokeOpacity: 0.18, strokeWidth: 1 }}
+                        content={<SalesTooltip colorOf={colorOf} />}
+                        wrapperStyle={{ outline: "none", zIndex: 20 }}
+                    />
+                    {series.map((s, i) => (
+                        <Line
+                            key={s.name}
+                            type="monotone"
+                            dataKey={s.name}
+                            stroke={s.color}
+                            strokeWidth={2}
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            dot={false}
+                            activeDot={{ r: 4, strokeWidth: 2, stroke: "#fff" }}
+                            animationDuration={900}
+                            // Each line starts a beat after the one above, so four
+                            // simultaneous reveals don't read as one blur.
+                            animationBegin={i * 120}
+                        />
+                    ))}
+                </LineChart>
+            </ResponsiveContainer>
         </div>
     );
 }

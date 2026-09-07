@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { useAdminStore } from "@/library/adminStore";
 import { StaffMember, StaffRole } from "@/library/admin/types";
 import { useScrollTopOnChange } from "@/library/useScrollTopOnChange";
@@ -9,9 +10,21 @@ import StatusBadge from "@/components/admin/StatusBadge";
 import Tooltip from "@/components/ui/Tooltip";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import Pagination from "@/components/ui/Pagination";
+import BulkActionBar from "@/components/admin/BulkActionBar";
 import StaffModal from "@/components/admin/modals/StaffModal";
 import StaffViewModal from "@/components/admin/modals/StaffViewModal";
 import { BTN_ADD, ICON_BTN, ICON_BTN_DANGER, FILTER_SELECT } from "@/components/admin/formClasses";
+import { useMounted } from "@/library/useMounted";
+import Skeleton, { SkeletonGroup } from "@/components/ui/Skeleton";
+
+// "n" jumps straight to the Add Staff modal from anywhere on the page (unless
+// the user is already typing in some field) — mirrors the guard SearchField
+// uses for its own "/" shortcut.
+function isTypingTarget(el: EventTarget | null) {
+    if (!(el instanceof HTMLElement)) return false;
+    const tag = el.tagName;
+    return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || el.isContentEditable;
+}
 
 const PAGE_SIZE = 10;
 const STAFF_ROLES: StaffRole[] = ["Administrator", "Staff"];
@@ -26,7 +39,8 @@ function initials(name: string) {
 }
 
 export default function StaffPage() {
-    const { staff, addStaff, updateStaff, deleteStaff } = useAdminStore();
+    const { staff, addStaff, updateStaff, deleteStaff, bulkDeleteStaff } = useAdminStore();
+    const mounted = useMounted();
     const [search, setSearch] = useState("");
     const [role, setRole] = useState<StaffRole | "All">("All");
     const [page, setPage] = useState(1);
@@ -34,6 +48,8 @@ export default function StaffPage() {
     const [editing, setEditing] = useState<StaffMember | null>(null);
     const [modalOpen, setModalOpen] = useState(false);
     const [deleteId, setDeleteId] = useState<number | null>(null);
+    const [selected, setSelected] = useState<Set<number>>(new Set());
+    const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
 
     const filtered = useMemo(() => {
         let list = staff;
@@ -52,6 +68,7 @@ export default function StaffPage() {
     if (filterKey !== prevFilterKey) {
         setPrevFilterKey(filterKey);
         setPage(1);
+        if (selected.size > 0) setSelected(new Set());
     }
 
     const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
@@ -64,6 +81,38 @@ export default function StaffPage() {
         setModalOpen(true);
     }
 
+    useEffect(() => {
+        function onKeyDown(e: KeyboardEvent) {
+            if (e.key !== "n" || e.metaKey || e.ctrlKey || e.altKey) return;
+            if (isTypingTarget(document.activeElement)) return;
+            e.preventDefault();
+            openAdd();
+        }
+        document.addEventListener("keydown", onKeyDown);
+        return () => document.removeEventListener("keydown", onKeyDown);
+    }, []);
+
+    const allOnPageSelected = paged.length > 0 && paged.every((s) => selected.has(s.id));
+    function toggleRow(id: number) {
+        setSelected((prev) => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+        });
+    }
+    function toggleAllOnPage() {
+        setSelected((prev) => {
+            const next = new Set(prev);
+            if (allOnPageSelected) paged.forEach((s) => next.delete(s.id));
+            else paged.forEach((s) => next.add(s.id));
+            return next;
+        });
+    }
+    function clearSelection() {
+        setSelected(new Set());
+    }
+
     function openEdit(s: StaffMember) {
         setEditing(s);
         setModalOpen(true);
@@ -74,12 +123,29 @@ export default function StaffPage() {
         else addStaff(data);
     }
 
+    // NOTE: this codebase's admin auth is a placeholder (see adminStore.tsx —
+    // login accepts any email/password and derives `adminName` from whatever
+    // was typed, with no link back to a specific StaffMember record), so
+    // there's no reliable "this is my own account" identity to guard against
+    // self-deletion here. Only the last-Administrator guard is enforced.
+    const administratorCount = staff.filter((s) => s.role === "Administrator").length;
+
+    function requestDelete(s: StaffMember) {
+        if (s.role === "Administrator" && administratorCount <= 1) {
+            toast.error(`"${s.name}" is the last Administrator — promote another staff member before removing this account.`);
+            return;
+        }
+        setDeleteId(s.id);
+    }
+
     const deletingStaff = staff.find((s) => s.id === deleteId) ?? null;
+
+    if (!mounted) return <StaffSkeleton />;
 
     return (
         <div>
             <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-                <div className="flex flex-1 flex-wrap items-center gap-2.5">
+                <div className="flex flex-1 flex-wrap items-center gap-3">
                     <SearchField value={search} onChange={setSearch} placeholder="Search by name or email" />
                     <select value={role} onChange={(e) => setRole(e.target.value as StaffRole | "All")} className={FILTER_SELECT}>
                         <option value="All">Role: All</option>
@@ -96,11 +162,21 @@ export default function StaffPage() {
             </div>
 
             <div className="overflow-hidden border border-ink/10 bg-white">
-                <table className="w-full border-collapse">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[640px] border-collapse">
                     <thead>
                             <tr className="bg-off/50">
+                                <th scope="col" className="w-11 border-b border-ink/10 px-5 py-3.5">
+                                    <input
+                                        type="checkbox"
+                                        checked={allOnPageSelected}
+                                        onChange={toggleAllOnPage}
+                                        aria-label="Select all staff on this page"
+                                        className="h-4 w-4 accent-pink-btn"
+                                    />
+                                </th>
                                 {["Name", "Email", "Role", "Access", ""].map((h) => (
-                                    <th key={h} className="border-b border-ink/10 px-5 py-3.5 text-left font-mono text-[10px] tracking-[.12em] text-grey uppercase">
+                                    <th key={h} scope="col" className="border-b border-ink/10 px-5 py-3.5 text-left font-mono text-[10px] tracking-[.12em] text-grey uppercase">
                                         {h}
                                     </th>
                                 ))}
@@ -109,13 +185,35 @@ export default function StaffPage() {
                         <tbody>
                             {paged.length === 0 && (
                                 <tr>
-                                    <td colSpan={5} className="px-5 py-16 text-center text-[13px] text-grey">
+                                    <td colSpan={6} className="px-5 py-16 text-center text-[13px] text-grey">
                                         No staff match this search.
                                     </td>
                                 </tr>
                             )}
                             {paged.map((s) => (
-                                <tr key={s.id} onClick={() => setViewing(s)} className="cursor-pointer transition hover:bg-off/40">
+                                <tr
+                                    key={s.id}
+                                    onClick={() => setViewing(s)}
+                                    role="button"
+                                    tabIndex={0}
+                                    aria-label={`View ${s.name}`}
+                                    onKeyDown={(e) => {
+                                        if ((e.key === "Enter" || e.key === " ") && !(e.target instanceof HTMLInputElement)) {
+                                            e.preventDefault();
+                                            setViewing(s);
+                                        }
+                                    }}
+                                    className="cursor-pointer transition hover:bg-off/40"
+                                >
+                                    <td className="border-b border-ink/10 px-5 py-3.5" onClick={(e) => e.stopPropagation()}>
+                                        <input
+                                            type="checkbox"
+                                            checked={selected.has(s.id)}
+                                            onChange={() => toggleRow(s.id)}
+                                            aria-label={`Select ${s.name}`}
+                                            className="h-4 w-4 accent-pink-btn"
+                                        />
+                                    </td>
                                     <td className="border-b border-ink/10 px-5 py-3">
                                         <div className="flex items-center gap-3">
                                             <span className="flex h-9 w-9 flex-none items-center justify-center overflow-hidden rounded-full bg-blue-soft font-mono text-[11px] text-ink">
@@ -155,7 +253,7 @@ export default function StaffPage() {
                                                 <button
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        setDeleteId(s.id);
+                                                        requestDelete(s);
                                                     }}
                                                     aria-label="Remove staff"
                                                     className={ICON_BTN_DANGER}
@@ -174,9 +272,19 @@ export default function StaffPage() {
                             ))}
                         </tbody>
                     </table>
+              </div>
             </div>
 
             <Pagination page={currentPage} totalPages={totalPages} onChange={setPage} />
+
+            <BulkActionBar count={selected.size} onClear={clearSelection}>
+                <button
+                    onClick={() => setBulkDeleteOpen(true)}
+                    className="flex h-9 items-center border border-white/40 px-3.5 text-[12px] font-semibold text-white transition hover:border-alert hover:bg-alert"
+                >
+                    Delete selected
+                </button>
+            </BulkActionBar>
 
             <StaffViewModal open={viewing !== null} staff={viewing} onClose={() => setViewing(null)} />
 
@@ -189,6 +297,61 @@ export default function StaffPage() {
                 onConfirm={() => deleteId !== null && deleteStaff(deleteId)}
                 onClose={() => setDeleteId(null)}
             />
+
+            <ConfirmModal
+                open={bulkDeleteOpen}
+                title="Remove these staff accounts?"
+                description={`${selected.size} staff account${selected.size === 1 ? "" : "s"} will be reviewed for removal. Any account that is the last remaining Administrator will be kept.`}
+                onConfirm={() => {
+                    bulkDeleteStaff(Array.from(selected));
+                    clearSelection();
+                }}
+                onClose={() => setBulkDeleteOpen(false)}
+            />
         </div>
+    );
+}
+
+// Mirrors the populated staff page — search/role toolbar with the Add Staff
+// button, and the staff table with pagination.
+function StaffSkeleton() {
+    return (
+        <SkeletonGroup>
+            <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+                <div className="flex flex-1 flex-wrap items-center gap-3">
+                    <Skeleton tone="outline" className="h-11 w-64" />
+                    <Skeleton tone="outline" className="h-11 w-40" />
+                </div>
+                <Skeleton tone="outline" className="h-11 w-32" />
+            </div>
+
+            <div className="overflow-hidden border border-ink/10 bg-white">
+                <div className="border-b border-ink/10 bg-off/50 px-5 py-3.5">
+                    <Skeleton tone="soft" className="h-[10px] w-full" />
+                </div>
+                {Array.from({ length: 6 }).map((_, i) => (
+                    <div key={i} className="flex items-center gap-4 border-b border-ink/10 px-5 py-3 last:border-b-0">
+                        <Skeleton tone="outline" className="h-4 w-4 flex-none" />
+                        <Skeleton tone="faint" className="h-9 w-9 flex-none rounded-full" />
+                        <Skeleton className="h-[13.5px] w-28" />
+                        <Skeleton className="h-[13px] w-40" />
+                        <Skeleton tone="outline" className="h-[19px] w-24 rounded-pill" />
+                        <Skeleton className="h-3 w-24" />
+                        <div className="flex items-center gap-1.5">
+                            <Skeleton tone="outline" className="h-8 w-8 rounded-full" />
+                            <Skeleton tone="outline" className="h-8 w-8 rounded-full" />
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            <div className="mt-8 flex justify-center gap-1.5">
+                <Skeleton tone="outline" className="h-8 w-20" />
+                <Skeleton tone="outline" className="h-8 w-8" />
+                <Skeleton tone="outline" className="h-8 w-8" />
+                <Skeleton tone="outline" className="h-8 w-8" />
+                <Skeleton tone="outline" className="h-8 w-16" />
+            </div>
+        </SkeletonGroup>
     );
 }
