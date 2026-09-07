@@ -34,7 +34,41 @@
       "Bash(rm -f *.png FAILURE.png)",
       "Bash(node regression.js)",
       "Bash(echo \"TSC: $?\")",
-      "Bash(echo \"TSC:$?\")"
+      "Bash(echo \"TSC:$?\")",
+      "Bash(timeout 40 bash -c 'until curl -sf http://localhost:3000 >/dev/null; do sleep 1; done')",
+      "Bash(node \"C:\\\\Users\\\\jbesayte\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-jbesayte-Desktop-ecommerce\\\\d398ef65-9383-40b1-8c81-fa0504fc9d09\\\\scratchpad\\\\check-account.js\")",
+      "Bash(node _tmp-check-account.js)",
+      "Bash(npm root *)",
+      "Bash(curl -sf -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3001/)",
+      "Bash(npx eslint *)",
+      "Bash(node \"C:\\\\Users\\\\jbesayte\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-jbesayte-Desktop-ecommerce\\\\78567e27-c3cb-4291-8d41-7e0b84658cf5\\\\scratchpad\\\\test-modal.mjs\")",
+      "Bash(PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm install playwright@1.62.1)",
+      "Bash(node test-modal.mjs)",
+      "Bash(node test-modal2.mjs)",
+      "Bash(mkdir -p \"c:\\\\Users\\\\jbesayte\\\\Desktop\\\\ecommerce\\\\frontend\\\\app\\\\rituals\\\\[id]\")",
+      "Bash(ls \"/c/nvm4w/nodejs/node_modules\" | grep -i play)",
+      "Read(//c/nvm4w/nodejs/node_modules/**)",
+      "Bash(node scripts/validate_palette.js \"#A81753,#1F5FA8,#2A9D8F,#6B4FA0\" --mode light)",
+      "Bash(cat /tmp/nextdev.log 2>&1 | tail -40)",
+      "Bash(curl -sf http://localhost:3001 -o /dev/null -w \"%{http_code}\\\\n\")",
+      "Bash(sed -i 's/localhost:3000/localhost:3001/g' _tmp-check-account.js)",
+      "Bash(npm uninstall *)",
+      "Bash(sed -i 's|className=\"w-full\"\\\\n|X|' components/admin/charts/SalesTrendChart.tsx)",
+      "Bash(perl -0pi -e 's/                    className=\"w-full\"\\\\n                    style=\\\\{\\\\{ height: HEIGHT \\\\}\\\\}/                    className=\"block w-full\"\\\\n                    style={{ height: HEIGHT }}/' components/admin/charts/SalesTrendChart.tsx)",
+      "Bash(perl -0pi -e 's/                className=\"w-full\"\\\\n                style=\\\\{\\\\{ height: HEIGHT \\\\}\\\\}/                className=\"block w-full\"\\\\n                style={{ height: HEIGHT }}/' components/admin/charts/OrdersTrendSparkline.tsx)",
+      "Bash(curl -s http://localhost:3001/account)",
+      "Bash(curl -s http://localhost:3001/account -o /tmp/acct.html)",
+      "Bash(node test-view-modals.mjs)",
+      "Bash(node test-view-modals2.mjs)",
+      "Bash(echo \"EXIT=$?\")",
+      "Bash(node -e ' *)",
+      "Bash(node test-view-modals3.mjs)",
+      "Bash(node test-view-modals4.mjs)",
+      "Bash(echo \"TSC_EXIT=$?\")",
+      "Bash(echo \"ESLINT_EXIT=$?\")"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\jbesayte\\Desktop\\ecommerce\\frontend\\app\\rituals"
     ]
   }
 }

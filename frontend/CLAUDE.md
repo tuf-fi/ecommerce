@@ -2,6 +2,7 @@
 
 ## Design Rules (read first, apply to every UI task)
 
+0. **Use the `impeccable` skill for design work.** It's installed at `.claude/skills/impeccable` (repo root) with durable context in `PRODUCT.md` (repo root). For any non-trivial UI task — new screens, redesigns, or a pre-ship pass — reach for its commands (`/impeccable polish`, `critique`, `audit`, `distill`, `typeset`, etc.) rather than working ad hoc; it enforces rules 1–4 below programmatically (anti-slop detection, quality floor) on top of this brand's own direction. Run `/impeccable document` once to generate `DESIGN.md` from the tokens below when a portable, tool-readable copy of this design system is needed.
 1. **Use the frontend-design skill** for any component, page, or layout work — before writing markup, check it for design tokens/patterns to follow.
 2. **Avoid generic AI design patterns.** No default shadcn-card-with-shadow layouts, no centered-hero-with-three-feature-cards clichés, no interchangeable SaaS-template flows. Every screen should look like it belongs to *this* brand, not a template.
 3. **Avoid AI slop.** No filler copy ("Discover our amazing products"), no lorem-ipsum-adjacent placeholder text left in, no inconsistent spacing/sizing "close enough" to the design system, no unnecessary emoji, no over-explained UI (excess tooltips/labels stating the obvious).
@@ -74,13 +75,3 @@ Fonts: `font-display` (Space Grotesk, headings), `font-body` (Inter, everything 
 
 1. **Scroll to top on navigation.** Every route change lands at the very top of the new page — handled globally by `components/layout/ScrollToTop.tsx` (mounted in `app/layout.tsx`), which resets scroll on `pathname` change. **Exception:** in-page section scrolling — Navbar's `goToSection` (clicking a navlink like "Best Sellers") — is untouched; it either calls `scrollIntoView`/`window.scrollTo` directly (no route change) or routes to `/#id` cross-page, and `ScrollToTop` skips its own reset whenever the URL carries a hash so the browser/Next can land on the section instead of the top.
 2. **Confirm before delete/remove.** Any destructive "Remove"/"Delete" action must go through `components/ui/ConfirmModal.tsx` (wraps `components/ui/Modal.tsx`) — set local state on click, only call the actual mutation (`removeLine`, `removeAddress`, etc.) from the modal's `onConfirm`. See `app/cart/page.tsx` and `app/account/addresses/page.tsx` for the pattern. **Exception:** low-stakes toggles that are trivially reversible by re-clicking (e.g. the wishlist heart) don't need this — it's for one-way "this item is gone" actions.
-
-<!-- BEGIN:nextjs-agent-rules -->
-
-# This is NOT the Next.js you know
-
-This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
-
-This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
-
-<!-- END:nextjs-agent-rules -->
