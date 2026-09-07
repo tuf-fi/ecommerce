@@ -9,10 +9,11 @@ export const BASE_DELAY = 0.08;
 // Default spacing between items in a staggered group.
 export const STAGGER = 0.14;
 
-// `margin` extends the viewport downward so a section is considered "in
-// view" while it's still partly below the fold — reveals start as it
-// approaches rather than after it's already centered on screen.
-export const VIEWPORT = { once: true, amount: 0.05, margin: "0px 0px 200px 0px" } as const;
+// `margin` shrinks the viewport's bottom edge upward so a section only
+// counts as "in view" once it's actually visible on screen — reveals
+// trigger as the section arrives rather than while it's still off-screen,
+// so a slow scroll can actually see the animation play out.
+export const VIEWPORT = { once: true, amount: 0.05, margin: "0px 0px -80px 0px" } as const;
 
 // Critically-damped-ish spring for the transform half of a reveal — reads as
 // a natural glide rather than a mechanical linear/eased slide.

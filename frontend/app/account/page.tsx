@@ -3,6 +3,9 @@
 import { useState } from "react";
 import { useStore } from "@/library/store";
 import PageHeading from "@/components/ui/PageHeading";
+import { useAsyncAction, wait } from "@/library/useAsyncAction";
+import { useMounted } from "@/library/useMounted";
+import Skeleton, { SkeletonGroup } from "@/components/ui/Skeleton";
 
 function initials(name: string) {
     if (!name) return "?";
@@ -12,17 +15,21 @@ function initials(name: string) {
 export default function AccountProfilePage() {
     const { customerName, customerEmail, showToast } = useStore();
     const [name, setName] = useState(customerName);
+    const mounted = useMounted();
 
-    function saveProfile(e: React.FormEvent) {
+    const [saving, saveProfile] = useAsyncAction(async (e: React.FormEvent) => {
         e.preventDefault();
         // TODO: persist profile edits (name) against the backend API.
+        await wait();
         showToast("success", "Profile updated.");
-    }
+    });
 
     function changePhoto() {
         // TODO: wire up real photo upload (Cloudinary) once account editing is backed by the API.
         showToast("success", "Photo uploads aren't wired up in this preview.");
     }
+
+    if (!mounted) return <AccountProfileSkeleton />;
 
     return (
         <div>
@@ -77,15 +84,57 @@ export default function AccountProfilePage() {
 
                     <button
                         type="submit"
-                        className="inline-flex items-center gap-2 bg-navy px-7 py-3 text-[13px] font-semibold tracking-wide text-white transition hover:bg-pink-dark"
+                        disabled={saving}
+                        className="inline-flex items-center gap-2 bg-navy px-7 py-3 text-[13px] font-semibold tracking-wide text-white transition hover:bg-pink-dark disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-navy"
                     >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                            <path d="M20 6 9 17l-5-5" />
-                        </svg>
-                        Save Changes
+                        {!saving && (
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                <path d="M20 6 9 17l-5-5" />
+                            </svg>
+                        )}
+                        {saving ? "Saving…" : "Save Changes"}
                     </button>
                 </form>
             </div>
+        </div>
+    );
+}
+
+// Mirrors PageHeading's border-b/h-10 row, the avatar circle + name/caption/
+// link block, and the name/email form fields with their labels and the save
+// button — so the mounted-gate swap doesn't jump the layout.
+function AccountProfileSkeleton() {
+    return (
+        <div>
+            <SkeletonGroup>
+                <div className="mb-6 flex h-10 items-center justify-between border-b border-ink/10 pb-4">
+                    <Skeleton className="h-[18px] w-44" />
+                </div>
+
+                <div className="grid grid-cols-1 gap-12 lg:grid-cols-[240px_1fr]">
+                    <div className="flex flex-col items-center gap-4 lg:items-start">
+                        <Skeleton tone="soft" className="h-24 w-24 flex-none rounded-full" />
+                        <div className="flex flex-col items-center gap-2 lg:items-start">
+                            <Skeleton className="h-[15px] w-28" />
+                            <Skeleton tone="soft" className="h-3 w-36" />
+                            <Skeleton className="h-3 w-24" />
+                        </div>
+                    </div>
+
+                    <div className="max-w-[420px]">
+                        <div className="mb-4">
+                            <Skeleton className="mb-1.5 h-[10.5px] w-20" />
+                            <Skeleton tone="outline" className="h-11 w-full" />
+                        </div>
+                        <div className="mb-2">
+                            <Skeleton className="mb-1.5 h-[10.5px] w-28" />
+                            <Skeleton tone="outline" className="h-11 w-full" />
+                        </div>
+                        <Skeleton tone="soft" className="mb-5 h-3 w-64" />
+                        <Skeleton tone="outline" className="h-11 w-40" />
+                    </div>
+                </div>
+            </SkeletonGroup>
         </div>
     );
 }

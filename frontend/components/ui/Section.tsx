@@ -36,18 +36,23 @@ export default function SectionContainer({
     children,
     id,
     tint,
+    preview = false,
 }: {
     children: React.ReactNode;
     id?: string;
     tint?: SectionTint;
+    // Drops the full-bleed negative-margin trick — there's no page gutter to
+    // bleed against inside the admin's live-preview pane, which is already
+    // edge to edge (see Hero.tsx for the same distinction).
+    preview?: boolean;
 }) {
     if (tint) {
         return (
             <div
-                className="-mx-8 w-[calc(100%+4rem)] px-8"
+                className={preview ? "" : "-mx-8 w-[calc(100%+4rem)] px-8"}
                 style={{ backgroundImage: fadeGradient(tintVar[tint]) }}
             >
-                <div id={id} className="py-16">
+                <div id={id} className={`py-16 ${preview ? "px-9" : ""}`}>
                     {children}
                 </div>
             </div>

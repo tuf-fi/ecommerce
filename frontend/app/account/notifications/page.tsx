@@ -20,7 +20,7 @@ export default function NotificationsPage() {
     return (
         <div>
             <PageHeading>Notification Settings</PageHeading>
-            <div className="flex flex-col divide-y divide-ink/10 border-y border-ink/10">
+            <div className="flex flex-col divide-y divide-ink/10 border-b border-ink/10">
                 {NOTIFICATION_ROWS.map((row) => (
                     <div key={row.key} className="flex items-center justify-between gap-4 py-4">
                         <div>

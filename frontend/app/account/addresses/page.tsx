@@ -6,6 +6,9 @@ import PageHeading from "@/components/ui/PageHeading";
 import Modal from "@/components/ui/Modal";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import Tooltip from "@/components/ui/Tooltip";
+import { useAsyncAction, wait } from "@/library/useAsyncAction";
+import { useMounted } from "@/library/useMounted";
+import Skeleton, { SkeletonGroup } from "@/components/ui/Skeleton";
 
 export default function SavedAddressesPage() {
     const { addresses, addAddress, editAddress, removeAddress, setDefaultAddress, checkoutAddress, selectCheckoutAddress, showToast } =
@@ -16,6 +19,7 @@ export default function SavedAddressesPage() {
     const [label, setLabel] = useState("");
     const [text, setText] = useState("");
     const [removeId, setRemoveId] = useState<number | null>(null);
+    const mounted = useMounted();
 
     function openAddModal() {
         setEditingId(null);
@@ -40,11 +44,12 @@ export default function SavedAddressesPage() {
         setText("");
     }
 
-    function save() {
+    const [saving, save] = useAsyncAction(async () => {
         if (!label.trim() || !text.trim()) {
             showToast("error", "Fill in both fields.");
             return;
         }
+        await wait();
         if (editingId !== null) {
             editAddress(editingId, label.trim(), text.trim());
             showToast("success", "Address updated.");
@@ -53,7 +58,7 @@ export default function SavedAddressesPage() {
             showToast("success", "Address saved.");
         }
         closeModal();
-    }
+    });
 
     function remove(id: number) {
         removeAddress(id);
@@ -76,6 +81,8 @@ export default function SavedAddressesPage() {
         const rank = (x: (typeof addresses)[number]) => (x.isDefault ? 0 : checkoutAddress?.id === x.id ? 1 : 2);
         return rank(a) - rank(b);
     });
+
+    if (!mounted) return <AddressesSkeleton />;
 
     return (
         <div>
@@ -111,7 +118,7 @@ export default function SavedAddressesPage() {
                             <div
                                 key={a.id}
                                 className={`flex flex-col gap-4 border p-5 transition sm:flex-row sm:items-center ${
-                                    isCheckoutAddress ? "border-pink-btn" : "border-ink/10"
+                                    a.isDefault ? "border-navy" : isCheckoutAddress ? "border-pink-btn" : "border-ink/10"
                                 }`}
                             >
                                 <div className="flex min-w-0 flex-1 items-start gap-4">
@@ -190,10 +197,11 @@ export default function SavedAddressesPage() {
                 </div>
             )}
 
-            <Modal open={modalOpen} onClose={closeModal} maxWidth="max-w-[460px]">
-                <div className="p-8">
-                    <h3 className="mb-5 text-2xl font-medium text-ink">{editingId !== null ? "Edit Address" : "Add New Address"}</h3>
-
+            <Modal open={modalOpen} onClose={saving ? () => {} : closeModal} maxWidth="max-w-[460px]">
+                <div className="sticky top-0 z-10 border-b border-ink/10 bg-white px-8 py-5">
+                    <h3 className="text-xl font-medium text-ink">{editingId !== null ? "Edit Address" : "Add New Address"}</h3>
+                </div>
+                <div className="px-8 pt-6 pb-4">
                     <div className="mb-3">
                         <label className="mb-1.5 block font-mono text-[10.5px] uppercase tracking-[.14em] text-grey">Label</label>
                         <input
@@ -203,7 +211,7 @@ export default function SavedAddressesPage() {
                             className="w-full border border-ink/10 px-4 py-3 text-sm text-ink outline-none transition focus:border-navy/30"
                         />
                     </div>
-                    <div className="mb-5">
+                    <div>
                         <label className="mb-1.5 block font-mono text-[10.5px] uppercase tracking-[.14em] text-grey">Full Address</label>
                         <textarea
                             value={text}
@@ -213,14 +221,19 @@ export default function SavedAddressesPage() {
                             className="w-full resize-none border border-ink/10 px-4 py-3 text-sm text-ink outline-none transition focus:border-navy/30"
                         />
                     </div>
+                </div>
+                <div className="sticky bottom-0 border-t border-ink/10 bg-white px-8 py-5">
                     <button
                         onClick={save}
-                        className="inline-flex w-full items-center justify-center gap-2 bg-navy py-3.5 text-[13px] font-semibold tracking-wide text-white transition hover:bg-pink-dark"
+                        disabled={saving}
+                        className="inline-flex w-full items-center justify-center gap-2 bg-navy py-3.5 text-[13px] font-semibold tracking-wide text-white transition hover:bg-pink-dark disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-navy"
                     >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                            <path d="M20 6 9 17l-5-5" />
-                        </svg>
-                        {editingId !== null ? "Save Changes" : "Save Address"}
+                        {!saving && (
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                <path d="M20 6 9 17l-5-5" />
+                            </svg>
+                        )}
+                        {saving ? "Saving…" : editingId !== null ? "Save Changes" : "Save Address"}
                     </button>
                 </div>
             </Modal>
@@ -234,6 +247,42 @@ export default function SavedAddressesPage() {
                 onConfirm={() => removeId !== null && remove(removeId)}
                 onClose={() => setRemoveId(null)}
             />
+        </div>
+    );
+}
+
+// Mirrors PageHeading + its "+ Add Address" action, and ~3 representative
+// address cards (icon circle, label/badge row, address text, action buttons)
+// matching the real card's border/padding/layout.
+function AddressesSkeleton() {
+    return (
+        <div>
+            <SkeletonGroup>
+                <div className="mb-6 flex h-10 items-center justify-between border-b border-ink/10 pb-4">
+                    <Skeleton className="h-[18px] w-40" />
+                    <Skeleton tone="outline" className="h-9 w-36" />
+                </div>
+
+                <div className="flex flex-col gap-3">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                        <div key={i} className="flex flex-col gap-4 border border-ink/10 p-5 sm:flex-row sm:items-center">
+                            <div className="flex min-w-0 flex-1 items-start gap-4">
+                                <Skeleton tone="soft" className="h-10 w-10 flex-none rounded-full" />
+                                <div className="min-w-0 flex-1">
+                                    <Skeleton className="mb-2 h-[13.5px] w-24" />
+                                    <Skeleton tone="soft" className="h-3 w-56" />
+                                </div>
+                            </div>
+
+                            <div className="flex flex-none flex-wrap items-center gap-2 sm:justify-end">
+                                <Skeleton tone="outline" className="h-8 w-32" />
+                                <Skeleton tone="outline" className="h-8 w-8 rounded-full" />
+                                <Skeleton tone="outline" className="h-8 w-8 rounded-full" />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </SkeletonGroup>
         </div>
     );
 }

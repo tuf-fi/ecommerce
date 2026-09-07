@@ -9,18 +9,19 @@ import { useContent } from "@/library/content";
 import { slugify } from "@/library/admin/content";
 
 export default function Journal(){
-    const { blogPosts } = useContent();
+    const { blogPosts, sectionVisibility } = useContent();
     const published = blogPosts.filter((p) => p.status === "Published");
     const [featured, ...rest] = published;
     const posts = rest.slice(0, 3);
 
+    if (!sectionVisibility.journal) return null;
     if (!featured) return null;
 
     return(
         <SectionContainer tint="blue-soft" id="journal">
             <SectionTitle num="06" title="Journal" />
 
-            <div className="grid grid-cols-[1.1fr_1fr] gap-10">
+            <div className="grid grid-cols-[1.1fr_1fr] gap-14">
                 <RevealIn direction="bottom">
                     <Link href={`/journal/${slugify(featured.title)}`} className="group relative isolate flex h-[460px] flex-col justify-end overflow-hidden border border-ink/10 p-9">
                         {featured.image && (
@@ -46,28 +47,40 @@ export default function Journal(){
                 <div className="flex flex-col divide-y divide-ink/10">
                     {posts.map((post, index) => (
                         <RevealIn key={post.id} direction="bottom" delay={0.14 + index * 0.14} distance={28}>
-                            <Link href={`/journal/${slugify(post.title)}`} className="group flex items-center gap-5 py-6 first:pt-0 last:pb-0">
-                                <div className="relative h-[86px] w-[110px] flex-shrink-0 overflow-hidden border border-ink/10">
+                            <Link href={`/journal/${slugify(post.title)}`} className="group flex items-center gap-6 py-8 first:pt-0 last:pb-0">
+                                <div className="relative h-[96px] w-[124px] flex-shrink-0 overflow-hidden border border-ink/10">
                                     {post.image && (
                                         <Image
                                             src={post.image}
                                             alt={post.title}
                                             fill
-                                            sizes="110px"
+                                            sizes="124px"
                                             className="object-cover transition duration-500 group-hover:scale-110"
                                             unoptimized={typeof post.image === "string"}
                                         />
                                     )}
                                 </div>
                                 <div>
-                                    <h4 className="mt-1 text-[15px] font-medium leading-snug text-ink transition group-hover:text-pink-dark">{post.title}</h4>
-                                    <p className="mt-1 line-clamp-2 max-w-[280px] text-[12.5px] text-grey">{post.excerpt}</p>
+                                    <h4 className="text-[15px] font-medium leading-snug text-ink transition group-hover:text-pink-dark">{post.title}</h4>
+                                    <p className="mt-2 line-clamp-2 max-w-[280px] text-[12.5px] leading-relaxed text-grey">{post.excerpt}</p>
                                 </div>
                             </Link>
                         </RevealIn>
                     ))}
                 </div>
             </div>
+
+            <RevealIn direction="bottom" delay={0.14 + posts.length * 0.14}>
+                <div className="mt-14 flex justify-center">
+                    <Link
+                        href="/journal"
+                        className="group/cta inline-flex items-center gap-2.5 bg-navy px-8 py-4 text-[13px] font-semibold uppercase tracking-wide text-white transition hover:bg-pink-dark"
+                    >
+                        View All Journal Entries
+                        <span className="transition-transform duration-200 group-hover/cta:translate-x-1">→</span>
+                    </Link>
+                </div>
+            </RevealIn>
         </SectionContainer>
     )
 }

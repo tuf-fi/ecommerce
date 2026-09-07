@@ -35,9 +35,13 @@ function FaqAccordion({ compact }: { compact: boolean }) {
 // full-bleed tinted background both assume the real homepage's width, so
 // preview mode stacks to one column and skips the background/eyebrow intro.
 export default function Faqs({ preview = false }: { preview?: boolean } = {}) {
+    const { sectionVisibility } = useContent();
+
     if (preview) {
         return <FaqAccordion compact />;
     }
+
+    if (!sectionVisibility.faq) return null;
 
     return(
         <SectionContainer tint="pink-soft" id="faq">

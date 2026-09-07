@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useStore } from "@/library/store";
 import PageHeading from "@/components/ui/PageHeading";
+import { useAsyncAction, wait } from "@/library/useAsyncAction";
 
 export default function ChangePasswordPage() {
     const { showToast } = useStore();
@@ -11,18 +12,19 @@ export default function ChangePasswordPage() {
     const [newPw, setNewPw] = useState("");
     const [confirmPw, setConfirmPw] = useState("");
 
-    function changePassword(e: React.FormEvent) {
+    const [submitting, changePassword] = useAsyncAction(async (e: React.FormEvent) => {
         e.preventDefault();
         if (!currentPw || !newPw || newPw !== confirmPw) {
             showToast("error", newPw !== confirmPw ? "New passwords don't match." : "Fill in all fields.");
             return;
         }
         // TODO: verify current password and update it against the backend API.
+        await wait();
         setCurrentPw("");
         setNewPw("");
         setConfirmPw("");
         showToast("success", "Password updated.");
-    }
+    });
 
     return (
         <div>
@@ -68,12 +70,15 @@ export default function ChangePasswordPage() {
                     </div>
                     <button
                         type="submit"
-                        className="inline-flex items-center gap-2 bg-navy px-7 py-3 text-[13px] font-semibold tracking-wide text-white transition hover:bg-pink-dark"
+                        disabled={submitting}
+                        className="inline-flex items-center gap-2 bg-navy px-7 py-3 text-[13px] font-semibold tracking-wide text-white transition hover:bg-pink-dark disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-navy"
                     >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                            <path d="M20 6 9 17l-5-5" />
-                        </svg>
-                        Update Password
+                        {!submitting && (
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                <path d="M20 6 9 17l-5-5" />
+                            </svg>
+                        )}
+                        {submitting ? "Updating…" : "Update Password"}
                     </button>
                 </form>
             </div>

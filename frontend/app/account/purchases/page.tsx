@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { ORDER_STATUS_TABS, SAMPLE_ORDERS, Order, OrderStatus } from "@/library/orders";
@@ -11,6 +11,8 @@ import PageHeading from "@/components/ui/PageHeading";
 import Modal from "@/components/ui/Modal";
 import SearchField, { FILTER_SELECT } from "@/components/ui/SearchField";
 import { useScrollTopOnChange } from "@/library/useScrollTopOnChange";
+import { useMounted } from "@/library/useMounted";
+import Skeleton, { SkeletonGroup } from "@/components/ui/Skeleton";
 
 type SortKey = "date-desc" | "date-asc" | "total-desc" | "total-asc";
 
@@ -33,26 +35,105 @@ const PRIMARY_ACTION: Record<OrderStatus, string | null> = {
     "Return Refund": "View Refund Status",
 };
 
+const STATUS_DOT: Record<OrderStatus, string> = {
+    "To Pay": "bg-pink-dark",
+    "To Ship": "bg-navy",
+    "To Receive": "bg-navy",
+    Completed: "bg-success",
+    Cancelled: "bg-ink/25",
+    "Return Refund": "bg-ink/25",
+};
+
+function StatusTag({ status }: { status: OrderStatus }) {
+    return (
+        <span className="inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[.1em] text-ink/70">
+            <span className={`h-1.5 w-1.5 rounded-full ${STATUS_DOT[status]}`} />
+            {status}
+        </span>
+    );
+}
+
 function OrderTracker({ order }: { order: Order }) {
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        const id = requestAnimationFrame(() => setMounted(true));
+        return () => cancelAnimationFrame(id);
+    }, []);
+
     if (order.steps.length === 0) {
-        return <p className="pb-5 text-center text-[12.5px] text-grey">{order.eta}</p>;
+        const isCancelled = order.status === "Cancelled";
+        return (
+            <div className="flex flex-col items-center gap-3 pb-6 pt-2">
+                <span
+                    className={`flex h-10 w-10 items-center justify-center rounded-full border transition-all duration-500 ease-out ${
+                        mounted ? "scale-100 opacity-100" : "scale-50 opacity-0"
+                    } ${isCancelled ? "border-ink/15 text-ink/30" : "border-pink-dark/30 text-pink-dark"}`}
+                >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                        {isCancelled ? (
+                            <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
+                        ) : (
+                            <path
+                                d="M4 4v6h6M20 20v-6h-6M4.5 9a8 8 0 0114-4.5M19.5 15a8 8 0 01-14 4.5"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                            />
+                        )}
+                    </svg>
+                </span>
+                <p className="text-center text-[12.5px] text-grey">{order.eta}</p>
+            </div>
+        );
     }
 
+    const n = order.steps.length;
+    const complete = order.current >= n - 1;
+    const inset = 50 / n;
+    const track = 100 - inset * 2;
+    const filled = n > 1 ? (order.current / (n - 1)) * track : 0;
+
     return (
-        <div className="pb-5">
-            <div className="mb-5 flex justify-between">
-                {order.steps.map((s, i) => (
-                    <div key={s} className="flex flex-1 flex-col items-center gap-2 text-center">
-                        <div
-                            className={`flex h-6 w-6 items-center justify-center rounded-full border text-[11px] ${
-                                i <= order.current ? "border-navy bg-navy text-white" : "border-ink/20 text-ink/30"
-                            }`}
-                        >
-                            {i <= order.current ? "✓" : ""}
+        <div className="pb-6 pt-2">
+            <div className="relative mb-5 flex justify-between pt-3">
+                <div className="absolute top-6 h-px bg-ink/10" style={{ left: `${inset}%`, right: `${inset}%` }} />
+                <div
+                    className="absolute top-6 h-px bg-success transition-[width] duration-700 ease-out"
+                    style={{ left: `${inset}%`, width: mounted ? `${filled}%` : 0 }}
+                />
+                {order.steps.map((s, i) => {
+                    const done = i <= order.current;
+                    const isNext = i === order.current + 1 && !complete;
+
+                    return (
+                        <div key={s} className="relative z-10 flex flex-1 flex-col items-center gap-2 text-center">
+                            <div className="relative flex h-6 w-6 items-center justify-center">
+                                {isNext && <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-navy/25" />}
+                                <div
+                                    className={`relative flex h-6 w-6 items-center justify-center rounded-full border text-[11px] transition-all duration-500 ease-out ${
+                                        mounted ? "scale-100" : "scale-50"
+                                    } ${done ? "border-success bg-success text-white" : isNext ? "border-navy/40 bg-white text-navy/50" : "border-ink/15 bg-white text-ink/25"}`}
+                                    style={{ transitionDelay: mounted ? `${i * 100}ms` : "0ms" }}
+                                >
+                                    {done ? (
+                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                                            <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
+                                        </svg>
+                                    ) : (
+                                        <span className="h-1 w-1 rounded-full bg-current" />
+                                    )}
+                                </div>
+                            </div>
+                            <span
+                                className={`text-[10.5px] transition-colors duration-500 ${
+                                    done || isNext ? "font-medium text-ink" : "text-grey/70"
+                                }`}
+                            >
+                                {s}
+                            </span>
                         </div>
-                        <span className="text-[10.5px] text-grey">{s}</span>
-                    </div>
-                ))}
+                    );
+                })}
             </div>
             <p className="text-center text-[12.5px] text-grey">{order.eta}</p>
         </div>
@@ -66,6 +147,7 @@ export default function PurchasesPage() {
     const [sort, setSort] = useState<SortKey>("date-desc");
     const [selectedOrderNo, setSelectedOrderNo] = useState<string | null>(null);
     const [page, setPage] = useState(1);
+    const mounted = useMounted();
 
     const orderNos = useMemo(() => Object.keys(SAMPLE_ORDERS), []);
 
@@ -121,6 +203,8 @@ export default function PurchasesPage() {
         showToast("success", `"${label}" isn't wired up yet in this preview.`);
     }
 
+    if (!mounted) return <PurchasesSkeleton />;
+
     return (
         <div>
             <PageHeading action={<span className="font-mono text-[11px] text-grey">{filtered.length} Orders</span>}>
@@ -140,7 +224,7 @@ export default function PurchasesPage() {
                 ))}
             </div>
 
-            <div className="mb-8 flex flex-wrap items-center gap-2.5">
+            <div className="mb-8 flex flex-wrap items-center gap-3">
                 <SearchField value={query} onChange={search} placeholder="Search by Order ID or Product name" />
                 <select value={sort} onChange={(e) => sortBy(e.target.value as SortKey)} className={FILTER_SELECT}>
                     <option value="date-desc">Date (Newest)</option>
@@ -200,7 +284,7 @@ export default function PurchasesPage() {
                                         <span className="font-mono text-[11px] text-grey">
                                             Order {no} <span className="text-ink/20">·</span> {formatDate(o.date)}
                                         </span>
-                                        <span className="font-mono text-[11px] uppercase text-pink-dark">{o.status}</span>
+                                        <StatusTag status={o.status} />
                                     </div>
 
                                     <div className={ROW_GRID}>
@@ -256,40 +340,130 @@ export default function PurchasesPage() {
 
             <Pagination page={currentPage} totalPages={totalPages} onChange={setPage} />
 
-            <Modal open={selectedOrderNo !== null} onClose={() => setSelectedOrderNo(null)} maxWidth="max-w-[480px]">
+            <Modal open={selectedOrderNo !== null} onClose={() => setSelectedOrderNo(null)} maxWidth="max-w-[460px]">
                 {selectedOrderNo && (() => {
                     const o = SAMPLE_ORDERS[selectedOrderNo];
                     const p = getProduct(o.productId);
                     const unitPrice = o.total / o.qty;
+                    const primary = PRIMARY_ACTION[o.status];
+
                     return (
-                        <div className="p-8">
-                            <div className="mb-1 flex items-center justify-between gap-4 pr-6">
-                                <h3 className="text-xl font-medium text-ink">Order {selectedOrderNo}</h3>
-                                <span className="font-mono text-[11px] uppercase text-pink-dark">{o.status}</span>
-                            </div>
-                            <p className="mb-6 font-mono text-[11px] text-grey">{formatDate(o.date)}</p>
-
-                            <div className="mb-6 flex items-center gap-4 border-b border-ink/10 pb-6">
-                                {p && (
-                                    <div className="relative h-16 w-16 flex-none overflow-hidden border border-ink/10">
-                                        <Image src={p.image} alt={o.product} fill sizes="64px" className="object-cover" />
-                                    </div>
-                                )}
-                                <div className="min-w-0 flex-1">
-                                    <div className="truncate text-[14px] text-ink">{o.product}</div>
-                                    {p && <div className="font-mono text-[10px] uppercase tracking-[.14em] text-grey">{p.category}</div>}
-                                    <div className="mt-1 font-mono text-[12.5px] text-grey">
-                                        ₱{unitPrice.toLocaleString()} × {o.qty}
-                                    </div>
+                        <>
+                            <div className="border-b border-ink/10 px-8 pb-5 pt-7">
+                                <p className="font-mono text-[10px] uppercase tracking-[.14em] text-grey">Order {selectedOrderNo}</p>
+                                <div className="mt-1.5 flex items-center justify-between gap-4">
+                                    <StatusTag status={o.status} />
+                                    <span className="text-[12.5px] text-grey">{formatDate(o.date)}</span>
                                 </div>
-                                <span className="font-mono text-[15px] font-semibold text-ink">₱{o.total.toLocaleString()}</span>
                             </div>
 
-                            <OrderTracker order={o} />
-                        </div>
+                            <div className="px-8 py-6">
+                                <div className="flex items-center gap-4">
+                                    {p && (
+                                        <div className="relative h-16 w-16 flex-none overflow-hidden border border-ink/10">
+                                            <Image src={p.image} alt={o.product} fill sizes="64px" className="object-cover" />
+                                        </div>
+                                    )}
+                                    <div className="min-w-0 flex-1">
+                                        <div className="truncate text-[14px] text-ink">{o.product}</div>
+                                        {p && <div className="font-mono text-[10px] uppercase tracking-[.14em] text-grey">{p.category}</div>}
+                                        <div className="mt-1 font-mono text-[12.5px] text-grey">
+                                            ₱{unitPrice.toLocaleString()} × {o.qty}
+                                        </div>
+                                    </div>
+                                    <span className="font-mono text-[15px] font-semibold text-ink">₱{o.total.toLocaleString()}</span>
+                                </div>
+
+                                <div className="mt-6 border-t border-ink/10 pt-6">
+                                    <p className="mb-1 font-mono text-[10px] uppercase tracking-[.14em] text-grey">Status</p>
+                                    <OrderTracker order={o} />
+                                </div>
+                            </div>
+
+                            {primary && (
+                                <div className="sticky bottom-0 z-10 flex items-center justify-between gap-4 border-t border-ink/10 bg-off px-8 py-5">
+                                    <div>
+                                        <p className="font-mono text-[10px] uppercase tracking-[.14em] text-grey">Order Total</p>
+                                        <p className="font-mono text-[15px] font-semibold text-ink">₱{o.total.toLocaleString()}</p>
+                                    </div>
+                                    <button
+                                        onClick={() => runAction(primary)}
+                                        className="bg-pink-btn px-6 py-3 text-[12.5px] font-semibold uppercase tracking-wide text-white transition hover:bg-pink-btn-hover"
+                                    >
+                                        {primary}
+                                    </button>
+                                </div>
+                            )}
+                        </>
                     );
                 })()}
             </Modal>
+        </div>
+    );
+}
+
+// Mirrors PageHeading + status tabs + search/sort toolbar + the desktop
+// column header, then ~4 representative order rows (meta line, thumbnail +
+// title, unit price, qty, total, action button) matching ROW_GRID/HEADER_GRID.
+function PurchasesSkeleton() {
+    return (
+        <div>
+            <SkeletonGroup>
+                <div className="mb-6 flex h-10 items-center justify-between border-b border-ink/10 pb-4">
+                    <Skeleton className="h-[18px] w-32" />
+                    <Skeleton className="h-3 w-16" />
+                </div>
+
+                <div className="mb-6 flex flex-wrap gap-x-7 gap-y-2 border-b border-ink/10 pb-2.5">
+                    {ORDER_STATUS_TABS.map((t) => (
+                        <Skeleton key={t} className="h-[11px] w-14" />
+                    ))}
+                </div>
+
+                <div className="mb-8 flex flex-wrap items-center gap-3">
+                    <Skeleton tone="outline" className="h-10 w-64" />
+                    <Skeleton tone="outline" className="h-10 w-52" />
+                </div>
+
+                <div className={HEADER_GRID}>
+                    <Skeleton className="h-[10px] w-16" />
+                    <Skeleton className="ml-auto h-[10px] w-16" />
+                    <Skeleton className="mx-auto h-[10px] w-14" />
+                    <Skeleton className="ml-auto h-[10px] w-16" />
+                    <Skeleton className="ml-auto h-[10px] w-14" />
+                </div>
+
+                <div className="flex flex-col divide-y divide-ink/10 border-b border-ink/10">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                        <div key={i} className="px-3 py-4">
+                            <div className="mb-3 flex items-center justify-between gap-4">
+                                <Skeleton className="h-[11px] w-40" />
+                                <Skeleton className="h-[11px] w-20" />
+                            </div>
+
+                            <div className={ROW_GRID}>
+                                <div className="flex min-w-0 items-center gap-4">
+                                    <Skeleton tone="faint" className="h-16 w-16 flex-none" />
+                                    <div className="min-w-0 flex-1">
+                                        <Skeleton className="mb-2 h-[13.5px] w-40" />
+                                        <Skeleton tone="soft" className="h-[10px] w-20" />
+                                    </div>
+                                </div>
+                                <Skeleton className="h-[13px] w-16 sm:ml-auto" />
+                                <Skeleton className="h-[13px] w-8 sm:mx-auto" />
+                                <Skeleton className="h-[13px] w-16 sm:ml-auto" />
+                                <Skeleton tone="outline" className="h-8 w-28 sm:ml-auto" />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                <div className="mt-8 flex justify-center gap-2">
+                    <Skeleton tone="outline" className="h-9 w-9" />
+                    <Skeleton tone="outline" className="h-9 w-9" />
+                    <Skeleton tone="outline" className="h-9 w-9" />
+                </div>
+            </SkeletonGroup>
         </div>
     );
 }

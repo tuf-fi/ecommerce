@@ -2,6 +2,13 @@ import { StaticImageData } from "next/image";
 import { productImages } from "@/components/ui/images";
 import { PlaceholderVariant } from "@/components/ui/Placeholder";
 
+export type ProductSize = {
+    id: string;
+    label: string;
+    price: number;
+    stock: number;
+};
+
 export type Product = {
     id: number;
     category: string;
@@ -12,6 +19,12 @@ export type Product = {
     desc: string;
     image: StaticImageData;
     variant: PlaceholderVariant;
+    // Optional size choices (e.g. 30ml/50ml) — each with its own price and
+    // stock. When present, `price` above is the starting-from (cheapest) price.
+    sizes?: ProductSize[];
+    // Concern keys (see Concern.key in library/admin/types.ts, e.g. "dryness")
+    // this product addresses — drives the Shop by Concern filter on /shop.
+    concerns?: string[];
 };
 
 export const CATEGORIES = ["All", "Serum", "Treatment", "Moisturizer", "Body", "Sets"] as const;
@@ -25,8 +38,13 @@ export const PRODUCTS: Product[] = [
         rating: 4.5,
         count: 133,
         desc: "A slow-release retinol treatment for nightly use — softens fine lines and evens texture while you sleep, without the usual sting.",
+        concerns: ["fine-lines", "texture"],
         image: productImages["Overnight Retinol Serum"],
         variant: "pastel",
+        sizes: [
+            { id: "15ml", label: "15ml", price: 2800, stock: 20 },
+            { id: "30ml", label: "30ml", price: 4800, stock: 14 },
+        ],
     },
     {
         id: 2,
@@ -36,8 +54,13 @@ export const PRODUCTS: Product[] = [
         rating: 4.8,
         count: 96,
         desc: "A rich, ceramide-forward cream that rebuilds a compromised moisture barrier — for skin that feels tight, dry, or reactive.",
+        concerns: ["dryness", "redness"],
         image: productImages["Barrier Repair Cream"],
         variant: "blue",
+        sizes: [
+            { id: "30ml", label: "30ml", price: 2150, stock: 6 },
+            { id: "50ml", label: "50ml", price: 3400, stock: 0 },
+        ],
     },
     {
         id: 3,
@@ -47,8 +70,13 @@ export const PRODUCTS: Product[] = [
         rating: 4.6,
         count: 210,
         desc: "A lightweight gel-cream that leaves skin dewy without shine — the everyday moisturizer for combination skin.",
+        concerns: ["dullness"],
         image: productImages["Quiet Glow Gel Cream"],
         variant: "pink",
+        sizes: [
+            { id: "30ml", label: "30ml", price: 1890, stock: 42 },
+            { id: "50ml", label: "50ml", price: 2900, stock: 30 },
+        ],
     },
     {
         id: 4,
@@ -58,8 +86,13 @@ export const PRODUCTS: Product[] = [
         rating: 4.4,
         count: 74,
         desc: "A gentle, fragrance-light body wash built around rice milk extract — cleans without stripping.",
+        concerns: ["dryness"],
         image: productImages["Rice Milk Body Wash"],
         variant: "pastel",
+        sizes: [
+            { id: "250ml", label: "250ml", price: 980, stock: 55 },
+            { id: "500ml", label: "500ml", price: 1650, stock: 38 },
+        ],
     },
     {
         id: 5,
@@ -69,8 +102,13 @@ export const PRODUCTS: Product[] = [
         rating: 4.7,
         count: 168,
         desc: "A stabilized vitamin C serum that evens tone and fades the look of dark spots over consistent use.",
+        concerns: ["dullness"],
         image: productImages["Vitamin C Brightening Drop"],
         variant: "blue",
+        sizes: [
+            { id: "15ml", label: "15ml", price: 2450, stock: 17 },
+            { id: "30ml", label: "30ml", price: 4200, stock: 9 },
+        ],
     },
     {
         id: 6,
@@ -80,6 +118,7 @@ export const PRODUCTS: Product[] = [
         rating: 4.5,
         count: 142,
         desc: "A daily treatment that refines the look of pores and balances oil — no tightness, no white cast.",
+        concerns: ["breakouts", "texture"],
         image: productImages["Niacinamide Pore Refiner"],
         variant: "pink",
     },
@@ -102,6 +141,7 @@ export const PRODUCTS: Product[] = [
         rating: 4.6,
         count: 88,
         desc: "A dense overnight balm that seals in moisture and repairs the skin barrier by morning.",
+        concerns: ["dryness"],
         image: productImages["Ceramide Sleep Balm"],
         variant: "blue",
     },
@@ -113,6 +153,7 @@ export const PRODUCTS: Product[] = [
         rating: 4.5,
         count: 121,
         desc: "A single-ingredient oil that mimics skin's own squalane — seals in moisture without sitting heavy or clogging pores.",
+        concerns: ["dryness"],
         image: productImages["Overnight Retinol Serum"],
         variant: "pastel",
     },
@@ -124,6 +165,7 @@ export const PRODUCTS: Product[] = [
         rating: 4.4,
         count: 77,
         desc: "A 10% azelaic acid gel that fades post-breakout marks and evens tone — gentle enough for daily use.",
+        concerns: ["breakouts", "redness"],
         image: productImages["Barrier Repair Cream"],
         variant: "blue",
     },
@@ -135,6 +177,7 @@ export const PRODUCTS: Product[] = [
         rating: 4.7,
         count: 156,
         desc: "A colloidal-oat cream built for reactive, easily-irritated skin — calms redness without a heavy finish.",
+        concerns: ["redness"],
         image: productImages["Quiet Glow Gel Cream"],
         variant: "pink",
     },
@@ -146,6 +189,7 @@ export const PRODUCTS: Product[] = [
         rating: 4.6,
         count: 94,
         desc: "A thick, unscented balm for hands that see too much hand sanitizer — softens rough, cracked skin fast.",
+        concerns: ["dryness"],
         image: productImages["Rice Milk Body Wash"],
         variant: "pastel",
     },
@@ -157,6 +201,7 @@ export const PRODUCTS: Product[] = [
         rating: 4.8,
         count: 63,
         desc: "A five-peptide complex that supports skin's natural firmness over time — no filler, no fragrance.",
+        concerns: ["fine-lines"],
         image: productImages["Vitamin C Brightening Drop"],
         variant: "blue",
     },
@@ -168,6 +213,7 @@ export const PRODUCTS: Product[] = [
         rating: 4.3,
         count: 203,
         desc: "A targeted 2% BHA gel for occasional breakouts — dries down clear under makeup.",
+        concerns: ["breakouts"],
         image: productImages["Niacinamide Pore Refiner"],
         variant: "pink",
     },
@@ -179,6 +225,7 @@ export const PRODUCTS: Product[] = [
         rating: 4.7,
         count: 118,
         desc: "A centella-forward balm for compromised skin post-treatment — reduces the look of irritation overnight.",
+        concerns: ["redness"],
         image: productImages["The Ritual Edit, Full Set"],
         variant: "ink",
     },
@@ -190,6 +237,7 @@ export const PRODUCTS: Product[] = [
         rating: 4.5,
         count: 85,
         desc: "A fast-absorbing lotion with real coconut milk extract — softens without the greasy afterfeel.",
+        concerns: ["dryness"],
         image: productImages["Ceramide Sleep Balm"],
         variant: "blue",
     },
@@ -212,6 +260,7 @@ export const PRODUCTS: Product[] = [
         rating: 4.6,
         count: 174,
         desc: "A multi-weight hyaluronic acid serum that plumps on contact and holds moisture through the day.",
+        concerns: ["dryness"],
         image: productImages["Barrier Repair Cream"],
         variant: "blue",
     },
@@ -223,6 +272,7 @@ export const PRODUCTS: Product[] = [
         rating: 4.7,
         count: 91,
         desc: "A faster-converting retinal for visible texture change — start slow, two nights a week.",
+        concerns: ["fine-lines", "texture"],
         image: productImages["Quiet Glow Gel Cream"],
         variant: "pink",
     },
@@ -234,6 +284,7 @@ export const PRODUCTS: Product[] = [
         rating: 4.5,
         count: 67,
         desc: "A richer follow-up to our original balm, built for colder months and drier skin.",
+        concerns: ["redness", "dryness"],
         image: productImages["Rice Milk Body Wash"],
         variant: "pastel",
     },
@@ -256,6 +307,7 @@ export const PRODUCTS: Product[] = [
         rating: 4.6,
         count: 58,
         desc: "Targets stubborn discoloration that vitamin C alone doesn't touch — pairs well with SPF, not with retinol.",
+        concerns: ["dullness"],
         image: productImages["Niacinamide Pore Refiner"],
         variant: "pink",
     },
@@ -267,6 +319,7 @@ export const PRODUCTS: Product[] = [
         rating: 4.5,
         count: 139,
         desc: "A 10-minute fruit-enzyme mask that lifts dull surface skin without the scrubbing.",
+        concerns: ["texture", "dullness"],
         image: productImages["The Ritual Edit, Full Set"],
         variant: "ink",
     },
@@ -285,4 +338,11 @@ export const PRODUCTS: Product[] = [
 
 export function getProduct(id: number): Product | undefined {
     return PRODUCTS.find((p) => p.id === id);
+}
+
+// The size to default to for a "quick add" (product card/listing) — the
+// cheapest one, regardless of what order sizes were entered in.
+export function cheapestSizeId(product: Product): string | null {
+    if (!product.sizes || product.sizes.length === 0) return null;
+    return product.sizes.reduce((min, s) => (s.price < min.price ? s : min)).id;
 }

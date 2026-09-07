@@ -2,9 +2,12 @@
 
 import { useRef, useState } from "react";
 import Image from "next/image";
+import { AnimatePresence, motion } from "framer-motion";
 import Modal from "../ui/Modal";
+import { EASE } from "../ui/motion/constants";
 import { useStore } from "@/library/store";
 import { contactImage, newsletterImage } from "@/components/ui/images";
+import { useAsyncAction, wait } from "@/library/useAsyncAction";
 
 type Mode = "login" | "signup" | "forgot";
 
@@ -13,32 +16,34 @@ export default function LoginModal() {
     const open = activeModal === "login";
 
     return (
-        <Modal open={open} onClose={closeModal} maxWidth="max-w-[760px]">
-            {open && <LoginContent />}
+        <Modal open={open} onClose={closeModal} maxWidth="max-w-[760px]" hideDefaultClose>
+            {open && <LoginContent onClose={closeModal} />}
         </Modal>
     );
 }
 
-function LoginContent() {
+function LoginContent({ onClose }: { onClose: () => void }) {
     const { signIn, showToast } = useStore();
     const [mode, setMode] = useState<Mode>("login");
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
 
-    function submit(e: React.FormEvent) {
+    const [submitting, submit] = useAsyncAction(async (e: React.FormEvent) => {
         e.preventDefault();
         // TODO: replace with real authentication / registration (JWT + httpOnly cookies) against the backend API.
+        await wait();
         signIn(email);
-    }
+    });
 
-    function signUpWithGoogle() {
+    const [googleSubmitting, signUpWithGoogle] = useAsyncAction(async () => {
         // TODO: replace with real Google OAuth (e.g. NextAuth's Google provider).
+        await wait();
         signIn("google.user@gmail.com");
-    }
+    });
 
     const imagePanel = (
-        <div className="relative hidden h-full overflow-hidden sm:block">
+        <div className="relative hidden h-full min-h-[320px] overflow-hidden sm:block">
             <Image
                 src={mode === "signup" ? newsletterImage : contactImage}
                 alt=""
@@ -115,8 +120,12 @@ function LoginContent() {
                     </div>
                 )}
 
-                <button type="submit" className="w-full bg-navy py-3.5 text-[13px] font-semibold tracking-wide text-white transition hover:bg-pink-dark">
-                    {mode === "login" ? "Sign In" : "Sign Up"}
+                <button
+                    type="submit"
+                    disabled={submitting}
+                    className="w-full bg-navy py-3.5 text-[13px] font-semibold tracking-wide text-white transition hover:bg-pink-dark disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-navy"
+                >
+                    {submitting ? (mode === "login" ? "Signing In…" : "Signing Up…") : mode === "login" ? "Sign In" : "Sign Up"}
                 </button>
             </form>
 
@@ -131,15 +140,18 @@ function LoginContent() {
                     <button
                         type="button"
                         onClick={signUpWithGoogle}
-                        className="flex w-full items-center justify-center gap-2.5 border border-ink/15 py-3.5 text-[13px] font-semibold text-ink transition hover:bg-off"
+                        disabled={googleSubmitting}
+                        className="flex w-full items-center justify-center gap-2.5 border border-ink/15 py-3.5 text-[13px] font-semibold text-ink transition hover:bg-off disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-transparent"
                     >
-                        <svg width="16" height="16" viewBox="0 0 24 24">
-                            <path fill="#4285F4" d="M23.49 12.27c0-.85-.08-1.67-.22-2.45H12v4.64h6.47a5.53 5.53 0 0 1-2.4 3.63v2.99h3.87c2.27-2.09 3.55-5.17 3.55-8.81z" />
-                            <path fill="#34A853" d="M12 24c3.24 0 5.95-1.07 7.94-2.92l-3.87-2.99c-1.07.72-2.45 1.15-4.07 1.15-3.13 0-5.78-2.11-6.73-4.96H1.27v3.09A11.998 11.998 0 0 0 12 24z" />
-                            <path fill="#FBBC05" d="M5.27 14.28A7.2 7.2 0 0 1 4.89 12c0-.79.14-1.56.38-2.28V6.63H1.27A12 12 0 0 0 0 12c0 1.94.46 3.77 1.27 5.37l4-3.09z" />
-                            <path fill="#EA4335" d="M12 4.77c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.94 1.19 15.24 0 12 0 7.31 0 3.26 2.69 1.27 6.63l4 3.09C6.22 6.87 8.87 4.77 12 4.77z" />
-                        </svg>
-                        Sign up with Google
+                        {!googleSubmitting && (
+                            <svg width="16" height="16" viewBox="0 0 24 24">
+                                <path fill="#4285F4" d="M23.49 12.27c0-.85-.08-1.67-.22-2.45H12v4.64h6.47a5.53 5.53 0 0 1-2.4 3.63v2.99h3.87c2.27-2.09 3.55-5.17 3.55-8.81z" />
+                                <path fill="#34A853" d="M12 24c3.24 0 5.95-1.07 7.94-2.92l-3.87-2.99c-1.07.72-2.45 1.15-4.07 1.15-3.13 0-5.78-2.11-6.73-4.96H1.27v3.09A11.998 11.998 0 0 0 12 24z" />
+                                <path fill="#FBBC05" d="M5.27 14.28A7.2 7.2 0 0 1 4.89 12c0-.79.14-1.56.38-2.28V6.63H1.27A12 12 0 0 0 0 12c0 1.94.46 3.77 1.27 5.37l4-3.09z" />
+                                <path fill="#EA4335" d="M12 4.77c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.94 1.19 15.24 0 12 0 7.31 0 3.26 2.69 1.27 6.63l4 3.09C6.22 6.87 8.87 4.77 12 4.77z" />
+                            </svg>
+                        )}
+                        {googleSubmitting ? "Signing Up…" : "Sign up with Google"}
                     </button>
                 </>
             )}
@@ -165,23 +177,35 @@ function LoginContent() {
     );
 
     return (
-        <div className="relative h-[680px] overflow-hidden">
-            <div
-                className={`absolute inset-y-0 left-0 z-10 hidden w-1/2 transition-transform duration-500 ease-in-out sm:block ${
-                    mode === "signup" ? "sm:translate-x-full" : "sm:translate-x-0"
-                }`}
-            >
+        <motion.div layout transition={{ duration: 0.3, ease: EASE }} className="grid items-stretch sm:grid-cols-2">
+            <motion.div layout transition={{ duration: 0.4, ease: EASE }} className={mode === "signup" ? "sm:order-2" : "sm:order-1"}>
                 {imagePanel}
-            </div>
-
-            <div
-                className={`absolute inset-y-0 left-0 z-0 w-full overflow-y-auto bg-white transition-transform duration-500 ease-in-out sm:left-1/2 sm:w-1/2 ${
-                    mode === "signup" ? "sm:-translate-x-full" : "sm:translate-x-0"
-                }`}
+            </motion.div>
+            <motion.div
+                layout
+                transition={{ duration: 0.4, ease: EASE }}
+                className={`relative overflow-hidden bg-white ${mode === "signup" ? "sm:order-1" : "sm:order-2"}`}
             >
-                {mode === "forgot" ? <ForgotPasswordForm onBack={() => setMode("login")} showToast={showToast} /> : loginOrSignupForm}
-            </div>
-        </div>
+                <button
+                    aria-label="Close"
+                    onClick={onClose}
+                    className="absolute top-4 right-4 z-10 flex h-8 w-8 items-center justify-center text-lg text-ink/50 transition hover:text-ink"
+                >
+                    ×
+                </button>
+                <AnimatePresence mode="wait">
+                    <motion.div
+                        key={mode}
+                        initial={{ opacity: 0, y: 6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -6 }}
+                        transition={{ duration: 0.2, ease: EASE }}
+                    >
+                        {mode === "forgot" ? <ForgotPasswordForm onBack={() => setMode("login")} showToast={showToast} /> : loginOrSignupForm}
+                    </motion.div>
+                </AnimatePresence>
+            </motion.div>
+        </motion.div>
     );
 }
 
@@ -199,16 +223,25 @@ function ForgotPasswordForm({
 
     const codeComplete = code.every((c) => c !== "");
 
-    function sendCode(e: React.FormEvent) {
+    const [sending, sendCode] = useAsyncAction(async (e: React.FormEvent) => {
         e.preventDefault();
         // TODO: send a real one-time code via the backend/email service.
+        await wait();
         setSent(true);
         showToast("success", `Code sent to ${email}.`);
-    }
+    });
 
-    function resendCode() {
+    const [resending, resendCode] = useAsyncAction(async () => {
+        await wait();
         showToast("success", `Code resent to ${email}.`);
-    }
+    });
+
+    const [verifying, verifyCode] = useAsyncAction(async () => {
+        // TODO: verify the code against the backend, then let the user set a new password.
+        await wait();
+        showToast("success", "Code verified — you can now sign in.");
+        onBack();
+    });
 
     function updateDigit(index: number, value: string) {
         const digit = value.replace(/\D/g, "").slice(-1);
@@ -222,12 +255,6 @@ function ForgotPasswordForm({
         if (e.key === "Backspace" && !code[index] && index > 0) {
             inputRefs.current[index - 1]?.focus();
         }
-    }
-
-    function verifyCode() {
-        // TODO: verify the code against the backend, then let the user set a new password.
-        showToast("success", "Code verified — you can now sign in.");
-        onBack();
     }
 
     return (
@@ -250,8 +277,12 @@ function ForgotPasswordForm({
                             className="w-full border-b border-ink/25 bg-transparent py-2 text-sm text-ink outline-none transition focus:border-pink-dark"
                         />
                     </div>
-                    <button type="submit" className="w-full bg-navy py-3.5 text-[13px] font-semibold tracking-wide text-white transition hover:bg-pink-dark">
-                        Send Code
+                    <button
+                        type="submit"
+                        disabled={sending}
+                        className="w-full bg-navy py-3.5 text-[13px] font-semibold tracking-wide text-white transition hover:bg-pink-dark disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-navy"
+                    >
+                        {sending ? "Sending…" : "Send Code"}
                     </button>
                 </form>
             ) : (
@@ -273,14 +304,18 @@ function ForgotPasswordForm({
 
                     <button
                         onClick={verifyCode}
-                        disabled={!codeComplete}
+                        disabled={!codeComplete || verifying}
                         className="w-full bg-navy py-3.5 text-[13px] font-semibold tracking-wide text-white transition hover:bg-pink-dark disabled:cursor-not-allowed disabled:bg-ink/20 disabled:hover:bg-ink/20"
                     >
-                        Enter Code
+                        {verifying ? "Verifying…" : "Enter Code"}
                     </button>
 
-                    <button onClick={resendCode} className="mt-4 w-full text-center text-[12.5px] text-pink-dark underline underline-offset-2">
-                        Resend Code
+                    <button
+                        onClick={resendCode}
+                        disabled={resending}
+                        className="mt-4 w-full text-center text-[12.5px] text-pink-dark underline underline-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                        {resending ? "Resending…" : "Resend Code"}
                     </button>
                 </div>
             )}

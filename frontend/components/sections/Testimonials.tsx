@@ -78,8 +78,9 @@ function FeaturedTestimonial({ pool }: { pool: Testimonial[] }) {
 }
 
 export default function Testimonials() {
-    const { testimonials } = useContent();
+    const { testimonials, sectionVisibility } = useContent();
 
+    if (!sectionVisibility.testimonials) return null;
     if (testimonials.length === 0) return null;
 
     return (

@@ -5,24 +5,35 @@ import { toast } from "sonner";
 import { PRODUCTS, getProduct } from "./products";
 
 export type ModalKey =
-    | "product"
     | "login"
     | "welcome"
     | "quiz";
 
 export type Address = { id: number; label: string; text: string; isDefault: boolean };
 
-type CartMap = Record<number, number>;
+export type CartLine = { productId: number; sizeId: string | null; qty: number };
+type CartMap = Record<string, CartLine>;
 
 const MAX_PER_ITEM = 6;
+
+export function cartKey(id: number, sizeId?: string | null) {
+    return sizeId ? `${id}::${sizeId}` : String(id);
+}
+
+export function lineUnitPrice(line: CartLine): number {
+    const p = getProduct(line.productId);
+    if (!p) return 0;
+    const size = line.sizeId ? p.sizes?.find((s) => s.id === line.sizeId) : undefined;
+    return size ? size.price : p.price;
+}
 
 type StoreValue = {
     cart: CartMap;
     cartCount: number;
     cartTotal: number;
-    addToCart: (id: number, qty?: number) => void;
-    changeQty: (id: number, delta: number) => void;
-    removeLine: (id: number) => void;
+    addToCart: (id: number, qty?: number, sizeId?: string | null) => void;
+    changeQty: (key: string, delta: number) => void;
+    removeLine: (key: string) => void;
 
     wishlist: number[];
     toggleWishlist: (id: number) => void;
@@ -44,10 +55,8 @@ type StoreValue = {
     showToast: (type: "success" | "error", message: string) => void;
 
     activeModal: ModalKey | null;
-    activeProductId: number | null;
-    openModal: (key: ModalKey, productId?: number) => void;
+    openModal: (key: ModalKey) => void;
     closeModal: () => void;
-    openProduct: (id: number) => void;
 };
 
 const StoreContext = createContext<StoreValue | null>(null);
@@ -63,27 +72,20 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const [customerName, setCustomerName] = useState("");
     const [customerEmail, setCustomerEmail] = useState("");
     const [activeModal, setActiveModal] = useState<ModalKey | null>(null);
-    const [activeProductId, setActiveProductId] = useState<number | null>(null);
 
     const showToast = useCallback((type: "success" | "error", message: string) => {
         if (type === "success") toast.success(message);
         else toast.error(message);
     }, []);
 
-    const openModal = useCallback((key: ModalKey, productId?: number) => {
+    const openModal = useCallback((key: ModalKey) => {
         setActiveModal(key);
-        if (productId !== undefined) setActiveProductId(productId);
     }, []);
 
     const closeModal = useCallback(() => setActiveModal(null), []);
 
-    const openProduct = useCallback((id: number) => {
-        setActiveProductId(id);
-        setActiveModal("product");
-    }, []);
-
     const addToCart = useCallback(
-        (id: number, qty: number = 1) => {
+        (id: number, qty: number = 1, sizeId: string | null = null) => {
             if (!isLoggedIn) {
                 openModal("login");
                 showToast("error", "Sign in to add items to your bag.");
@@ -91,31 +93,42 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             }
             const p = getProduct(id);
             if (!p) return;
-            const current = cart[id] || 0;
-            if (current + qty > MAX_PER_ITEM) {
+            const size = sizeId ? p.sizes?.find((s) => s.id === sizeId) : undefined;
+            if (sizeId && !size) return;
+            const key = cartKey(id, sizeId);
+            const current = cart[key]?.qty || 0;
+            // Summed across every size variant of this product, not just the
+            // one being added to — otherwise the cap resets per size and a
+            // multi-size product can exceed it in total.
+            const currentForProduct = Object.values(cart)
+                .filter((line) => line.productId === id)
+                .reduce((sum, line) => sum + line.qty, 0);
+            if (currentForProduct + qty > MAX_PER_ITEM) {
                 showToast("error", `Only ${MAX_PER_ITEM} of "${p.title}" allowed per order.`);
                 return;
             }
-            setCart({ ...cart, [id]: current + qty });
-            showToast("success", `Added "${p.title}" to your bag.`);
+            setCart({ ...cart, [key]: { productId: id, sizeId, qty: current + qty } });
+            showToast("success", `Added "${p.title}"${size ? ` (${size.label})` : ""} to your bag.`);
         },
         [cart, isLoggedIn, openModal, showToast]
     );
 
-    const changeQty = useCallback((id: number, delta: number) => {
+    const changeQty = useCallback((key: string, delta: number) => {
         setCart((c) => {
-            const next = (c[id] || 0) + delta;
+            const line = c[key];
+            if (!line) return c;
+            const nextQty = line.qty + delta;
             const copy = { ...c };
-            if (next <= 0) delete copy[id];
-            else copy[id] = next;
+            if (nextQty <= 0) delete copy[key];
+            else copy[key] = { ...line, qty: nextQty };
             return copy;
         });
     }, []);
 
-    const removeLine = useCallback((id: number) => {
+    const removeLine = useCallback((key: string) => {
         setCart((c) => {
             const copy = { ...c };
-            delete copy[id];
+            delete copy[key];
             return copy;
         });
     }, []);
@@ -193,9 +206,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         return addresses.find((a) => a.isDefault) ?? addresses[0] ?? null;
     }, [addresses, checkoutAddressId]);
 
-    const cartCount = useMemo(() => Object.values(cart).reduce((a, b) => a + b, 0), [cart]);
+    const cartCount = useMemo(() => Object.values(cart).reduce((sum, line) => sum + line.qty, 0), [cart]);
     const cartTotal = useMemo(
-        () => Object.entries(cart).reduce((sum, [id, qty]) => sum + (getProduct(Number(id))?.price ?? 0) * qty, 0),
+        () => Object.values(cart).reduce((sum, line) => sum + lineUnitPrice(line) * line.qty, 0),
         [cart]
     );
 
@@ -222,10 +235,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         signOut,
         showToast,
         activeModal,
-        activeProductId,
         openModal,
         closeModal,
-        openProduct,
     };
 
     return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;

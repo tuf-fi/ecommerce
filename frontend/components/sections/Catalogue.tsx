@@ -1,15 +1,31 @@
+"use client";
+
 import Link from "next/link";
 import Card from "../ui/Card";
 import SectionContainer from "../ui/Section";
 import SectionTitle from "../ui/SectionTitle";
 import RevealIn from "../ui/motion/RevealIn";
 import { PRODUCTS } from "@/library/products";
+import { CatalogueContent, useContent } from "@/library/content";
 
 const PREVIEW_COUNT = 12;
+// The admin preview pane shows one grid row instead of three — the only
+// editable thing in this section is the CTA below the grid, and twelve cards
+// push it entirely out of view.
+const ADMIN_PREVIEW_COUNT = 4;
 
-export default function Catalogue(){
-    return(
-        <SectionContainer id="products">
+// `previewData` lets CatalogueEditor feed in its local unsaved draft — see Hero.tsx.
+export default function Catalogue({
+    preview = false,
+    previewData,
+}: { preview?: boolean; previewData?: CatalogueContent } = {}) {
+    const { catalogue: liveCatalogue, sectionVisibility } = useContent();
+    const catalogue = previewData ?? liveCatalogue;
+
+    if (!preview && !sectionVisibility.catalogue) return null;
+
+    return (
+        <SectionContainer id={preview ? undefined : "products"} preview={preview}>
             <SectionTitle num="05" title="Shop All" />
 
             {/* TODO: wire these up to real filtering once catalogue data/state exists */}
@@ -37,8 +53,16 @@ export default function Catalogue(){
                 </select>
             </div>
 
-            <div id="catalogTop" className="grid grid-cols-4 gap-5">
-                {PRODUCTS.slice(0, PREVIEW_COUNT).map((product, index) => (
+            {/* The admin preview keeps a flat `grid-cols-4` regardless of the
+                device-width toggle — it only ever renders ADMIN_PREVIEW_COUNT
+                (4) cards, and this is what keeps them on one row (see the
+                comment above) even when the preview is narrowed to tablet/
+                mobile width. The real section responds to the viewport. */}
+            <div
+                id={preview ? undefined : "catalogTop"}
+                className={`grid gap-5 ${preview ? "grid-cols-4" : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4"}`}
+            >
+                {PRODUCTS.slice(0, preview ? ADMIN_PREVIEW_COUNT : PREVIEW_COUNT).map((product, index) => (
                     <RevealIn
                         key={product.id}
                         direction="bottom"
@@ -55,10 +79,10 @@ export default function Catalogue(){
                     href="/shop"
                     className="group/cta inline-flex items-center gap-2.5 bg-navy px-8 py-4 text-[13px] font-semibold uppercase tracking-wide text-white transition hover:bg-pink-dark"
                 >
-                    Go to Shop
+                    {catalogue.ctaLabel}
                     <span className="transition-transform duration-200 group-hover/cta:translate-x-1">→</span>
                 </Link>
             </RevealIn>
         </SectionContainer>
-    )
+    );
 }

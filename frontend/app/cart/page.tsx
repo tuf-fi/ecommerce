@@ -4,20 +4,25 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useStore } from "@/library/store";
-import { useContent } from "@/library/content";
+import { useStore, lineUnitPrice } from "@/library/store";
 import { getProduct } from "@/library/products";
 import SectionTitle from "@/components/ui/SectionTitle";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import LoginRequiredModal from "@/components/modals/LoginRequiredModal";
+import PageIntro from "@/components/sections/PageIntro";
+import { useMounted } from "@/library/useMounted";
+import Skeleton, { SkeletonGroup } from "@/components/ui/Skeleton";
 
 export default function CartPage() {
-    const { cart, changeQty, removeLine, cartTotal, cartCount, checkoutAddress, showToast, openProduct, isLoggedIn, openModal } = useStore();
-    const { pageIntros } = useContent();
+    const { cart, changeQty, removeLine, cartTotal, cartCount, checkoutAddress, showToast, isLoggedIn, openModal } = useStore();
     const router = useRouter();
     const entries = Object.entries(cart);
-    const [removeId, setRemoveId] = useState<number | null>(null);
-    const removeProduct = removeId !== null ? getProduct(removeId) : null;
+    const [removeKey, setRemoveKey] = useState<string | null>(null);
+    const removeLineItem = removeKey !== null ? cart[removeKey] : null;
+    const removeProduct = removeLineItem ? getProduct(removeLineItem.productId) : null;
+    const mounted = useMounted();
+
+    if (!mounted) return <CartSkeleton />;
 
     if (!isLoggedIn) {
         return (
@@ -35,10 +40,7 @@ export default function CartPage() {
 
     return (
         <div className="-mx-8 w-[calc(100%+4rem)] min-h-screen bg-white px-8 pt-25 pb-20">
-            {/* <span className="eyebrow uppercase text-grey">Your Bag</span> */}
-            <h1 className="mt-3 mb-11 max-w-none text-[30px] leading-[1.08] font-normal sm:text-[38px] lg:text-[42px]">
-                {pageIntros.cart.headline} <br/><em className="pink-highlight font-normal">{pageIntros.cart.accent}</em>
-            </h1>
+            <PageIntro pageKey="cart" />
 
             <SectionTitle num="—" title={`${cartCount} Item${cartCount === 1 ? "" : "s"}`} />
 
@@ -61,15 +63,17 @@ export default function CartPage() {
                     </Link>
                 </div>
             ) : (
-                <div className="pr-[420px]">
+                <div className="pb-28 lg:pr-[420px] lg:pb-0">
                     <div className="flex flex-col divide-y divide-ink/10">
-                        {entries.map(([idStr, qty]) => {
-                            const p = getProduct(Number(idStr));
+                        {entries.map(([key, line]) => {
+                            const p = getProduct(line.productId);
                             if (!p) return null;
+                            const size = line.sizeId ? p.sizes?.find((s) => s.id === line.sizeId) : undefined;
+                            const unitPrice = lineUnitPrice(line);
                             return (
-                                <div key={idStr} className="grid grid-cols-[7rem_1fr] gap-5 py-7 first:pt-0 last:pb-0 sm:grid-cols-[8rem_1fr] sm:gap-6">
-                                    <button
-                                        onClick={() => openProduct(p.id)}
+                                <div key={key} className="grid grid-cols-[7rem_1fr] gap-5 py-7 first:pt-0 last:pb-0 sm:grid-cols-[8rem_1fr] sm:gap-6">
+                                    <Link
+                                        href={`/shop/${p.id}`}
                                         className="group relative aspect-[4/5] w-full overflow-hidden border border-ink/10 transition hover:border-ink/30"
                                     >
                                         <Image
@@ -79,26 +83,29 @@ export default function CartPage() {
                                             sizes="128px"
                                             className="object-cover transition duration-500 group-hover:scale-[1.03]"
                                         />
-                                    </button>
+                                    </Link>
 
                                     <div className="flex flex-col">
                                         <div className="flex items-start justify-between gap-4">
                                             <div className="min-w-0">
-                                                <span className="font-mono text-[10px] uppercase tracking-[.16em] text-grey">{p.category}</span>
-                                                <button
-                                                    onClick={() => openProduct(p.id)}
+                                                <span className="font-mono text-[10px] uppercase tracking-[.16em] text-grey">
+                                                    {p.category}
+                                                    {size && ` · ${size.label}`}
+                                                </span>
+                                                <Link
+                                                    href={`/shop/${p.id}`}
                                                     className="mt-1 block text-left text-[16.5px] font-medium leading-snug text-ink"
                                                 >
                                                     {p.title}
-                                                </button>
+                                                </Link>
                                                 <span className="mt-1.5 block font-mono text-[12px] text-grey">
-                                                    ₱{p.price.toLocaleString()} each
+                                                    ₱{unitPrice.toLocaleString()} each
                                                 </span>
                                             </div>
                                             <button
-                                                onClick={() => setRemoveId(p.id)}
+                                                onClick={() => setRemoveKey(key)}
                                                 aria-label={`Remove ${p.title}`}
-                                                className="flex h-8 w-8 flex-none items-center justify-center text-grey transition hover:text-alert"
+                                                className="flex h-11 w-11 flex-none items-center justify-center text-grey transition hover:text-alert"
                                             >
                                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                                                     <path d="M4 7h16" />
@@ -111,11 +118,11 @@ export default function CartPage() {
 
                                         <div className="mt-auto flex flex-wrap items-end justify-between gap-2 pt-5">
                                             <div className="flex items-center border border-ink/15">
-                                                <button onClick={() => changeQty(p.id, -1)} className="px-3 py-1.5 text-ink transition hover:bg-off">–</button>
-                                                <span className="w-8 text-center text-[13px]">{qty}</span>
-                                                <button onClick={() => changeQty(p.id, 1)} className="px-3 py-1.5 text-ink transition hover:bg-off">+</button>
+                                                <button onClick={() => changeQty(key, -1)} aria-label="Decrease quantity" className="flex h-11 w-11 items-center justify-center text-ink transition hover:bg-off">–</button>
+                                                <span className="w-8 text-center text-[13px]">{line.qty}</span>
+                                                <button onClick={() => changeQty(key, 1)} aria-label="Increase quantity" className="flex h-11 w-11 items-center justify-center text-ink transition hover:bg-off">+</button>
                                             </div>
-                                            <span className="font-mono text-[16px] font-medium text-ink">₱{(p.price * qty).toLocaleString()}</span>
+                                            <span className="font-mono text-[16px] font-medium text-ink">₱{(unitPrice * line.qty).toLocaleString()}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -123,7 +130,7 @@ export default function CartPage() {
                         })}
                     </div>
 
-                    <div className="thin-scrollbar shadow-glow fixed inset-y-0 right-0 w-[380px] overflow-y-auto border-l border-ink/10 bg-white p-10 pt-[calc(6.25rem+var(--promo-h,0px))] pb-10">
+                    <div className="thin-scrollbar shadow-glow mt-10 border border-ink/10 bg-white p-6 sm:p-8 lg:mt-0 lg:fixed lg:inset-y-0 lg:right-0 lg:w-[380px] lg:overflow-y-auto lg:border-0 lg:border-l lg:border-ink/10 lg:p-10 lg:pt-[calc(6.25rem+var(--promo-h,0px))] lg:pb-10">
                         <div className="mb-6 flex items-start justify-between gap-3 border-b border-ink/10 pb-6">
                             <div className="min-w-0">
                                 <div className="mb-1.5 font-mono text-[10px] uppercase tracking-[.16em] text-grey">Deliver To</div>
@@ -150,18 +157,25 @@ export default function CartPage() {
                             <span>Shipping</span>
                             <span className="font-mono text-ink">Calculated at checkout</span>
                         </div>
-                        <div className="my-5 border-t border-ink/10" />
-                        <div className="mb-6 flex items-center justify-between">
-                            <span className="text-sm text-ink">Total</span>
-                            <span className="font-mono text-xl font-semibold text-ink">₱{cartTotal.toLocaleString()}</span>
+
+                        {/* Total + checkout live in the fixed mobile bar below instead,
+                            so they're always on screen without scrolling — at lg+ there's
+                            no separate bar (the whole card is already a fixed sidebar),
+                            so they render here same as before. */}
+                        <div className="hidden lg:block">
+                            <div className="my-5 border-t border-ink/10" />
+                            <div className="mb-6 flex items-center justify-between">
+                                <span className="text-sm text-ink">Total</span>
+                                <span className="font-mono text-xl font-semibold text-ink">₱{cartTotal.toLocaleString()}</span>
+                            </div>
+                            {/* TODO: wire up to real PayMongo checkout — currently just a demo toast. */}
+                            <button
+                                onClick={() => showToast("success", "Checkout isn't wired up yet in this preview.")}
+                                className="w-full bg-navy py-3.5 text-[13px] font-semibold tracking-wide text-white transition hover:bg-pink-dark"
+                            >
+                                Proceed to Payment
+                            </button>
                         </div>
-                        {/* TODO: wire up to real PayMongo checkout — currently just a demo toast. */}
-                        <button
-                            onClick={() => showToast("success", "Checkout isn't wired up yet in this preview.")}
-                            className="w-full bg-navy py-3.5 text-[13px] font-semibold tracking-wide text-white transition hover:bg-pink-dark"
-                        >
-                            Proceed to Payment
-                        </button>
                         <Link href="/shop" className="mt-4 block text-center text-[12px] text-grey underline underline-offset-2">
                             Continue Shopping
                         </Link>
@@ -169,13 +183,111 @@ export default function CartPage() {
                 </div>
             )}
 
+            {/* Mobile-only fixed checkout bar — always visible regardless of scroll
+                position, so Total/Proceed to Payment never require scrolling to find.
+                Hidden at lg+, where the sidebar above is already fixed in full. */}
+            {entries.length > 0 && (
+                <div className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-between gap-4 border-t border-ink/10 bg-white px-5 py-3 shadow-[0_-8px_24px_rgba(61,90,115,.14)] lg:hidden">
+                    <div className="min-w-0">
+                        <div className="font-mono text-[10px] uppercase tracking-[.14em] text-grey">Total</div>
+                        <div className="font-mono text-lg font-semibold text-ink">₱{cartTotal.toLocaleString()}</div>
+                    </div>
+                    <button
+                        onClick={() => showToast("success", "Checkout isn't wired up yet in this preview.")}
+                        className="flex-none bg-navy px-6 py-3 text-[12.5px] font-semibold tracking-wide text-white transition hover:bg-pink-dark"
+                    >
+                        Proceed to Payment
+                    </button>
+                </div>
+            )}
+
             <ConfirmModal
-                open={removeId !== null}
+                open={removeKey !== null}
                 title="Remove this item?"
                 description={removeProduct ? `"${removeProduct.title}" will be taken out of your bag.` : undefined}
-                onConfirm={() => removeId !== null && removeLine(removeId)}
-                onClose={() => setRemoveId(null)}
+                onConfirm={() => removeKey !== null && removeLine(removeKey)}
+                onClose={() => setRemoveKey(null)}
             />
+        </div>
+    );
+}
+
+// Mirrors the populated bag: PageIntro's two-line headline, SectionTitle's
+// num/title/rule row, a few line-item rows (thumbnail + category/title/price
+// + qty stepper), and the fixed order-summary sidebar.
+function CartSkeleton() {
+    return (
+        <div className="-mx-8 w-[calc(100%+4rem)] min-h-screen bg-white px-8 pt-25 pb-20">
+            <SkeletonGroup>
+                <Skeleton className="mt-3 h-[34px] w-[70%] max-w-[520px] sm:h-[42px]" />
+                <Skeleton className="mt-3 mb-11 h-[34px] w-[45%] max-w-[340px] sm:h-[42px]" />
+
+                <div className="mb-11 flex items-center gap-x-5">
+                    <Skeleton className="h-[10.5px] w-3" />
+                    <Skeleton className="h-[10.5px] w-20" />
+                    <span className="h-px flex-1 bg-grey-light/40" />
+                </div>
+
+                <div className="pb-28 lg:pr-[420px] lg:pb-0">
+                    <div className="flex flex-col divide-y divide-ink/10">
+                        {Array.from({ length: 3 }).map((_, i) => (
+                            <div key={i} className="grid grid-cols-[7rem_1fr] gap-5 py-7 first:pt-0 last:pb-0 sm:grid-cols-[8rem_1fr] sm:gap-6">
+                                <Skeleton tone="faint" className="aspect-[4/5] w-full border border-ink/10" />
+                                <div className="flex flex-col">
+                                    <div className="flex items-start justify-between gap-4">
+                                        <div className="min-w-0 flex-1">
+                                            <Skeleton className="h-[10px] w-16" />
+                                            <Skeleton className="mt-2 h-[16.5px] w-4/5" />
+                                            <Skeleton tone="soft" className="mt-2 h-3 w-20" />
+                                        </div>
+                                        <Skeleton tone="soft" className="h-8 w-8 flex-none" />
+                                    </div>
+                                    <div className="mt-auto flex flex-wrap items-end justify-between gap-2 pt-5">
+                                        <Skeleton tone="outline" className="h-8 w-24" />
+                                        <Skeleton className="h-4 w-16" />
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="mt-10 border border-ink/10 p-6 sm:p-8 lg:mt-0 lg:fixed lg:inset-y-0 lg:right-0 lg:w-[380px] lg:border-0 lg:border-l lg:border-ink/10 lg:p-10 lg:pt-[calc(6.25rem+var(--promo-h,0px))] lg:pb-10">
+                        <div className="mb-6 border-b border-ink/10 pb-6">
+                            <Skeleton className="mb-2 h-[10px] w-20" />
+                            <Skeleton className="h-[13px] w-32" />
+                            <Skeleton tone="soft" className="mt-1.5 h-3 w-48" />
+                        </div>
+
+                        <Skeleton className="mb-5 h-[10px] w-24" />
+                        <div className="flex items-center justify-between">
+                            <Skeleton tone="soft" className="h-3 w-28" />
+                            <Skeleton className="h-3 w-16" />
+                        </div>
+                        <div className="mt-2.5 flex items-center justify-between">
+                            <Skeleton tone="soft" className="h-3 w-16" />
+                            <Skeleton className="h-3 w-24" />
+                        </div>
+
+                        <div className="hidden lg:block">
+                            <div className="my-5 border-t border-ink/10" />
+                            <div className="mb-6 flex items-center justify-between">
+                                <Skeleton className="h-4 w-12" />
+                                <Skeleton className="h-6 w-24" />
+                            </div>
+                            <Skeleton tone="outline" className="h-[50px] w-full" />
+                        </div>
+                        <Skeleton tone="soft" className="mx-auto mt-4 h-3 w-32" />
+                    </div>
+                </div>
+
+                <div className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-between gap-4 border-t border-ink/10 bg-white px-5 py-3 lg:hidden">
+                    <div className="min-w-0">
+                        <Skeleton className="mb-1.5 h-[10px] w-12" />
+                        <Skeleton className="h-[19px] w-20" />
+                    </div>
+                    <Skeleton tone="outline" className="h-[42px] w-40 flex-none" />
+                </div>
+            </SkeletonGroup>
         </div>
     );
 }

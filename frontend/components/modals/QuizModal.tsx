@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import Modal from "../ui/Modal";
 import { useStore } from "@/library/store";
 import { PRODUCTS } from "@/library/products";
@@ -51,12 +52,18 @@ function pickProducts(answers: string[]) {
 }
 
 export default function QuizModal() {
-    const { activeModal, closeModal, openProduct } = useStore();
+    const { activeModal, closeModal } = useStore();
+    const router = useRouter();
     const open = activeModal === "quiz";
+
+    function goToProduct(id: number) {
+        closeModal();
+        router.push(`/shop/${id}`);
+    }
 
     return (
         <Modal open={open} onClose={closeModal} maxWidth="max-w-[460px]">
-            <div className="p-8">{open && <QuizContent key={String(open)} onOpenProduct={openProduct} onDone={closeModal} />}</div>
+            <div className="p-8">{open && <QuizContent key={String(open)} onOpenProduct={goToProduct} onDone={closeModal} />}</div>
         </Modal>
     );
 }

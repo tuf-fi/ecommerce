@@ -2,43 +2,108 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import RevealIn from "@/components/ui/motion/RevealIn";
+import JournalCard from "@/components/sections/JournalCard";
+import PageIntro from "@/components/sections/PageIntro";
 import SectionTitle from "@/components/ui/SectionTitle";
 import { useContent } from "@/library/content";
 import { slugify } from "@/library/admin/content";
+import { useMounted } from "@/library/useMounted";
+import Skeleton, { SkeletonGroup } from "@/components/ui/Skeleton";
 
 export default function JournalIndexPage() {
     const { blogPosts } = useContent();
     const published = blogPosts.filter((p) => p.status === "Published");
+    const [featured, ...rest] = published;
+    const mounted = useMounted();
+
+    if (!mounted) return <JournalSkeleton />;
 
     return (
         <div className="-mx-8 w-[calc(100%+4rem)] min-h-screen bg-white px-8 pt-25 pb-20">
-            <SectionTitle num="06" title="Journal" />
+            <PageIntro pageKey="journal" />
 
-            {published.length === 0 ? (
+            {!featured ? (
                 <p className="py-16 text-center text-[13px] text-grey">Nothing published yet — check back soon.</p>
             ) : (
-                <div className="grid grid-cols-1 gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
-                    {published.map((post) => (
-                        <Link key={post.id} href={`/journal/${slugify(post.title)}`} className="group flex flex-col">
-                            <div className="relative aspect-[4/3] w-full overflow-hidden border border-ink/10">
-                                {post.image && (
-                                    <Image
-                                        src={post.image}
-                                        alt={post.title}
-                                        fill
-                                        sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-                                        className="object-cover transition duration-500 group-hover:scale-[1.03]"
-                                        unoptimized={typeof post.image === "string"}
-                                    />
-                                )}
+                <>
+                    <SectionTitle num="—" title={`${published.length} ${published.length === 1 ? "Entry" : "Entries"}`} />
+
+                    <RevealIn direction="bottom">
+                        <Link
+                            href={`/journal/${slugify(featured.title)}`}
+                            className="group relative isolate mb-14 flex h-[420px] flex-col justify-end overflow-hidden sm:h-[520px]"
+                        >
+                            {featured.image && (
+                                <Image
+                                    src={featured.image}
+                                    alt={featured.title}
+                                    fill
+                                    priority
+                                    sizes="100vw"
+                                    className="absolute inset-0 -z-10 object-cover transition duration-500 group-hover:scale-[1.03]"
+                                    unoptimized={typeof featured.image === "string"}
+                                />
+                            )}
+                            <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+
+                            <div className="px-8 pb-9 sm:px-12 sm:pb-12">
+                                <span className="font-mono text-[11px] uppercase tracking-[.16em] text-white/70">Latest</span>
+                                <h2 className="mt-3 max-w-[680px] text-[clamp(26px,3.6vw,44px)] font-medium leading-[1.1] text-white">
+                                    {featured.title}
+                                </h2>
+                                <span className="mt-4 inline-block text-[12px] font-semibold uppercase tracking-wide text-white underline decoration-white/40 underline-offset-4 group-hover:decoration-white">
+                                    Read more →
+                                </span>
                             </div>
-                            <span className="mt-4 font-mono text-[10px] uppercase tracking-[.16em] text-grey">{post.date}</span>
-                            <h3 className="mt-1.5 text-[17px] font-medium leading-snug text-ink transition group-hover:text-pink-dark">{post.title}</h3>
-                            <p className="mt-2 line-clamp-2 text-[13px] leading-relaxed text-grey">{post.excerpt}</p>
                         </Link>
+                    </RevealIn>
+
+                    {rest.length > 0 && (
+                        <div className="grid grid-cols-1 gap-x-8 gap-y-14 sm:grid-cols-2 lg:grid-cols-3">
+                            {rest.map((post, index) => (
+                                <RevealIn key={post.id} direction="bottom" delay={index * 0.08} distance={28}>
+                                    <JournalCard post={post} href={`/journal/${slugify(post.title)}`} />
+                                </RevealIn>
+                            ))}
+                        </div>
+                    )}
+                </>
+            )}
+        </div>
+    );
+}
+
+// Mirrors the populated journal index: PageIntro's two-line headline,
+// SectionTitle's num/title/rule row, the tall featured-post block, and a
+// representative grid matching JournalCard's shape (image, date, title, excerpt).
+function JournalSkeleton() {
+    return (
+        <div className="-mx-8 w-[calc(100%+4rem)] min-h-screen bg-white px-8 pt-25 pb-20">
+            <SkeletonGroup>
+                <Skeleton className="mt-3 h-[34px] w-[70%] max-w-[520px] sm:h-[42px]" />
+                <Skeleton className="mt-3 mb-11 h-[34px] w-[45%] max-w-[340px] sm:h-[42px]" />
+
+                <div className="mb-11 flex items-center gap-x-5">
+                    <Skeleton className="h-[10.5px] w-3" />
+                    <Skeleton className="h-[10.5px] w-20" />
+                    <span className="h-px flex-1 bg-grey-light/40" />
+                </div>
+
+                <Skeleton tone="faint" className="mb-14 h-[420px] w-full sm:h-[520px]" />
+
+                <div className="grid grid-cols-1 gap-x-8 gap-y-14 sm:grid-cols-2 lg:grid-cols-3">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                        <div key={i} className="flex flex-col">
+                            <Skeleton tone="faint" className="aspect-[4/3] w-full border border-ink/10" />
+                            <Skeleton className="mt-5 h-[10.5px] w-24" />
+                            <Skeleton className="mt-2 h-[19px] w-4/5" />
+                            <Skeleton tone="soft" className="mt-2.5 h-3 w-full" />
+                            <Skeleton tone="soft" className="mt-1.5 h-3 w-2/3" />
+                        </div>
                     ))}
                 </div>
-            )}
+            </SkeletonGroup>
         </div>
     );
 }

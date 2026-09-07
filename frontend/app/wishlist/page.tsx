@@ -11,14 +11,16 @@ import LoginRequiredModal from "@/components/modals/LoginRequiredModal";
 import { useStore } from "@/library/store";
 import { CATEGORIES, getProduct } from "@/library/products";
 import { useScrollTopOnChange } from "@/library/useScrollTopOnChange";
-import { useContent } from "@/library/content";
+import PageIntro from "@/components/sections/PageIntro";
+import { useMounted } from "@/library/useMounted";
+import Skeleton, { SkeletonGroup } from "@/components/ui/Skeleton";
 
 const PAGE_SIZE = 16;
 
 export default function WishlistPage() {
     const { wishlist, isLoggedIn, openModal } = useStore();
-    const { pageIntros } = useContent();
     const router = useRouter();
+    const mounted = useMounted();
     const [search, setSearch] = useState("");
     const [category, setCategory] = useState<(typeof CATEGORIES)[number]>("All");
     const [page, setPage] = useState(1);
@@ -53,6 +55,8 @@ export default function WishlistPage() {
 
     useScrollTopOnChange(currentPage);
 
+    if (!mounted) return <WishlistSkeleton />;
+
     if (!isLoggedIn) {
         return (
             <>
@@ -69,10 +73,7 @@ export default function WishlistPage() {
 
     return (
         <div className="shadow-glow -mx-8 w-[calc(100%+4rem)] min-h-screen bg-white px-8 pt-25 pb-20">
-            {/* <span className="eyebrow uppercase text-grey">Saved For Later</span> */}
-            <h1 className="mt-3 mb-11 max-w-none text-[30px] leading-[1.08] font-normal sm:text-[38px] lg:text-[42px]">
-                {pageIntros.wishlist.headline} <br/><em className="pink-highlight font-normal">{pageIntros.wishlist.accent}</em>
-            </h1>
+            <PageIntro pageKey="wishlist" />
 
             <SectionTitle num="—" title={`${saved.length} Saved`} />
 
@@ -95,7 +96,7 @@ export default function WishlistPage() {
                 </div>
             ) : (
                 <>
-                    <div className="mb-8 flex flex-wrap items-center gap-2.5">
+                    <div className="mb-8 flex flex-wrap items-center gap-3">
                         <SearchField value={search} onChange={setSearch} placeholder="Search by product name" />
                         <select value={category} onChange={(e) => setCategory(e.target.value as (typeof CATEGORIES)[number])} className={FILTER_SELECT}>
                             {CATEGORIES.map((c) => (
@@ -112,7 +113,7 @@ export default function WishlistPage() {
                         </div>
                     ) : (
                         <>
-                            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                            <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
                                 {paged.map((product) => (
                                     <Card key={product.id} product={product} />
                                 ))}
@@ -123,6 +124,48 @@ export default function WishlistPage() {
                     )}
                 </>
             )}
+        </div>
+    );
+}
+
+// Mirrors the populated wishlist: PageIntro's two-line headline, SectionTitle's
+// num/title/rule row, the search/filter row, and a representative product grid
+// matching Card's shape (image, category, title, rating line, price + button).
+function WishlistSkeleton() {
+    return (
+        <div className="shadow-glow -mx-8 w-[calc(100%+4rem)] min-h-screen bg-white px-8 pt-25 pb-20">
+            <SkeletonGroup>
+                <Skeleton className="mt-3 h-[34px] w-[70%] max-w-[520px] sm:h-[42px]" />
+                <Skeleton className="mt-3 mb-11 h-[34px] w-[45%] max-w-[340px] sm:h-[42px]" />
+
+                <div className="mb-11 flex items-center gap-x-5">
+                    <Skeleton className="h-[10.5px] w-3" />
+                    <Skeleton className="h-[10.5px] w-16" />
+                    <span className="h-px flex-1 bg-grey-light/40" />
+                </div>
+
+                <div className="mb-8 flex flex-wrap items-center gap-3">
+                    <Skeleton tone="outline" className="h-10 w-64" />
+                    <Skeleton tone="outline" className="h-10 w-40" />
+                </div>
+
+                <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
+                    {Array.from({ length: 8 }).map((_, i) => (
+                        <div key={i} className="flex flex-col border border-ink/10">
+                            <Skeleton tone="faint" className="aspect-[4/5] w-full" />
+                            <div className="flex flex-col gap-2 p-5">
+                                <Skeleton className="h-[10px] w-16" />
+                                <Skeleton className="h-[16.5px] w-4/5" />
+                                <Skeleton tone="soft" className="h-3 w-24" />
+                                <div className="mt-2 flex items-center justify-between">
+                                    <Skeleton className="h-3 w-12" />
+                                    <Skeleton tone="outline" className="h-8 w-24" />
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </SkeletonGroup>
         </div>
     );
 }
