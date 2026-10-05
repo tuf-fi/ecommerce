@@ -8,9 +8,7 @@ import RevealIn from "../ui/motion/RevealIn";
 import { STAGGER } from "../ui/motion/constants";
 import { useContent } from "@/library/content";
 
-// No `preview` prop: this section is edited through RitualsTab's CRUD screen
-// (see the dispatcher in admin/content/pages/[slug]) rather than a
-// ContentEditorShell editor, so there's no live-preview pane to render into.
+// No preview prop: edited via RitualsTab's CRUD screen, not a ContentEditorShell editor, so there's no preview pane.
 export default function Moments(){
     const { rituals, sectionVisibility } = useContent();
 

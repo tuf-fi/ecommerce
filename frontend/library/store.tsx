@@ -1,8 +1,21 @@
 "use client";
 
-import { createContext, useCallback, useContext, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { PRODUCTS, getProduct } from "./products";
+import { customerLogout, customerSession, updateCustomerProfile } from "./api/auth";
+import { ApiError } from "./api/client";
+import { useProducts } from "./productsStore";
+
+const STORAGE_KEY = "cindyrella_customer_store";
+
+// What survives a refresh — not activeModal, which is intentionally session-only.
+type PersistedStore = {
+    cart: CartMap;
+    wishlist: number[];
+    addresses: Address[];
+    checkoutAddressId: number | null;
+};
 
 export type ModalKey =
     | "login"
@@ -34,6 +47,7 @@ type StoreValue = {
     addToCart: (id: number, qty?: number, sizeId?: string | null) => void;
     changeQty: (key: string, delta: number) => void;
     removeLine: (key: string) => void;
+    clearCart: () => void;
 
     wishlist: number[];
     toggleWishlist: (id: number) => void;
@@ -46,10 +60,16 @@ type StoreValue = {
     checkoutAddress: Address | null;
     selectCheckoutAddress: (id: number) => void;
 
+    // Bumps when the product catalogue changes, so any component using useStore() re-renders with fresh PRODUCTS/getProduct data.
+    catalogVersion: number;
+
     isLoggedIn: boolean;
     customerName: string;
     customerEmail: string;
-    signIn: (email: string) => void;
+    customerAvatar: string;
+    signIn: (customer: { name: string; email: string; avatarUrl?: string | null }) => void;
+    // Saves to the server, then updates the signed-in customer here. Resolves true on success.
+    updateProfile: (patch: { name?: string; avatarUrl?: string | null }) => Promise<boolean>;
     signOut: () => void;
 
     showToast: (type: "success" | "error", message: string) => void;
@@ -62,15 +82,16 @@ type StoreValue = {
 const StoreContext = createContext<StoreValue | null>(null);
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
+    const { version: catalogVersion } = useProducts();
     const [cart, setCart] = useState<CartMap>({});
     const [wishlist, setWishlist] = useState<number[]>([]);
-    const [addresses, setAddresses] = useState<Address[]>([
-        { id: 1, label: "Home", text: "221B Kalayaan Ave, Quezon City, Metro Manila", isDefault: true },
-    ]);
-    const [checkoutAddressId, setCheckoutAddressId] = useState<number | null>(1);
+    const [addresses, setAddresses] = useState<Address[]>([]);
+    const [checkoutAddressId, setCheckoutAddressId] = useState<number | null>(null);
+    const [hydrated, setHydrated] = useState(false);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [customerName, setCustomerName] = useState("");
     const [customerEmail, setCustomerEmail] = useState("");
+    const [customerAvatar, setCustomerAvatar] = useState("");
     const [activeModal, setActiveModal] = useState<ModalKey | null>(null);
 
     const showToast = useCallback((type: "success" | "error", message: string) => {
@@ -82,24 +103,75 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         setActiveModal(key);
     }, []);
 
-    const closeModal = useCallback(() => setActiveModal(null), []);
+    const closeModal = useCallback(() => {
+        setActiveModal(null);
+    }, []);
+
+    // One-time hydration of a browser-only API at mount — can't be a derived/lazy-initial value (mirrors adminStore.tsx).
+    /* eslint-disable react-hooks/set-state-in-effect */
+    useEffect(() => {
+        try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (raw) {
+                const saved = JSON.parse(raw) as Partial<PersistedStore>;
+                if (saved.cart) setCart(saved.cart);
+                if (saved.wishlist) setWishlist(saved.wishlist);
+                // Browsers that saved the old built-in demo address (it was never a customer's own) drop it here.
+                if (saved.addresses) setAddresses(saved.addresses.filter((a) => !a.text.startsWith("221B Kalayaan Ave")));
+                if (saved.checkoutAddressId !== undefined) setCheckoutAddressId(saved.checkoutAddressId);
+            }
+        } catch {
+            // Corrupt/foreign localStorage value — start from the plain defaults already in state.
+        }
+        setHydrated(true);
+    }, []);
+
+    // The httpOnly cookie is the source of truth for sign-in; nothing auth-related is read from localStorage.
+    useEffect(() => {
+        customerSession()
+            .then(({ customer }) => {
+                setCustomerName(customer.name);
+                setCustomerEmail(customer.email);
+                setCustomerAvatar(customer.avatarUrl ?? "");
+                setIsLoggedIn(true);
+            })
+            .catch(() => {
+                // Not signed in (401) or API unreachable — stay signed out.
+            });
+    }, []);
+    /* eslint-enable react-hooks/set-state-in-effect */
+
+    // Persists on every change — cheap to over-write each commit; diffing isn't worth it for this little state.
+    useEffect(() => {
+        if (!hydrated) return; // Writing defaults before hydration would clobber saved data.
+        try {
+            const toSave: PersistedStore = {
+                cart,
+                wishlist,
+                addresses,
+                checkoutAddressId,
+            };
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+        } catch {
+            // Private-browsing/storage-full — losing persistence is better than crashing the app.
+        }
+    }, [hydrated, cart, wishlist, addresses, checkoutAddressId]);
 
     const addToCart = useCallback(
         (id: number, qty: number = 1, sizeId: string | null = null) => {
-            if (!isLoggedIn) {
-                openModal("login");
-                showToast("error", "Sign in to add items to your bag.");
-                return;
-            }
             const p = getProduct(id);
             if (!p) return;
             const size = sizeId ? p.sizes?.find((s) => s.id === sizeId) : undefined;
             if (sizeId && !size) return;
             const key = cartKey(id, sizeId);
             const current = cart[key]?.qty || 0;
-            // Summed across every size variant of this product, not just the
-            // one being added to — otherwise the cap resets per size and a
-            // multi-size product can exceed it in total.
+            // Summed across every size variant of this product, not just the one being added, or the cap resets per size.
+            // The server re-checks stock at checkout; this just stops the bag from filling with units that can't be bought.
+            const available = size ? size.stock : p.sizes?.length ? 0 : p.stock;
+            if (current + qty > available) {
+                showToast("error", available <= 0 ? `"${p.title}" is out of stock.` : `Only ${available} of "${p.title}"${size ? ` (${size.label})` : ""} left.`);
+                return;
+            }
             const currentForProduct = Object.values(cart)
                 .filter((line) => line.productId === id)
                 .reduce((sum, line) => sum + line.qty, 0);
@@ -110,20 +182,42 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             setCart({ ...cart, [key]: { productId: id, sizeId, qty: current + qty } });
             showToast("success", `Added "${p.title}"${size ? ` (${size.label})` : ""} to your bag.`);
         },
-        [cart, isLoggedIn, openModal, showToast]
+        [cart, showToast]
     );
 
-    const changeQty = useCallback((key: string, delta: number) => {
-        setCart((c) => {
-            const line = c[key];
-            if (!line) return c;
-            const nextQty = line.qty + delta;
-            const copy = { ...c };
-            if (nextQty <= 0) delete copy[key];
-            else copy[key] = { ...line, qty: nextQty };
-            return copy;
-        });
-    }, []);
+    const changeQty = useCallback(
+        (key: string, delta: number) => {
+            setCart((c) => {
+                const line = c[key];
+                if (!line) return c;
+                const nextQty = line.qty + delta;
+                if (nextQty <= 0) {
+                    const copy = { ...c };
+                    delete copy[key];
+                    return copy;
+                }
+                // Same per-product cap as addToCart, summed across every size variant, so the stepper can't be used to bypass it.
+                if (delta > 0) {
+                    const p = getProduct(line.productId);
+                    const size = line.sizeId ? p?.sizes?.find((s) => s.id === line.sizeId) : undefined;
+                    const available = size ? size.stock : p?.sizes?.length ? 0 : (p?.stock ?? 0);
+                    if (nextQty > available) {
+                        showToast("error", `Only ${available} of "${p?.title ?? "this item"}" left.`);
+                        return c;
+                    }
+                    const currentForProduct = Object.values(c)
+                        .filter((l) => l.productId === line.productId)
+                        .reduce((sum, l) => sum + l.qty, 0);
+                    if (currentForProduct + delta > MAX_PER_ITEM) {
+                        showToast("error", `Only ${MAX_PER_ITEM} of "${p?.title ?? "this item"}" allowed per order.`);
+                        return c;
+                    }
+                }
+                return { ...c, [key]: { ...line, qty: nextQty } };
+            });
+        },
+        [showToast]
+    );
 
     const removeLine = useCallback((key: string) => {
         setCart((c) => {
@@ -133,13 +227,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         });
     }, []);
 
+    const clearCart = useCallback(() => setCart({}), []);
+
     const toggleWishlist = useCallback(
         (id: number) => {
-            if (!isLoggedIn) {
-                openModal("login");
-                showToast("error", "Sign in to save items to your wishlist.");
-                return;
-            }
             const p = getProduct(id);
             const idx = wishlist.indexOf(id);
             if (idx > -1) {
@@ -150,7 +241,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
                 showToast("success", `Saved "${p?.title ?? "item"}" to your wishlist.`);
             }
         },
-        [wishlist, isLoggedIn, openModal, showToast]
+        [wishlist, showToast]
     );
 
     const addAddress = useCallback((label: string, text: string) => {
@@ -181,12 +272,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }, []);
 
     const signIn = useCallback(
-        (email: string) => {
-            const name = email ? email.split("@")[0] : "Guest";
+        ({ name, email, avatarUrl }: { name: string; email: string; avatarUrl?: string | null }) => {
             setCustomerName(name);
             setCustomerEmail(email);
+            setCustomerAvatar(avatarUrl ?? "");
             setIsLoggedIn(true);
-            // TODO: replace with real auth (JWT + httpOnly cookies) against the backend API.
             setActiveModal(null);
             showToast("success", `Welcome, ${name}!`);
         },
@@ -194,11 +284,28 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     );
 
     const signOut = useCallback(() => {
+        customerLogout().catch(() => {});
         setIsLoggedIn(false);
         setCustomerName("");
         setCustomerEmail("");
+        setCustomerAvatar("");
         showToast("success", "Signed out.");
     }, [showToast]);
+
+    const updateProfile = useCallback(
+        async (patch: { name?: string; avatarUrl?: string | null }) => {
+            try {
+                const { customer } = await updateCustomerProfile(patch);
+                setCustomerName(customer.name);
+                setCustomerAvatar(customer.avatarUrl ?? "");
+                return true;
+            } catch (err) {
+                showToast("error", err instanceof ApiError ? err.message : "Couldn't save your profile. Please try again.");
+                return false;
+            }
+        },
+        [showToast]
+    );
 
     const checkoutAddress = useMemo(() => {
         const selected = addresses.find((a) => a.id === checkoutAddressId);
@@ -207,10 +314,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }, [addresses, checkoutAddressId]);
 
     const cartCount = useMemo(() => Object.values(cart).reduce((sum, line) => sum + line.qty, 0), [cart]);
-    const cartTotal = useMemo(
-        () => Object.values(cart).reduce((sum, line) => sum + lineUnitPrice(line) * line.qty, 0),
-        [cart]
-    );
+    // Not memoized: unit prices come from the live catalogue, which changes outside React state.
+    const cartTotal = Object.values(cart).reduce((sum, line) => sum + lineUnitPrice(line) * line.qty, 0);
 
     const value: StoreValue = {
         cart,
@@ -219,6 +324,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         addToCart,
         changeQty,
         removeLine,
+        clearCart,
         wishlist,
         toggleWishlist,
         addresses,
@@ -228,9 +334,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         setDefaultAddress,
         checkoutAddress,
         selectCheckoutAddress,
+        catalogVersion,
         isLoggedIn,
         customerName,
         customerEmail,
+        customerAvatar,
+        updateProfile,
         signIn,
         signOut,
         showToast,

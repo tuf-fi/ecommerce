@@ -2,51 +2,50 @@
 
 import { useState } from "react";
 import Modal from "../ui/Modal";
-import { useAsyncAction, wait } from "@/library/useAsyncAction";
-
-export type NewReview = { rating: number; author: string; text: string };
+import { useAsyncAction } from "@/library/useAsyncAction";
+import { ApiError } from "@/library/api/client";
+import { createReview } from "@/library/api/reviews";
+import type { Review } from "@/library/reviews";
 
 export default function ReviewModal({
     open,
     onClose,
-    onSubmit,
+    productId,
+    onCreated,
     showToast,
-    defaultAuthor = "",
 }: {
     open: boolean;
     onClose: () => void;
-    onSubmit: (review: NewReview) => void;
+    productId: number;
+    onCreated: (review: Review) => void;
     showToast: (type: "success" | "error", message: string) => void;
-    defaultAuthor?: string;
 }) {
     const [rating, setRating] = useState(5);
-    const [author, setAuthor] = useState(defaultAuthor);
     const [text, setText] = useState("");
 
-    // Reset the form fields whenever the modal freshly opens — a render-time
-    // state adjustment rather than an effect, since AnimatePresence keeps
-    // this component mounted through the close animation.
+    // Render-time reset on open, not an effect — AnimatePresence keeps this mounted through the close animation.
     const [prevOpen, setPrevOpen] = useState(open);
     if (open !== prevOpen) {
         setPrevOpen(open);
         if (open) {
             setRating(5);
-            setAuthor(defaultAuthor);
             setText("");
         }
     }
 
     const [submitting, submit] = useAsyncAction(async () => {
-        if (!author.trim() || !text.trim()) {
-            showToast("error", "Add your name and a few words before submitting.");
+        if (text.trim().length < 3) {
+            showToast("error", "Add a few words before submitting.");
             return;
         }
-        // TODO: wire up to a real reviews API — this only holds local UI state, nothing is persisted.
-        await wait();
-        onSubmit({ rating, author: author.trim(), text: text.trim() });
-        showToast("success", "Review submitted for moderation.");
-        await wait(400);
-        onClose();
+        try {
+            const { review } = await createReview({ productId, rating, text: text.trim() });
+            onCreated(review);
+            showToast("success", "Thanks — your review is live.");
+            onClose();
+        } catch (err) {
+            showToast("error", err instanceof ApiError ? err.message : "Couldn't submit your review. Please try again.");
+        }
     });
 
     return (
@@ -69,18 +68,13 @@ export default function ReviewModal({
                     ))}
                 </div>
 
-                <input
-                    value={author}
-                    onChange={(e) => setAuthor(e.target.value)}
-                    placeholder="Your name"
-                    className="mb-3 w-full border border-ink/15 p-3 text-sm outline-none focus:border-pink-dark"
-                />
                 <textarea
                     value={text}
                     onChange={(e) => setText(e.target.value)}
                     rows={4}
                     placeholder="What did you think?"
-                    className="mb-4 w-full resize-none border border-ink/15 p-3 text-sm outline-none focus:border-pink-dark"
+                    aria-label="Your review"
+                    className="mb-4 w-full resize-none border border-ink/15 p-3 text-sm outline-none focus:border-pink-dark focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-1"
                 />
 
                 <div className="flex gap-2">

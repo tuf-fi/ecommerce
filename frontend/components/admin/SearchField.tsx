@@ -2,9 +2,6 @@
 
 import { useEffect, useRef } from "react";
 
-// "/" jumps focus here from anywhere on the page (unless the user is already
-// typing in some other field) — the one keyboard accelerator every admin
-// list page shares, since every one of them opens with a search box.
 function isTypingTarget(el: EventTarget | null) {
     if (!(el instanceof HTMLElement)) return false;
     const tag = el.tagName;
@@ -38,11 +35,10 @@ export default function SearchField({
     }, []);
 
     return (
-        <div className={`flex h-11 flex-1 items-center gap-2.5 border border-ink/10 bg-off/50 px-4 ${className}`}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="flex-none text-grey">
-                <circle cx="11" cy="11" r="7" />
-                <path d="m21 21-4.3-4.3" />
-            </svg>
+        // Padding mirrors FILTER_SELECT to the pixel so this reads as the same control family in a shared toolbar row.
+        <div
+            className={`relative flex h-11 flex-1 items-center border border-ink/10 bg-white outline-none transition focus-within:border-navy/30 focus-within:ring-2 focus-within:ring-navy focus-within:ring-offset-1 ${className}`}
+        >
             <input
                 ref={inputRef}
                 type="text"
@@ -50,8 +46,20 @@ export default function SearchField({
                 onChange={(e) => onChange(e.target.value)}
                 placeholder={placeholder}
                 aria-label={ariaLabel ?? placeholder}
-                className="w-full bg-transparent text-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-1 placeholder:text-grey"
+                className="w-full bg-transparent pl-3.5 pr-8 py-[11px] text-[12.5px] text-ink outline-none placeholder:text-grey"
             />
+            <svg
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-grey/60"
+            >
+                <circle cx="11" cy="11" r="7" />
+                <path d="m21 21-4.3-4.3" />
+            </svg>
         </div>
     );
 }

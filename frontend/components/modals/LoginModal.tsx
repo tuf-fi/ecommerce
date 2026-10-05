@@ -8,6 +8,8 @@ import { EASE } from "../ui/motion/constants";
 import { useStore } from "@/library/store";
 import { contactImage, newsletterImage } from "@/components/ui/images";
 import { useAsyncAction, wait } from "@/library/useAsyncAction";
+import { ApiError } from "@/library/api/client";
+import { customerLogin, customerRegister, otpRequest, otpVerify } from "@/library/api/auth";
 
 type Mode = "login" | "signup" | "forgot";
 
@@ -31,15 +33,19 @@ function LoginContent({ onClose }: { onClose: () => void }) {
 
     const [submitting, submit] = useAsyncAction(async (e: React.FormEvent) => {
         e.preventDefault();
-        // TODO: replace with real authentication / registration (JWT + httpOnly cookies) against the backend API.
-        await wait();
-        signIn(email);
+        try {
+            const { customer } =
+                mode === "signup" ? await customerRegister({ name, email, password }) : await customerLogin({ email, password });
+            signIn(customer);
+        } catch (err) {
+            showToast("error", err instanceof ApiError ? err.message : "Could not reach the server. Please try again.");
+        }
     });
 
     const [googleSubmitting, signUpWithGoogle] = useAsyncAction(async () => {
-        // TODO: replace with real Google OAuth (e.g. NextAuth's Google provider).
+        // TODO: real Google OAuth (e.g. NextAuth's Google provider); it must create a backend session, not just local state.
         await wait();
-        signIn("google.user@gmail.com");
+        showToast("error", "Google sign-in isn't available yet.");
     });
 
     const imagePanel = (
@@ -67,44 +73,47 @@ function LoginContent({ onClose }: { onClose: () => void }) {
                 {mode === "login" ? "Welcome back" : "Create an account"}
             </h3>
             <p className="mb-6 text-[12px] text-grey">
-                {mode === "login" ? "Demo only — any details will work." : "Demo only — this just signs you in."}
+                {mode === "login" ? "Sign in to your account." : "Use at least 8 characters for your password."}
             </p>
 
             <form onSubmit={submit}>
                 {mode === "signup" && (
                     <div className="mb-4">
-                        <label className="mb-1.5 block font-mono text-[10.5px] uppercase tracking-[.14em] text-grey">Full Name</label>
+                        <label htmlFor="login-name" className="mb-1.5 block font-mono text-[11px] uppercase tracking-[.14em] text-grey">Full Name</label>
                         <input
+                            id="login-name"
                             required
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             placeholder="Your name"
-                            className="w-full border-b border-ink/25 bg-transparent py-2 text-sm text-ink outline-none transition focus:border-pink-dark"
+                            className="w-full border-b border-ink/25 bg-transparent py-2 text-sm text-ink outline-none transition focus:border-pink-dark focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-1"
                         />
                     </div>
                 )}
 
                 <div className="mb-4">
-                    <label className="mb-1.5 block font-mono text-[10.5px] uppercase tracking-[.14em] text-grey">Email</label>
+                    <label htmlFor="login-email" className="mb-1.5 block font-mono text-[11px] uppercase tracking-[.14em] text-grey">Email</label>
                     <input
+                        id="login-email"
                         type="email"
                         required
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="you@email.com"
-                        className="w-full border-b border-ink/25 bg-transparent py-2 text-sm text-ink outline-none transition focus:border-pink-dark"
+                        className="w-full border-b border-ink/25 bg-transparent py-2 text-sm text-ink outline-none transition focus:border-pink-dark focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-1"
                     />
                 </div>
 
                 <div className="mb-5">
-                    <label className="mb-1.5 block font-mono text-[10.5px] uppercase tracking-[.14em] text-grey">Password</label>
+                    <label htmlFor="login-password" className="mb-1.5 block font-mono text-[11px] uppercase tracking-[.14em] text-grey">Password</label>
                     <input
+                        id="login-password"
                         type="password"
                         required
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="••••••••"
-                        className="w-full border-b border-ink/25 bg-transparent py-2 text-sm text-ink outline-none transition focus:border-pink-dark"
+                        className="w-full border-b border-ink/25 bg-transparent py-2 text-sm text-ink outline-none transition focus:border-pink-dark focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-1"
                     />
                 </div>
 
@@ -189,7 +198,7 @@ function LoginContent({ onClose }: { onClose: () => void }) {
                 <button
                     aria-label="Close"
                     onClick={onClose}
-                    className="absolute top-4 right-4 z-10 flex h-8 w-8 items-center justify-center text-lg text-ink/50 transition hover:text-ink"
+                    className="absolute top-4 right-4 z-10 flex h-10 w-10 items-center justify-center text-lg text-ink/50 transition hover:text-ink"
                 >
                     ×
                 </button>
@@ -219,28 +228,39 @@ function ForgotPasswordForm({
     const [email, setEmail] = useState("");
     const [sent, setSent] = useState(false);
     const [code, setCode] = useState<string[]>(Array(6).fill(""));
+    const [newPassword, setNewPassword] = useState("");
     const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-    const codeComplete = code.every((c) => c !== "");
+    const codeComplete = code.every((c) => c !== "") && newPassword.length >= 8;
 
     const [sending, sendCode] = useAsyncAction(async (e: React.FormEvent) => {
         e.preventDefault();
-        // TODO: send a real one-time code via the backend/email service.
-        await wait();
-        setSent(true);
-        showToast("success", `Code sent to ${email}.`);
+        try {
+            await otpRequest(email);
+            setSent(true);
+            showToast("success", `If an account exists for ${email}, a code is on its way.`);
+        } catch (err) {
+            showToast("error", err instanceof ApiError ? err.message : "Could not reach the server. Please try again.");
+        }
     });
 
     const [resending, resendCode] = useAsyncAction(async () => {
-        await wait();
-        showToast("success", `Code resent to ${email}.`);
+        try {
+            await otpRequest(email);
+            showToast("success", "A new code is on its way.");
+        } catch (err) {
+            showToast("error", err instanceof ApiError ? err.message : "Could not reach the server. Please try again.");
+        }
     });
 
     const [verifying, verifyCode] = useAsyncAction(async () => {
-        // TODO: verify the code against the backend, then let the user set a new password.
-        await wait();
-        showToast("success", "Code verified — you can now sign in.");
-        onBack();
+        try {
+            await otpVerify({ email, code: code.join(""), newPassword });
+            showToast("success", "Password updated — you can now sign in.");
+            onBack();
+        } catch (err) {
+            showToast("error", err instanceof ApiError ? err.message : "Could not reach the server. Please try again.");
+        }
     });
 
     function updateDigit(index: number, value: string) {
@@ -267,14 +287,15 @@ function ForgotPasswordForm({
             {!sent ? (
                 <form onSubmit={sendCode}>
                     <div className="mb-6">
-                        <label className="mb-1.5 block font-mono text-[10.5px] uppercase tracking-[.14em] text-grey">Email</label>
+                        <label htmlFor="forgot-password-email" className="mb-1.5 block font-mono text-[11px] uppercase tracking-[.14em] text-grey">Email</label>
                         <input
+                            id="forgot-password-email"
                             type="email"
                             required
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             placeholder="you@email.com"
-                            className="w-full border-b border-ink/25 bg-transparent py-2 text-sm text-ink outline-none transition focus:border-pink-dark"
+                            className="w-full border-b border-ink/25 bg-transparent py-2 text-sm text-ink outline-none transition focus:border-pink-dark focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-1"
                         />
                     </div>
                     <button
@@ -297,9 +318,23 @@ function ForgotPasswordForm({
                                 onKeyDown={(e) => handleKeyDown(i, e)}
                                 inputMode="numeric"
                                 maxLength={1}
-                                className="h-14 w-12 border border-ink/20 text-center text-lg text-ink outline-none transition focus:border-pink-dark"
+                                aria-label={`Digit ${i + 1} of ${code.length}`}
+                                className="h-14 w-12 border border-ink/20 text-center text-lg text-ink outline-none transition focus:border-pink-dark focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-1"
                             />
                         ))}
+                    </div>
+
+                    <div className="mb-6">
+                        <label htmlFor="forgot-password-new" className="mb-1.5 block font-mono text-[11px] uppercase tracking-[.14em] text-grey">New Password</label>
+                        <input
+                            id="forgot-password-new"
+                            type="password"
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            placeholder="At least 8 characters"
+                            autoComplete="new-password"
+                            className="w-full border-b border-ink/25 bg-transparent py-2 text-sm text-ink outline-none transition focus:border-pink-dark focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-1"
+                        />
                     </div>
 
                     <button
@@ -307,7 +342,7 @@ function ForgotPasswordForm({
                         disabled={!codeComplete || verifying}
                         className="w-full bg-navy py-3.5 text-[13px] font-semibold tracking-wide text-white transition hover:bg-pink-dark disabled:cursor-not-allowed disabled:bg-ink/20 disabled:hover:bg-ink/20"
                     >
-                        {verifying ? "Verifying…" : "Enter Code"}
+                        {verifying ? "Updating…" : "Reset Password"}
                     </button>
 
                     <button

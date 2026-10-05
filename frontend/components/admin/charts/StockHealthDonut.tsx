@@ -4,9 +4,7 @@ import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { AdminProduct } from "@/library/admin/types";
 import { productStockStatus } from "@/library/admin/products";
 
-// Vivid, saturated hues chosen to pop off the white card — a deliberate
-// chart-only accent trio (blue/yellow/pink) distinct from the brand's
-// UI accent colors, not a muted tint of success/pink/alert.
+// Deliberate chart-only accent trio, distinct from the brand's UI accent colors.
 const COLOR_IN = "#4C7EF3";
 const COLOR_LOW = "#FFC531";
 const COLOR_OUT = "#FF5C8D";
@@ -51,9 +49,7 @@ export default function StockHealthDonut({
 
     return (
         <div className="flex flex-col items-center gap-5">
-            {/* The Pie's onClick has no keyboard equivalent, so it's marked
-                decorative and hidden from assistive tech — the legend below
-                is the real, keyboard-reachable control for the same filter. */}
+            {/* Pie's onClick has no keyboard equivalent, so it's hidden from assistive tech; the legend below is the real control. */}
             <div aria-hidden className="relative" style={{ width: DONUT_SIZE, height: DONUT_SIZE }}>
                 <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
@@ -65,8 +61,7 @@ export default function StockHealthDonut({
                             cy="50%"
                             innerRadius={48}
                             outerRadius={72}
-                            // Degrees of surface showing between slices — white
-                            // doing the separating, rather than a stroke.
+                            // Surface shows between slices instead of a stroke.
                             paddingAngle={2}
                             stroke="none"
                             startAngle={90}

@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import PromotionsTab from "@/components/admin/content/PromotionsTab";
 import PagesTab from "@/components/admin/content/PagesTab";
+import CollectionsTab from "@/components/admin/content/CollectionsTab";
 import ContactTab from "@/components/admin/content/ContactTab";
 import LinksTab from "@/components/admin/content/LinksTab";
 import BlogTab from "@/components/admin/content/BlogTab";
@@ -10,11 +11,12 @@ import { useMounted } from "@/library/useMounted";
 import Skeleton, { SkeletonGroup } from "@/components/ui/Skeleton";
 
 const TABS = [
-    { key: "promotions", label: "Promotions" },
     { key: "pages", label: "Pages" },
-    { key: "contact", label: "Contact" },
-    { key: "links", label: "Links" },
+    { key: "collections", label: "Content Collections" },
     { key: "blog", label: "Blog" },
+    { key: "promotions", label: "Promotions" },
+    { key: "links", label: "Links" },
+    { key: "contact", label: "Contact Information" },
 ] as const;
 
 type TabKey = (typeof TABS)[number]["key"];
@@ -34,7 +36,7 @@ export default function ContentPage() {
                     <button
                         key={t.key}
                         onClick={() => router.push(`/admin/content?tab=${t.key}`)}
-                        className={`relative pb-2.5 transition ${active === t.key ? "text-pink-dark" : "text-grey hover:text-ink"}`}
+                        className={`relative pb-2.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-1 ${active === t.key ? "text-pink-dark" : "text-grey hover:text-ink"}`}
                     >
                         {t.label}
                         {active === t.key && <span className="absolute inset-x-0 -bottom-px h-[2px] bg-pink-dark" />}
@@ -44,6 +46,7 @@ export default function ContentPage() {
 
             {active === "promotions" && <PromotionsTab />}
             {active === "pages" && <PagesTab />}
+            {active === "collections" && <CollectionsTab />}
             {active === "contact" && <ContactTab />}
             {active === "links" && <LinksTab />}
             {active === "blog" && <BlogTab />}
@@ -51,10 +54,6 @@ export default function ContentPage() {
     );
 }
 
-// Mirrors the tab bar (5 label-shaped bars over the hairline rule) plus a
-// generic list/table body representative of the default "Pages" tab —
-// heading row + a couple of category groups, each a bordered table with a
-// header row and a few body rows (name / updated / toggle / edit-icon).
 function ContentPageSkeleton() {
     return (
         <SkeletonGroup>

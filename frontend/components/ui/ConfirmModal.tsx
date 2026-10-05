@@ -1,11 +1,9 @@
 "use client";
 
 import Modal from "./Modal";
-import { useAsyncAction, wait } from "@/library/useAsyncAction";
+import { useAsyncAction } from "@/library/useAsyncAction";
 
-// "Remove" -> "Removing…", "Delete" -> "Deleting…", "Save" -> "Saving…" — a
-// plain-English -ing form for whatever confirmLabel a call site passes, so
-// every ConfirmModal gets a sensible loading label without repeating one.
+// Converts confirmLabel to its -ing form ("Remove" -> "Removing…") for a default loading label.
 function ingForm(label: string) {
     return `${label.endsWith("e") ? label.slice(0, -1) : label}ing…`;
 }
@@ -26,16 +24,11 @@ export default function ConfirmModal({
     confirmLabel?: string;
     loadingLabel?: string;
     cancelLabel?: string;
-    // `unknown` (not `void`) because most call sites pass a `cond && fn()`
-    // one-liner, which returns `false` rather than `undefined` when the
-    // condition is falsy — the return value itself is never used here.
+    // unknown, not void: call sites often pass `cond && fn()`, which returns false rather than undefined.
     onConfirm: () => unknown;
     onClose: () => void;
 }) {
     const [confirming, confirm] = useAsyncAction(async () => {
-        // TODO: once destructive actions hit a real API, drop this simulated
-        // delay — `onConfirm` will already be awaiting the request.
-        await wait();
         await onConfirm();
         onClose();
     });

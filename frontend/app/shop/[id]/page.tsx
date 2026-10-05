@@ -1,12 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useParams } from "next/navigation";
 import { useStore } from "@/library/store";
 import { PRODUCTS, getProduct, cheapestSizeId, Product } from "@/library/products";
-import { getReviewsForProduct, Review } from "@/library/reviews";
+import type { Review } from "@/library/reviews";
+import { listProductReviews } from "@/library/api/reviews";
 import StarRating from "@/components/ui/StarRating";
 import SectionTitle from "@/components/ui/SectionTitle";
 import Card from "@/components/ui/Card";
@@ -42,11 +43,23 @@ export default function ProductPage() {
 }
 
 function ProductPageContent({ product }: { product: Product }) {
-    const { addToCart, wishlist, toggleWishlist, isLoggedIn, customerName, showToast } = useStore();
+    const { addToCart, wishlist, toggleWishlist, isLoggedIn, openModal, showToast } = useStore();
     const [qty, setQty] = useState(1);
     const [selectedSizeId, setSelectedSizeId] = useState<string | null>(() => cheapestSizeId(product));
     const [reviewOpen, setReviewOpen] = useState(false);
-    const [reviews, setReviews] = useState<Review[]>(() => getReviewsForProduct(product.id));
+    const [reviews, setReviews] = useState<Review[]>([]);
+
+    useEffect(() => {
+        let stale = false;
+        listProductReviews(product.id)
+            .then(({ reviews: list }) => !stale && setReviews(list))
+            .catch(() => {
+                // Reviews are supplementary; the page works without them.
+            });
+        return () => {
+            stale = true;
+        };
+    }, [product.id]);
     const [ratingFilter, setRatingFilter] = useState<RatingFilter>("all");
     const [reviewPage, setReviewPage] = useState(1);
 
@@ -69,8 +82,7 @@ function ProductPageContent({ product }: { product: Product }) {
 
     const filteredReviews = ratingFilter === "all" ? reviews : reviews.filter((r) => Math.round(r.rating) === ratingFilter);
 
-    // Reset to page 1 whenever the filter set changes — a render-time state
-    // adjustment rather than an effect.
+    // Reset to page 1 on filter change; a render-time state adjustment, not an effect.
     const filterKey = `${ratingFilter}|${total}`;
     const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
     if (filterKey !== prevFilterKey) {
@@ -91,13 +103,19 @@ function ProductPageContent({ product }: { product: Product }) {
                 ← Shop
             </Link>
 
-            <div className="grid grid-cols-1 gap-12 lg:grid-cols-2">
-                <div className="relative aspect-square overflow-hidden border border-ink/10">
-                    <Image src={product.image} alt={product.title} fill sizes="(min-width: 1024px) 50vw, 100vw" className="object-cover" />
+            <div className="grid grid-cols-1 gap-12 lg:grid-cols-[1.05fr_1fr]">
+                <div className="group relative aspect-[4/5] overflow-hidden border border-ink/10 lg:sticky lg:top-[calc(var(--navbar-h,72px)+24px)] lg:self-start">
+                    <Image
+                        src={product.image}
+                        alt={product.title}
+                        fill
+                        sizes="(min-width: 1024px) 50vw, 100vw"
+                        className="object-cover transition duration-500 group-hover:scale-[1.03]"
+                    />
                     <button
                         aria-label="Toggle wishlist"
                         onClick={() => toggleWishlist(product.id)}
-                        className={`absolute top-4 left-4 flex h-9 w-9 items-center justify-center border transition hover:border-pink-btn hover:bg-pink-btn hover:text-white ${
+                        className={`absolute top-4 left-4 flex h-11 w-11 items-center justify-center border transition hover:border-pink-btn hover:bg-pink-btn hover:text-white ${
                             isWished ? "border-pink-btn bg-pink-btn text-white" : "border-ink/10 bg-white/90 text-ink"
                         }`}
                     >
@@ -107,64 +125,89 @@ function ProductPageContent({ product }: { product: Product }) {
                     </button>
                 </div>
 
-                <div>
-                    <span className="font-mono text-[10px] uppercase tracking-[.16em] text-grey">{product.category}</span>
-                    <h1 className="mt-2 text-[clamp(24px,3vw,34px)] font-medium leading-tight text-ink">{product.title}</h1>
+                {/* Two clusters — identity and purchase — separated by one gap and rule, not a shared mt-* scale. */}
+                <div className="flex flex-col">
+                    <div className="flex flex-col gap-2">
+                        <span className="font-mono text-[10px] uppercase tracking-[.16em] text-grey">{product.category}</span>
+                        <h1 className="text-[clamp(24px,3vw,34px)] font-medium leading-tight text-ink">{product.title}</h1>
 
-                    <button onClick={() => setReviewOpen(true)} className="mt-3 flex items-center gap-2">
-                        <StarRating rating={avgRating} count={total || product.count} />
-                        <span className="mb-2 text-[11px] text-pink-dark underline underline-offset-2">Write a review</span>
-                    </button>
+                        <button
+                            onClick={() => {
+                                if (!isLoggedIn) {
+                                    showToast("error", "Sign in to write a review.");
+                                    openModal("login");
+                                    return;
+                                }
+                                setReviewOpen(true);
+                            }}
+                            className="flex items-center gap-2"
+                        >
+                            <StarRating rating={avgRating} count={total || product.count} />
+                            <span className="text-[11px] text-pink-dark underline underline-offset-2">Write a review</span>
+                        </button>
 
-                    <div className="mt-1 font-mono text-lg text-ink">₱{displayPrice.toLocaleString()}</div>
+                        <div className="font-mono text-lg text-ink">₱{displayPrice.toLocaleString()}</div>
 
-                    <p className="mt-4 max-w-[440px] text-sm leading-relaxed text-grey">{product.desc}</p>
-
-                    <div className="mt-8 flex max-w-[300px] items-center justify-between">
-                        <span className="font-mono text-[11px] uppercase tracking-wide text-grey">Quantity</span>
-                        <div className="flex items-center border border-ink/15">
-                            <button onClick={() => setQty((q) => Math.max(1, q - 1))} className="px-3 py-1.5 text-ink transition hover:bg-off">
-                                –
-                            </button>
-                            <span className="w-8 text-center text-sm text-ink">{qty}</span>
-                            <button onClick={() => setQty((q) => q + 1)} className="px-3 py-1.5 text-ink transition hover:bg-off">
-                                +
-                            </button>
-                        </div>
+                        <p className="mt-2 max-w-[440px] text-sm leading-relaxed text-grey">{product.desc}</p>
                     </div>
 
-                    {product.sizes && product.sizes.length > 0 && (
-                        <div className="mt-5 max-w-[300px]">
-                            <span className="font-mono text-[11px] uppercase tracking-wide text-grey">Size</span>
-                            <div className="mt-2 flex flex-wrap gap-2">
-                                {product.sizes.map((s) => {
-                                    const active = s.id === selectedSizeId;
-                                    const sizeOutOfStock = s.stock <= 0;
-                                    return (
-                                        <button
-                                            key={s.id}
-                                            disabled={sizeOutOfStock}
-                                            onClick={() => setSelectedSizeId(s.id)}
-                                            className={`border px-4 py-2 text-[12.5px] transition ${
-                                                active ? "border-navy bg-navy text-white" : "border-ink/15 text-ink hover:border-ink/30"
-                                            } ${sizeOutOfStock ? "cursor-not-allowed text-ink/30 line-through hover:border-ink/15" : ""}`}
-                                        >
-                                            {s.label}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                            {outOfStock && <p className="mt-2 text-[12px] text-alert">This size is currently out of stock.</p>}
-                        </div>
-                    )}
+                    <div className="my-8 h-px w-full max-w-[300px] bg-ink/10" />
 
-                    <button
-                        onClick={() => addToCart(product.id, qty, selectedSizeId)}
-                        disabled={outOfStock}
-                        className="mt-6 w-full max-w-[300px] bg-navy py-3.5 text-[13px] font-semibold tracking-wide text-white transition hover:bg-pink-dark disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-navy"
-                    >
-                        {outOfStock ? "Out of Stock" : "Add to Bag"}
-                    </button>
+                    <div className="flex flex-col gap-5">
+                        <div className="flex max-w-[300px] items-center justify-between">
+                            <span className="font-mono text-[11px] uppercase tracking-wide text-grey">Quantity</span>
+                            <div className="flex items-center border border-ink/15">
+                                <button
+                                    onClick={() => setQty((q) => Math.max(1, q - 1))}
+                                    aria-label="Decrease quantity"
+                                    className="flex h-11 w-11 items-center justify-center text-ink transition hover:bg-off"
+                                >
+                                    –
+                                </button>
+                                <span className="w-8 text-center text-sm text-ink">{qty}</span>
+                                <button
+                                    onClick={() => setQty((q) => q + 1)}
+                                    aria-label="Increase quantity"
+                                    className="flex h-11 w-11 items-center justify-center text-ink transition hover:bg-off"
+                                >
+                                    +
+                                </button>
+                            </div>
+                        </div>
+
+                        {product.sizes && product.sizes.length > 0 && (
+                            <div className="max-w-[300px]">
+                                <span className="font-mono text-[11px] uppercase tracking-wide text-grey">Size</span>
+                                <div className="mt-2 flex flex-wrap gap-2">
+                                    {product.sizes.map((s) => {
+                                        const active = s.id === selectedSizeId;
+                                        const sizeOutOfStock = s.stock <= 0;
+                                        return (
+                                            <button
+                                                key={s.id}
+                                                disabled={sizeOutOfStock}
+                                                onClick={() => setSelectedSizeId(s.id)}
+                                                className={`border px-4 py-2 text-[12.5px] transition ${
+                                                    active ? "border-navy bg-navy text-white" : "border-ink/15 text-ink hover:border-ink/30"
+                                                } ${sizeOutOfStock ? "cursor-not-allowed text-ink/30 line-through hover:border-ink/15" : ""}`}
+                                            >
+                                                {s.label}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                                {outOfStock && <p className="mt-2 text-[12px] text-alert">This size is currently out of stock.</p>}
+                            </div>
+                        )}
+
+                        <button
+                            onClick={() => addToCart(product.id, qty, selectedSizeId)}
+                            disabled={outOfStock}
+                            className="w-full max-w-[300px] bg-navy py-3.5 text-[13px] font-semibold tracking-wide text-white transition hover:bg-pink-dark disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-navy"
+                        >
+                            {outOfStock ? "Out of Stock" : "Add to Bag"}
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -267,12 +310,9 @@ function ProductPageContent({ product }: { product: Product }) {
                 open={reviewOpen}
                 onClose={() => setReviewOpen(false)}
                 showToast={showToast}
-                defaultAuthor={isLoggedIn ? customerName : ""}
-                onSubmit={({ rating, author, text }) => {
-                    setReviews((prev) => [
-                        { id: Date.now(), productId: product.id, author, rating, text, date: new Date().toISOString().slice(0, 10) },
-                        ...prev,
-                    ]);
+                productId={product.id}
+                onCreated={(review) => {
+                    setReviews((prev) => [review, ...prev]);
                     setRatingFilter("all");
                 }}
             />

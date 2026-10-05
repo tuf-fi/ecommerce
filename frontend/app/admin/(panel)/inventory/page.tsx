@@ -1,25 +1,32 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { toast } from "sonner";
 import { useAdminStore, productStock, productStockStatus, productPriceRange, isExpiringSoon, daysUntilExpiry } from "@/library/adminStore";
 import { CATEGORIES } from "@/library/products";
+import { CATEGORY_DEFAULT_IMAGE, DEFAULT_PRODUCT_IMAGE } from "@/library/admin/products";
 import { AdminProduct } from "@/library/admin/types";
 import { useScrollTopOnChange } from "@/library/useScrollTopOnChange";
 import SearchField from "@/components/admin/SearchField";
+import { Toolbar, ToolbarFilters, FilterField } from "@/components/admin/Toolbar";
 import StatusBadge, { BadgeTone } from "@/components/admin/StatusBadge";
 import Tooltip from "@/components/ui/Tooltip";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import Pagination from "@/components/ui/Pagination";
 import ProductModal from "@/components/admin/modals/ProductModal";
+import type { StockReason } from "@/library/api/products";
 import ProductViewModal from "@/components/admin/modals/ProductViewModal";
+import BulkEditProductsModal from "@/components/admin/modals/BulkEditProductsModal";
 import BulkActionBar from "@/components/admin/BulkActionBar";
-import { BTN_ADD, BTN_SECONDARY, ICON_BTN, ICON_BTN_DANGER, FILTER_SELECT } from "@/components/admin/formClasses";
-import { toCsv, downloadCsv } from "@/library/admin/csv";
+import { BTN_ADD, BTN_SECONDARY, ICON_BTN, ICON_BTN_DANGER, FILTER_SELECT, BTN_BULK_PRIMARY, BTN_BULK_DANGER, BTN_BULK_SECONDARY } from "@/components/admin/formClasses";
+import { toCsv, parseCsv, downloadCsv } from "@/library/admin/csv";
 import { useMounted } from "@/library/useMounted";
 import Skeleton, { SkeletonGroup } from "@/components/ui/Skeleton";
+import ListPanel from "@/components/admin/ListPanel";
+import { EmptyStateRow } from "@/components/admin/EmptyState";
+import { EditIcon, TrashIcon, ImportIcon, ExportIcon } from "@/components/admin/icons";
 
 type SortKey =
     | "default"
@@ -35,48 +42,9 @@ type StockStatus = "in" | "low" | "out";
 const STOCK_TONE: Record<StockStatus, BadgeTone> = { in: "success", low: "warning", out: "alert" };
 const PAGE_SIZE = 10;
 
-function EditIcon() {
-    return (
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-            <path d="M12 20h9" />
-            <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5Z" />
-        </svg>
-    );
-}
-
-function TrashIcon() {
-    return (
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-            <path d="M4 7h16" />
-            <path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
-            <path d="M18 7l-.8 12.1a2 2 0 0 1-2 1.9H8.8a2 2 0 0 1-2-1.9L6 7" />
-            <path d="M10 11v6M14 11v6" />
-        </svg>
-    );
-}
-
-function ImportIcon() {
-    return (
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-            <path d="M12 15V3" />
-            <path d="M7 8l5-5 5 5" />
-            <path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4" />
-        </svg>
-    );
-}
-
-function ExportIcon() {
-    return (
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-            <path d="M12 3v12" />
-            <path d="M7 10l5 5 5-5" />
-            <path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4" />
-        </svg>
-    );
-}
-
 export default function InventoryPage() {
-    const { products, addProduct, updateProduct, deleteProduct, bulkDeleteProducts } = useAdminStore();
+    const { products, addProduct, bulkAddProducts, updateProduct, deleteProduct, bulkDeleteProducts, bulkAdjustProducts } = useAdminStore();
+    const importInputRef = useRef<HTMLInputElement>(null);
     const mounted = useMounted();
     const searchParams = useSearchParams();
 
@@ -86,6 +54,7 @@ export default function InventoryPage() {
     const [page, setPage] = useState(1);
     const [selected, setSelected] = useState<Set<number>>(new Set());
     const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+    const [bulkEditOpen, setBulkEditOpen] = useState(false);
 
     const [modalProduct, setModalProduct] = useState<AdminProduct | null>(null);
     const [modalOpen, setModalOpen] = useState(false);
@@ -132,10 +101,7 @@ export default function InventoryPage() {
         return sorted;
     }, [products, category, search, sort]);
 
-    // Reset to page 1 whenever the filter set changes — a render-time state
-    // adjustment (see https://react.dev/reference/react/useState#storing-information-from-previous-renders)
-    // rather than an effect, since it only needs to run during the render
-    // that changed the filters, not as a separate post-commit step.
+    // Reset to page 1 whenever the filter set changes
     const filterKey = `${category}|${search}|${sort}`;
     const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
     if (filterKey !== prevFilterKey) {
@@ -193,6 +159,77 @@ export default function InventoryPage() {
         downloadCsv(`inventory-${new Date().toISOString().slice(0, 10)}.csv`, csv);
     }
 
+    function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
+        const file = e.target.files?.[0];
+        e.target.value = "";
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+            const text = typeof reader.result === "string" ? reader.result : "";
+            const rows = parseCsv(text);
+            if (rows.length < 2) {
+                toast.error("That file has no data rows to import.");
+                return;
+            }
+            const header = rows[0].map((h) => h.trim().toLowerCase());
+            const colIndex = {
+                name: header.indexOf("product name"),
+                sku: header.indexOf("sku"),
+                category: header.indexOf("category"),
+                priceMin: header.indexOf("price min"),
+                stock: header.indexOf("stock"),
+            };
+            const missingCols = Object.entries(colIndex)
+                .filter(([, idx]) => idx === -1)
+                .map(([key]) => key);
+            if (missingCols.length > 0) {
+                toast.error(`CSV is missing required column${missingCols.length === 1 ? "" : "s"}: ${missingCols.join(", ")}.`);
+                return;
+            }
+            const existingSkus = new Set(products.map((p) => p.sku.trim().toLowerCase()));
+            const toImport: Omit<AdminProduct, "id">[] = [];
+            const skipped: string[] = [];
+            rows.slice(1).forEach((row, i) => {
+                const rowNum = i + 2; // +1 for header, +1 for 1-indexed display
+                const name = row[colIndex.name]?.trim();
+                const sku = row[colIndex.sku]?.trim();
+                const categoryRaw = row[colIndex.category]?.trim();
+                const category = CATEGORIES.find((c) => c.toLowerCase() === categoryRaw?.toLowerCase());
+                const price = Number(row[colIndex.priceMin]);
+                const stock = Number(row[colIndex.stock]);
+                if (!name) return skipped.push(`Row ${rowNum}: missing product name.`);
+                if (!sku) return skipped.push(`Row ${rowNum}: missing SKU.`);
+                if (existingSkus.has(sku.toLowerCase())) return skipped.push(`Row ${rowNum}: SKU "${sku}" already exists.`);
+                if (!category) return skipped.push(`Row ${rowNum}: unrecognized category "${categoryRaw}".`);
+                if (!Number.isFinite(price) || price <= 0) return skipped.push(`Row ${rowNum}: invalid price.`);
+                if (!Number.isFinite(stock) || stock < 0) return skipped.push(`Row ${rowNum}: invalid stock.`);
+                existingSkus.add(sku.toLowerCase());
+                toImport.push({
+                    name,
+                    sku,
+                    category,
+                    price,
+                    stock,
+                    expiry: null,
+                    image: CATEGORY_DEFAULT_IMAGE[category] ?? DEFAULT_PRODUCT_IMAGE,
+                });
+            });
+            if (toImport.length > 0) bulkAddProducts(toImport);
+            if (skipped.length > 0) {
+                console.warn("Inventory import — skipped rows:", skipped);
+                toast.error(
+                    toImport.length > 0
+                        ? `${skipped.length} row${skipped.length === 1 ? "" : "s"} skipped — see console for details.`
+                        : `No rows imported — ${skipped.length} skipped. See console for details.`
+                );
+            } else if (toImport.length === 0) {
+                toast.error("No valid rows found to import.");
+            }
+        };
+        reader.onerror = () => toast.error("Couldn't read that file.");
+        reader.readAsText(file);
+    }
+
     function openAddModal() {
         setModalProduct(null);
         setModalOpen(true);
@@ -203,9 +240,8 @@ export default function InventoryPage() {
         setModalOpen(true);
     }
 
-    function handleSave(data: Omit<AdminProduct, "id">, id?: number) {
-        if (id) updateProduct(id, data);
-        else addProduct(data);
+    function handleSave(data: Omit<AdminProduct, "id">, id?: number, stockReason?: StockReason) {
+        return id ? updateProduct(id, data, stockReason) : addProduct(data);
     }
 
     const deletingProduct = products.find((p) => p.id === deleteId) ?? null;
@@ -214,47 +250,61 @@ export default function InventoryPage() {
 
     return (
         <div>
-            <div className="mb-6 flex flex-wrap items-center justify-between gap-3.5">
-                <div className="flex flex-1 flex-wrap items-center gap-3">
-                    <SearchField value={search} onChange={setSearch} placeholder="Search by name or SKU" />
-                    <select value={category} onChange={(e) => setCategory(e.target.value)} className={FILTER_SELECT}>
-                        {CATEGORIES.map((c) => (
-                            <option key={c} value={c}>
-                                Category: {c}
-                            </option>
-                        ))}
-                    </select>
-                    <select value={sort} onChange={(e) => setSort(e.target.value as SortKey)} className={FILTER_SELECT}>
-                        <option value="default">Sort: Default</option>
-                        <option value="name-asc">Name (A–Z)</option>
-                        <option value="name-desc">Name (Z–A)</option>
-                        <option value="price-asc">Price (Low–High)</option>
-                        <option value="price-desc">Price (High–Low)</option>
-                        <option value="stock-asc">Stock (Low–High)</option>
-                        <option value="stock-desc">Stock (High–Low)</option>
-                        <option value="expiring-soon">Expiring Soon First</option>
-                    </select>
-                </div>
-                <div className="flex flex-none items-center gap-2.5">
-                    {/* TODO: wire up Excel import (parse + validate rows into products) and
-                        export (products -> .xlsx download) — UI only for now. */}
-                    <button onClick={() => toast.info("Import isn't wired up yet.")} className={BTN_SECONDARY}>
-                        <ImportIcon />
-                        Import
-                    </button>
-                    <button onClick={exportFiltered} className={BTN_SECONDARY}>
-                        <ExportIcon />
-                        Export
-                    </button>
-                    <button onClick={openAddModal} className={BTN_ADD}>
-                        + Add Product
-                    </button>
-                </div>
-            </div>
+            <Toolbar
+                actions={
+                    <>
+                        <input
+                            ref={importInputRef}
+                            type="file"
+                            accept=".csv,text/csv"
+                            onChange={handleImportFile}
+                            className="hidden"
+                            aria-label="Import products from CSV"
+                        />
+                        <button onClick={() => importInputRef.current?.click()} className={BTN_SECONDARY}>
+                            <ImportIcon />
+                            Import
+                        </button>
+                        <button onClick={exportFiltered} className={BTN_SECONDARY}>
+                            <ExportIcon />
+                            Export
+                        </button>
+                        <button onClick={openAddModal} className={BTN_ADD}>
+                            + Add Product
+                        </button>
+                    </>
+                }
+                filters={
+                    <ToolbarFilters>
+                        <FilterField label="Search" className="min-w-[200px] flex-1">
+                            <SearchField value={search} onChange={setSearch} placeholder="Search by name or SKU" className="w-full" />
+                        </FilterField>
+                        <FilterField label="Category" className="w-full flex-none sm:w-[150px]">
+                            <select value={category} onChange={(e) => setCategory(e.target.value)} className={`${FILTER_SELECT} w-full`}>
+                                {CATEGORIES.map((c) => (
+                                    <option key={c} value={c}>
+                                        {c}
+                                    </option>
+                                ))}
+                            </select>
+                        </FilterField>
+                        <FilterField label="Sort by" className="w-full flex-none sm:w-[180px]">
+                            <select value={sort} onChange={(e) => setSort(e.target.value as SortKey)} className={`${FILTER_SELECT} w-full`}>
+                                <option value="default">Default</option>
+                                <option value="name-asc">Name (A–Z)</option>
+                                <option value="name-desc">Name (Z–A)</option>
+                                <option value="price-asc">Price (Low–High)</option>
+                                <option value="price-desc">Price (High–Low)</option>
+                                <option value="stock-asc">Stock (Low–High)</option>
+                                <option value="stock-desc">Stock (High–Low)</option>
+                                <option value="expiring-soon">Expiring Soon First</option>
+                            </select>
+                        </FilterField>
+                    </ToolbarFilters>
+                }
+            />
 
-            <div className="overflow-hidden border border-ink/10 bg-white">
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[720px] border-collapse">
+            <ListPanel minWidth={720} footer={<>Showing {filtered.length} of {products.length}</>}>
                     <thead>
                             <tr className="bg-off/50">
                                 <th scope="col" className="w-11 border-b border-ink/10 px-5 py-3.5">
@@ -267,7 +317,7 @@ export default function InventoryPage() {
                                     />
                                 </th>
                                 {["Product", "Category", "Price", "Stock", "Status", ""].map((h) => (
-                                    <th key={h} scope="col" className="border-b border-ink/10 px-5 py-3.5 text-left font-mono text-[10px] tracking-[.12em] text-grey uppercase">
+                                    <th key={h} scope="col" className="border-b border-ink/10 px-5 py-3.5 text-left font-mono text-[11px] tracking-[.12em] text-grey uppercase">
                                         {h}
                                     </th>
                                 ))}
@@ -275,11 +325,7 @@ export default function InventoryPage() {
                         </thead>
                         <tbody>
                             {paged.length === 0 && (
-                                <tr>
-                                    <td colSpan={7} className="px-5 py-16 text-center text-[13px] text-grey">
-                                        No products match this filter.
-                                    </td>
-                                </tr>
+                                <EmptyStateRow colSpan={7} variant="filtered" message="No products match this filter." />
                             )}
                             {paged.map((p) => {
                                 const status = productStockStatus(p);
@@ -308,7 +354,7 @@ export default function InventoryPage() {
                                                 className="h-4 w-4 accent-pink-btn"
                                             />
                                         </td>
-                                        <td className="border-b border-ink/10 px-5 py-3">
+                                        <td className="border-b border-ink/10 px-5 py-3.5">
                                             <div className="flex items-center gap-3">
                                                 <div className="relative h-11 w-11 flex-none overflow-hidden bg-gradient-to-br from-blue-soft to-pink-soft">
                                                     <Image src={p.image} alt="" fill sizes="44px" unoptimized={typeof p.image === "string"} className="object-cover" />
@@ -319,18 +365,18 @@ export default function InventoryPage() {
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="border-b border-ink/10 px-5 py-3 text-[13px] text-ink">{p.category}</td>
-                                        <td className="border-b border-ink/10 px-5 py-3 font-mono text-[12.5px] text-ink">
+                                        <td className="border-b border-ink/10 px-5 py-3.5 text-[13px] text-ink">{p.category}</td>
+                                        <td className="border-b border-ink/10 px-5 py-3.5 font-mono text-[12.5px] text-ink">
                                             {min === max ? `₱${min.toLocaleString()}` : `₱${min.toLocaleString()}–₱${max.toLocaleString()}`}
                                         </td>
-                                        <td className="border-b border-ink/10 px-5 py-3 font-mono text-[12.5px] text-ink">{productStock(p)}</td>
-                                        <td className="border-b border-ink/10 px-5 py-3">
+                                        <td className="border-b border-ink/10 px-5 py-3.5 font-mono text-[12.5px] text-ink">{productStock(p)}</td>
+                                        <td className="border-b border-ink/10 px-5 py-3.5">
                                             <div className="flex flex-wrap items-center gap-1.5">
                                                 <StatusBadge label={status === "in" ? "In stock" : status === "low" ? "Low stock" : "Out of stock"} tone={STOCK_TONE[status]} />
                                                 {isExpiringSoon(p.expiry) && <StatusBadge label="Expiring soon" tone="warning" />}
                                             </div>
                                         </td>
-                                        <td className="border-b border-ink/10 px-5 py-3">
+                                        <td className="border-b border-ink/10 px-5 py-3.5">
                                             <div className="flex items-center justify-end gap-1.5">
                                                 <Tooltip label="Edit">
                                                     <button
@@ -362,23 +408,18 @@ export default function InventoryPage() {
                                 );
                             })}
                         </tbody>
-                    </table>
-              </div>
-            </div>
+            </ListPanel>
 
             <Pagination page={currentPage} totalPages={totalPages} onChange={setPage} />
 
             <BulkActionBar count={selected.size} onClear={clearSelection}>
-                <button
-                    onClick={() => setBulkDeleteOpen(true)}
-                    className="flex h-9 items-center border border-alert/50 px-3.5 text-[12px] font-semibold text-alert transition hover:bg-alert hover:text-white"
-                >
+                <button onClick={() => setBulkEditOpen(true)} className={BTN_BULK_PRIMARY}>
+                    Bulk Edit
+                </button>
+                <button onClick={() => setBulkDeleteOpen(true)} className={BTN_BULK_DANGER}>
                     Delete selected
                 </button>
-                <button
-                    onClick={exportSelected}
-                    className="flex h-9 items-center border border-white/25 px-3.5 text-[12px] font-semibold text-white transition hover:border-white hover:bg-white/10"
-                >
+                <button onClick={exportSelected} className={BTN_BULK_SECONDARY}>
                     Export CSV
                 </button>
             </BulkActionBar>
@@ -405,20 +446,28 @@ export default function InventoryPage() {
                 }}
                 onClose={() => setBulkDeleteOpen(false)}
             />
+
+            <BulkEditProductsModal
+                open={bulkEditOpen}
+                count={selected.size}
+                onClose={() => setBulkEditOpen(false)}
+                onApply={(adjust) => {
+                    bulkAdjustProducts(Array.from(selected), adjust);
+                    clearSelection();
+                }}
+            />
         </div>
     );
 }
 
-// Mirrors the populated inventory page — search/category/sort toolbar with
-// Import/Export/Add actions, and the product table with pagination.
 function InventorySkeleton() {
     return (
         <SkeletonGroup>
-            <div className="mb-6 flex flex-wrap items-center justify-between gap-3.5">
-                <div className="flex flex-1 flex-wrap items-center gap-3">
-                    <Skeleton tone="outline" className="h-11 w-64" />
-                    <Skeleton tone="outline" className="h-11 w-40" />
+            <div className="mb-10 flex flex-wrap items-end justify-between gap-x-8 gap-y-5 border-b border-ink/10 pb-6">
+                <div className="flex flex-1 flex-wrap items-end gap-4">
+                    <Skeleton tone="outline" className="h-11 flex-1 min-w-[200px]" />
                     <Skeleton tone="outline" className="h-11 w-44" />
+                    <Skeleton tone="outline" className="h-11 w-52" />
                 </div>
                 <div className="flex flex-none items-center gap-2.5">
                     <Skeleton tone="outline" className="h-11 w-28" />
@@ -427,12 +476,12 @@ function InventorySkeleton() {
                 </div>
             </div>
 
-            <div className="overflow-hidden border border-ink/10 bg-white">
+            <div className="overflow-hidden border border-ink/10 bg-white shadow-card">
                 <div className="border-b border-ink/10 bg-off/50 px-5 py-3.5">
                     <Skeleton tone="soft" className="h-[10px] w-full" />
                 </div>
                 {Array.from({ length: 6 }).map((_, i) => (
-                    <div key={i} className="flex items-center gap-4 border-b border-ink/10 px-5 py-3 last:border-b-0">
+                    <div key={i} className="flex items-center gap-4 border-b border-ink/10 px-5 py-3.5 last:border-b-0">
                         <Skeleton tone="outline" className="h-4 w-4 flex-none" />
                         <Skeleton tone="faint" className="h-11 w-11 flex-none" />
                         <div className="min-w-0 flex-1">
@@ -444,11 +493,14 @@ function InventorySkeleton() {
                         <Skeleton className="h-3 w-10" />
                         <Skeleton tone="outline" className="h-[19px] w-20 rounded-pill" />
                         <div className="flex items-center gap-1.5">
-                            <Skeleton tone="outline" className="h-8 w-8 rounded-full" />
-                            <Skeleton tone="outline" className="h-8 w-8 rounded-full" />
+                            <Skeleton tone="outline" className="h-11 w-11 rounded-full" />
+                            <Skeleton tone="outline" className="h-11 w-11 rounded-full" />
                         </div>
                     </div>
                 ))}
+                <div className="border-t border-ink/10 bg-off/50 px-5 py-2.5 text-right">
+                    <Skeleton tone="soft" className="ml-auto h-[11px] w-28" />
+                </div>
             </div>
 
             <div className="mt-8 flex justify-center gap-1.5">

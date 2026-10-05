@@ -1,9 +1,12 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { toast } from "sonner";
+import { ApiError } from "@/library/api/client";
+import { subscribeToNewsletter } from "@/library/api/marketing";
 import Image from "next/image";
 import { newsletterImage } from "../ui/images";
-import { useAsyncAction, wait } from "@/library/useAsyncAction";
+import { useAsyncAction } from "@/library/useAsyncAction";
 import { NewsletterContent, useContent } from "@/library/content";
 
 // `previewData` lets NewsletterEditor feed in its local unsaved draft — see Hero.tsx.
@@ -17,17 +20,19 @@ export default function Newsletter({
 
     const [submitting, handleSubmit] = useAsyncAction(async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        // TODO: send to a real email list (Mailchimp/Klaviyo).
-        await wait();
-        setSubscribed(true);
+        const input = e.currentTarget.elements.namedItem("newsletter-email") as HTMLInputElement;
+        try {
+            await subscribeToNewsletter(input.value);
+            setSubscribed(true);
+        } catch (err) {
+            toast.error(err instanceof ApiError ? err.message : "Couldn't send that. Please try again.");
+        }
     });
 
     if (!preview && !sectionVisibility.newsletter) return null;
 
     return (
-        // The negative bottom margin pulls this up over the footer's top edge,
-        // which only works against the real page — inside the admin preview
-        // pane there's no footer below it, so it just clips.
+        // Negative bottom margin pulls this over the footer's top edge; in the admin preview (no footer below) it just clips.
         <div id={preview ? undefined : "newsletter"} className={preview ? "p-9" : "relative z-10 pt-8 -mb-16"}>
             <div className="grid grid-cols-[.85fr_1.15fr] items-stretch gap-0 border border-ink/10">
                 <div className="relative overflow-hidden">
@@ -47,7 +52,17 @@ export default function Newsletter({
                         </p>
                     ) : (
                         <form onSubmit={handleSubmit} className="flex items-center gap-3">
-                            <input type="email" required placeholder="Your email address" className="min-w-0 flex-1 border border-ink/15 bg-white px-5 py-3 text-sm text-ink outline-none transition focus:border-pink-dark" />
+                            <label htmlFor="newsletter-email" className="sr-only">
+                                Email address
+                            </label>
+                            <input
+                                id="newsletter-email"
+                                name="newsletter-email"
+                                type="email"
+                                required
+                                placeholder="Your email address"
+                                className="min-w-0 flex-1 border border-ink/15 bg-white px-5 py-3 text-sm text-ink outline-none transition focus:border-pink-dark focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-1"
+                            />
                             <button
                                 type="submit"
                                 disabled={submitting}
@@ -58,9 +73,7 @@ export default function Newsletter({
                         </form>
                     )}
 
-                    <div className="flex items-center gap-1.5 text-[11.5px] text-grey">
-                        <span className="text-xs tracking-widest text-gold">★★★★★</span> {newsletter.socialProof}
-                    </div>
+                    <div className="text-[11.5px] text-grey">{newsletter.socialProof}</div>
                 </div>
             </div>
         </div>

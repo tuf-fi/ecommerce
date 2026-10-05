@@ -3,8 +3,7 @@ import { faqs } from "../faq";
 import { BlogPost, Concern, Faq, FooterLinkItem, Promo, Ritual, SiteNavLink, StaticPage, Testimonial } from "./types";
 import { SECTION_KEYS, SectionKey } from "./sections";
 
-// Blog posts don't store a slug — it's derived from the title so renaming a
-// post can't leave a stale slug behind pointing at the old URL.
+// Blog posts don't store a slug — it's derived from the title so renaming a post can't leave a stale one behind.
 export function slugify(title: string) {
     return title
         .toLowerCase()
@@ -80,9 +79,7 @@ export const STATIC_PAGES: StaticPage[] = [
     },
 ];
 
-// Default headline/accent shown atop the Shop, Wishlist, and Cart pages —
-// editable from the admin's Pages tab (see PageIntroEditor) the same way the
-// homepage Hero is, just without an image/CTA since these are listing pages.
+// Editable from the admin's Pages tab (PageIntroEditor) like the Hero, minus image/CTA since these are listing pages.
 export const PAGE_INTRO_DEFAULTS: Record<"shop" | "wishlist" | "cart" | "journal", { headline: string; accent: string }> = {
     shop: { headline: "Everything we make,", accent: "in one place." },
     wishlist: { headline: "Formulas you're", accent: "still thinking about." },
@@ -90,25 +87,18 @@ export const PAGE_INTRO_DEFAULTS: Record<"shop" | "wishlist" | "cart" | "journal
     journal: { headline: "Notes on ingredients, routines,", accent: "and the thinking behind them." },
 };
 
-// Every section starts visible — this map only exists so an admin can switch
-// one *off*, and a brand-new install should look exactly like the designed
-// homepage. Built from SECTION_KEYS rather than written out by hand so adding
-// a thirteenth section can't leave a hole here.
+// Built from SECTION_KEYS (not hand-listed) so a new section can't be missing here; every section starts visible.
 export const SECTION_VISIBILITY_DEFAULT: Record<SectionKey, boolean> = Object.fromEntries(
     SECTION_KEYS.map((key) => [key, true])
 ) as Record<SectionKey, boolean>;
 
-// The homepage Contact section's headline, split the same way the page-intro
-// headlines are: a plain first line and an accented second one.
+// Split like the page-intro headlines: plain first line, accented second.
 export const CONTACT_DEFAULT = {
     headline: "Let's",
     accent: "talk skin.",
 };
 
-// One plain string for the main line rather than a headline/accent pair — the
-// original markup emphasized a single word mid-sentence, which no two-field
-// split expresses honestly. The emphasis is dropped in exchange for the whole
-// line being editable.
+// One plain string instead of headline/accent — the original markup emphasized one mid-sentence word, which no two-field split captured, traded here for a fully editable line.
 export const PHILOSOPHY_DEFAULT = {
     eyebrow: "N° 002 — Philosophy",
     headline: "Good skin isn't fixed overnight. It's the sum of small, consistent choices, applied with care.",
@@ -116,8 +106,7 @@ export const PHILOSOPHY_DEFAULT = {
         "Every formula is built around fewer, better ingredients — layered in an order that actually works with your skin, not against it.",
 };
 
-// The Shop All section's only genuine editorial string — its filters and
-// product grid are product data, not content.
+// The Shop All section's only genuine editorial string — its filters and product grid are product data, not content.
 export const CATALOGUE_DEFAULT = {
     ctaLabel: "Go to Shop",
 };
@@ -129,8 +118,7 @@ export const NEWSLETTER_DEFAULT = {
     socialProof: "Loved by 12,000+ skincare routines",
 };
 
-// Read by both the Contact section and the Footer, which each used to carry
-// their own hardcoded copy of it.
+// Read by both the Contact section and the Footer, which each used to hardcode their own copy of it.
 export const CONTACT_INFO_DEFAULT = {
     email: "hello@cindyrella.ph",
     phone: "+63 917 000 0000",
@@ -140,9 +128,7 @@ export const CONTACT_INFO_DEFAULT = {
     hoursLine2: "9am – 6pm",
 };
 
-// TODO: replace with real @cindyrella handles once the social accounts exist —
-// "#" is the literal value both the Contact section and the Footer shipped
-// with, i.e. a link that deliberately goes nowhere.
+// TODO: replace with real @cindyrella handles — "#" matches the placeholder Contact and Footer shipped with.
 export const SOCIAL_LINKS_DEFAULT = {
     instagramUrl: "#",
     instagramEnabled: true,
@@ -156,9 +142,7 @@ export const SOCIAL_LINKS_DEFAULT = {
     xEnabled: true,
 };
 
-// Seeded from the list Navbar.tsx actually rendered. "Home" isn't here: it
-// duplicates the wordmark's scroll-to-top rather than pointing at a section,
-// so it stays hardcoded in the navbar.
+// Seeded from Navbar.tsx; "Home" is excluded since it duplicates the wordmark's scroll-to-top, not a section.
 export const NAV_LINKS_DEFAULT: SiteNavLink[] = [
     { id: 1, label: "About", section: "about" },
     { id: 2, label: "Best Sellers", section: "bestSellers", group: "more" },
@@ -171,9 +155,7 @@ export const NAV_LINKS_DEFAULT: SiteNavLink[] = [
     { id: 9, label: "Contact", section: "contact", group: "more" },
 ];
 
-// TODO: point these at real filtered listings once /shop reads a `?category=`
-// param (it only reads `?concern=` today) — "#" is the value the footer
-// shipped with for all five.
+// TODO: point at real filtered listings once /shop reads `?category=` (only `?concern=` today); "#" is the shipped placeholder.
 export const FOOTER_SHOP_LINKS_DEFAULT: FooterLinkItem[] = [
     { id: 1, label: "Serums", href: "#" },
     { id: 2, label: "Treatment", href: "#" },
@@ -193,8 +175,7 @@ export const FOOTER_COMPANY_LINKS_DEFAULT: FooterLinkItem[] = [
     { id: 8, label: "Terms of Service", href: "/pages/terms" },
 ];
 
-// TODO: these are display-only badges until PayMongo is wired up — the real
-// list should come from whichever methods the account actually has enabled.
+// TODO: display-only until PayMongo is wired up — should reflect the account's actually-enabled methods.
 export const FOOTER_PAYMENT_METHODS_DEFAULT: string[] = ["GCash", "Maya", "Visa", "Mastercard"];
 
 const JOURNAL_TITLES = Object.keys(journalImages) as (keyof typeof journalImages)[];
@@ -244,9 +225,7 @@ export const BLOG_POSTS: BlogPost[] = [
 
 export const FAQS: Faq[] = faqs.map((f, i) => ({ id: i + 1, q: f.q, a: f.a }));
 
-// Product ids reference PRODUCTS in library/products.ts. Each ritual is a
-// curated, shoppable subset — not just decorative copy — so "Shop Now" has
-// real products to add to the bag.
+// Ids reference PRODUCTS in library/products.ts — each ritual is a real shoppable subset, not decorative copy.
 export const RITUALS_DEFAULT: Ritual[] = [
     {
         id: 1,
@@ -275,9 +254,7 @@ export const CONCERNS_DEFAULT: Concern[] = [
     { id: 6, key: "texture", title: "Texture", image: concernImages.Texture },
 ];
 
-// No photo uploaded yet for any of these — TestimonialCard/the admin table
-// both fall back to an initials avatar when `image` is null, same pattern as
-// StaffMember.photo.
+// No photos yet — TestimonialCard/the admin table fall back to an initials avatar when `image` is null, same as StaffMember.photo.
 export const TESTIMONIALS: Testimonial[] = [
     {
         id: 1,

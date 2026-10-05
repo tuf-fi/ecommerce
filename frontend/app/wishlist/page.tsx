@@ -2,36 +2,36 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import Card from "@/components/ui/Card";
 import SectionTitle from "@/components/ui/SectionTitle";
 import Pagination from "@/components/ui/Pagination";
 import SearchField, { FILTER_SELECT } from "@/components/ui/SearchField";
-import LoginRequiredModal from "@/components/modals/LoginRequiredModal";
 import { useStore } from "@/library/store";
 import { CATEGORIES, getProduct } from "@/library/products";
 import { useScrollTopOnChange } from "@/library/useScrollTopOnChange";
 import PageIntro from "@/components/sections/PageIntro";
+import { PageIntroContent } from "@/library/content";
 import { useMounted } from "@/library/useMounted";
 import Skeleton, { SkeletonGroup } from "@/components/ui/Skeleton";
 
 const PAGE_SIZE = 16;
 
-export default function WishlistPage() {
-    const { wishlist, isLoggedIn, openModal } = useStore();
-    const router = useRouter();
+// See ShopPage for why `preview`/`introPreviewData` exist and how the admin's ContentEditorShell scrolls this
+// real page (previewScroll="page") instead of clipping it in a small pane — same admin live-preview use case.
+export default function WishlistPage({ preview = false, introPreviewData }: { preview?: boolean; introPreviewData?: PageIntroContent } = {}) {
+    const { wishlist } = useStore();
     const mounted = useMounted();
     const [search, setSearch] = useState("");
     const [category, setCategory] = useState<(typeof CATEGORIES)[number]>("All");
     const [page, setPage] = useState(1);
 
-    // Newest saved first — toggleWishlist appends new saves to the end of
-    // the array, so reverse it to read most-recent-first.
-    const saved = wishlist
+    // toggleWishlist appends new saves to the end, so reverse to read newest-first.
+    const realSaved = wishlist
         .map((id) => getProduct(id))
         .filter((p): p is NonNullable<typeof p> => !!p)
         .slice()
         .reverse();
+    const saved = realSaved;
 
     let products = saved;
     if (category !== "All") products = products.filter((p) => p.category === category);
@@ -40,8 +40,7 @@ export default function WishlistPage() {
         products = products.filter((p) => p.title.toLowerCase().includes(q));
     }
 
-    // Reset to page 1 whenever the filter set changes — a render-time state
-    // adjustment rather than an effect.
+    // Reset to page 1 on filter change; a render-time state adjustment, not an effect.
     const filterKey = `${category}|${search}`;
     const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
     if (filterKey !== prevFilterKey) {
@@ -55,25 +54,11 @@ export default function WishlistPage() {
 
     useScrollTopOnChange(currentPage);
 
-    if (!mounted) return <WishlistSkeleton />;
-
-    if (!isLoggedIn) {
-        return (
-            <>
-                <div className="min-h-screen bg-white" />
-                <LoginRequiredModal
-                    open
-                    message="You need to be signed in to view your wishlist."
-                    onLogin={() => openModal("login")}
-                    onCancel={() => router.push("/")}
-                />
-            </>
-        );
-    }
+    if (!mounted) return <WishlistSkeleton preview={preview} />;
 
     return (
-        <div className="shadow-glow -mx-8 w-[calc(100%+4rem)] min-h-screen bg-white px-8 pt-25 pb-20">
-            <PageIntro pageKey="wishlist" />
+        <div className={preview ? "bg-white px-8 pt-8 pb-16" : "shadow-glow -mx-8 w-[calc(100%+4rem)] min-h-screen bg-white px-8 pt-25 pb-20"}>
+            <PageIntro pageKey="wishlist" previewData={introPreviewData} />
 
             <SectionTitle num="—" title={`${saved.length} Saved`} />
 
@@ -87,12 +72,14 @@ export default function WishlistPage() {
                     <p className="max-w-[320px] text-[13px] leading-relaxed text-grey">
                         Nothing saved yet. Tap the heart on any product to keep it here.
                     </p>
-                    <Link
-                        href="/shop"
-                        className="border border-ink/15 px-6 py-3.5 text-[13px] font-semibold uppercase tracking-wide text-ink transition hover:border-pink-btn hover:bg-pink-btn hover:text-white"
-                    >
-                        Browse the Catalogue
-                    </Link>
+                    {!preview && (
+                        <Link
+                            href="/shop"
+                            className="border border-ink/15 px-6 py-3.5 text-[13px] font-semibold uppercase tracking-wide text-ink transition hover:border-pink-btn hover:bg-pink-btn hover:text-white"
+                        >
+                            Browse the Catalogue
+                        </Link>
+                    )}
                 </div>
             ) : (
                 <>
@@ -128,12 +115,9 @@ export default function WishlistPage() {
     );
 }
 
-// Mirrors the populated wishlist: PageIntro's two-line headline, SectionTitle's
-// num/title/rule row, the search/filter row, and a representative product grid
-// matching Card's shape (image, category, title, rating line, price + button).
-function WishlistSkeleton() {
+function WishlistSkeleton({ preview = false }: { preview?: boolean } = {}) {
     return (
-        <div className="shadow-glow -mx-8 w-[calc(100%+4rem)] min-h-screen bg-white px-8 pt-25 pb-20">
+        <div className={preview ? "bg-white px-8 pt-8 pb-16" : "shadow-glow -mx-8 w-[calc(100%+4rem)] min-h-screen bg-white px-8 pt-25 pb-20"}>
             <SkeletonGroup>
                 <Skeleton className="mt-3 h-[34px] w-[70%] max-w-[520px] sm:h-[42px]" />
                 <Skeleton className="mt-3 mb-11 h-[34px] w-[45%] max-w-[340px] sm:h-[42px]" />

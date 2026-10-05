@@ -60,12 +60,22 @@ export default function JournalIndexPage() {
                     </RevealIn>
 
                     {rest.length > 0 && (
+                        // The most recent post gets a spanning, larger-typed slot instead of an equal grid tile.
                         <div className="grid grid-cols-1 gap-x-8 gap-y-14 sm:grid-cols-2 lg:grid-cols-3">
-                            {rest.map((post, index) => (
-                                <RevealIn key={post.id} direction="bottom" delay={index * 0.08} distance={28}>
-                                    <JournalCard post={post} href={`/journal/${slugify(post.title)}`} />
-                                </RevealIn>
-                            ))}
+                            {rest.map((post, index) => {
+                                const lead = index === 0;
+                                return (
+                                    <RevealIn
+                                        key={post.id}
+                                        direction="bottom"
+                                        delay={index * 0.08}
+                                        distance={28}
+                                        className={lead ? "sm:col-span-2" : undefined}
+                                    >
+                                        <JournalCard post={post} href={`/journal/${slugify(post.title)}`} size={lead ? "large" : "default"} />
+                                    </RevealIn>
+                                );
+                            })}
                         </div>
                     )}
                 </>
@@ -74,9 +84,6 @@ export default function JournalIndexPage() {
     );
 }
 
-// Mirrors the populated journal index: PageIntro's two-line headline,
-// SectionTitle's num/title/rule row, the tall featured-post block, and a
-// representative grid matching JournalCard's shape (image, date, title, excerpt).
 function JournalSkeleton() {
     return (
         <div className="-mx-8 w-[calc(100%+4rem)] min-h-screen bg-white px-8 pt-25 pb-20">
@@ -93,7 +100,13 @@ function JournalSkeleton() {
                 <Skeleton tone="faint" className="mb-14 h-[420px] w-full sm:h-[520px]" />
 
                 <div className="grid grid-cols-1 gap-x-8 gap-y-14 sm:grid-cols-2 lg:grid-cols-3">
-                    {Array.from({ length: 3 }).map((_, i) => (
+                    <div className="flex flex-col sm:col-span-2">
+                        <Skeleton tone="faint" className="aspect-[16/9] w-full border border-ink/10" />
+                        <Skeleton className="mt-6 h-[11px] w-28" />
+                        <Skeleton className="mt-2.5 h-[28px] w-3/5" />
+                        <Skeleton tone="soft" className="mt-3 h-3.5 w-4/5" />
+                    </div>
+                    {Array.from({ length: 2 }).map((_, i) => (
                         <div key={i} className="flex flex-col">
                             <Skeleton tone="faint" className="aspect-[4/3] w-full border border-ink/10" />
                             <Skeleton className="mt-5 h-[10.5px] w-24" />

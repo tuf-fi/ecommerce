@@ -10,28 +10,13 @@ import ConfirmModal from "@/components/ui/ConfirmModal";
 import NavLinkModal from "@/components/admin/modals/NavLinkModal";
 import FooterLinkModal from "@/components/admin/modals/FooterLinkModal";
 import Toggle from "@/components/ui/Toggle";
-import { BTN_ADD, BTN_PRIMARY, FIELD_INPUT, ICON_BTN, ICON_BTN_DANGER } from "@/components/admin/formClasses";
+import { BTN_ADD, BTN_PRIMARY, FIELD_INPUT, FIELD_INPUT_INVALID, FIELD_ERROR, ICON_BTN, ICON_BTN_DANGER } from "@/components/admin/formClasses";
 import { useAsyncAction, wait } from "@/library/useAsyncAction";
-
-function EditIcon() {
-    return (
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-            <path d="M12 20h9" />
-            <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5Z" />
-        </svg>
-    );
-}
-
-function TrashIcon() {
-    return (
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-            <path d="M4 7h16" />
-            <path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
-            <path d="M18 7l-.8 12.1a2 2 0 0 1-2 1.9H8.8a2 2 0 0 1-2-1.9L6 7" />
-            <path d="M10 11v6M14 11v6" />
-        </svg>
-    );
-}
+import { isSafeHref } from "@/library/url-safety";
+import ListPanel from "@/components/admin/ListPanel";
+import { EmptyStateRow } from "@/components/admin/EmptyState";
+import { EditIcon, TrashIcon } from "@/components/admin/icons";
+import ReorderButtons from "@/components/admin/ReorderButtons";
 
 function BlockHeading({ title, description, action }: { title: string; description: string; action?: React.ReactNode }) {
     return (
@@ -45,8 +30,14 @@ function BlockHeading({ title, description, action }: { title: string; descripti
     );
 }
 
-// Primary navigation, the footer's two link columns, and the three social
-// URLs — everything on the site that's a link to somewhere else, on one page.
+type LinksSection = "nav" | "footer" | "social";
+
+const LINKS_SECTIONS: { key: LinksSection; label: string; caption: string }[] = [
+    { key: "nav", label: "Primary Navigation", caption: "Header links" },
+    { key: "footer", label: "Footer Links", caption: "Shop & Company columns" },
+    { key: "social", label: "Social Links", caption: "Icons in footer & Contact" },
+];
+
 export default function LinksTab() {
     const {
         navLinks,
@@ -63,6 +54,8 @@ export default function LinksTab() {
         updateSocialLinks,
     } = useContent();
 
+    const [section, setSection] = useState<LinksSection>("nav");
+
     const [navEditing, setNavEditing] = useState<SiteNavLink | null>(null);
     const [navModalOpen, setNavModalOpen] = useState(false);
     const [navDeleteId, setNavDeleteId] = useState<number | null>(null);
@@ -71,18 +64,34 @@ export default function LinksTab() {
     const [footerModal, setFooterModal] = useState<{ group: FooterLinkGroup; link: FooterLinkItem | null } | null>(null);
     const [footerDelete, setFooterDelete] = useState<{ group: FooterLinkGroup; link: FooterLinkItem } | null>(null);
 
-    // Staged in local draft state and only written to the shared content
-    // store (which the live Contact section and Footer both read) inside
-    // handleSaveSocial — see PageContentEditor.tsx for the reference pattern.
-    // No live preview pane on this tab, so nothing else needs to thread the
-    // draft through.
+    // Edits stage in local draft state, written to the shared content store only on handleSaveSocial — see PageContentEditor.tsx.
     const [socialDraft, setSocialDraft] = useState<SocialLinks>(socialLinks);
+    const [socialErrors, setSocialErrors] = useState<Partial<Record<keyof SocialLinks, string>>>({});
 
     function handleSocialChange(patch: Partial<SocialLinks>) {
         setSocialDraft((s) => ({ ...s, ...patch }));
+        for (const key of Object.keys(patch) as (keyof SocialLinks)[]) {
+            if (socialErrors[key]) setSocialErrors((er) => ({ ...er, [key]: undefined }));
+        }
     }
 
+    // "" and "#" mean "not set / inert" and skip the scheme check; everything else must pass isSafeHref to block javascript: URIs.
+    const SOCIAL_URL_KEYS: (keyof SocialLinks)[] = ["instagramUrl", "tiktokUrl", "pinterestUrl", "facebookUrl", "xUrl"];
+
     const [savingSocial, handleSaveSocial] = useAsyncAction(async () => {
+        const nextErrors: Partial<Record<keyof SocialLinks, string>> = {};
+        for (const key of SOCIAL_URL_KEYS) {
+            const value = (socialDraft[key] as string).trim();
+            if (value && value !== "#" && !isSafeHref(value)) {
+                nextErrors[key] = "Enter a valid URL, mailto:, tel:, or leave as #.";
+            }
+        }
+        if (Object.keys(nextErrors).length > 0) {
+            setSocialErrors(nextErrors);
+            toast.error("Fix the highlighted social links before saving.");
+            return;
+        }
+        setSocialErrors({});
         await wait();
         updateSocialLinks(socialDraft);
         toast.success("Social links saved.");
@@ -94,12 +103,39 @@ export default function LinksTab() {
     }
 
     const footerGroups: { group: FooterLinkGroup; heading: string; links: FooterLinkItem[] }[] = [
-        { group: "shop", heading: "Shop", links: footerShopLinks },
         { group: "company", heading: "Company", links: footerCompanyLinks },
+        { group: "shop", heading: "Shop", links: footerShopLinks },
+    ];
+
+    const SOCIAL_PLATFORMS: { label: string; enabledKey: keyof SocialLinks; urlKey: keyof SocialLinks }[] = [
+        { label: "Instagram", enabledKey: "instagramEnabled", urlKey: "instagramUrl" },
+        { label: "TikTok", enabledKey: "tiktokEnabled", urlKey: "tiktokUrl" },
+        { label: "Pinterest", enabledKey: "pinterestEnabled", urlKey: "pinterestUrl" },
+        { label: "Facebook", enabledKey: "facebookEnabled", urlKey: "facebookUrl" },
+        { label: "X", enabledKey: "xEnabled", urlKey: "xUrl" },
     ];
 
     return (
-        <div className="space-y-12">
+        <>
+        <div className="flex flex-col border border-ink/10 bg-white sm:flex-row sm:max-h-[70vh]">
+            <div className="flex flex-none divide-x divide-ink/10 border-b border-ink/10 sm:w-64 sm:flex-col sm:divide-x-0 sm:divide-y sm:border-r sm:border-b-0">
+                {LINKS_SECTIONS.map((s) => {
+                    const active = section === s.key;
+                    return (
+                        <button
+                            key={s.key}
+                            onClick={() => setSection(s.key)}
+                            className={`flex-1 px-5 py-4 text-left transition sm:flex-none ${active ? "bg-navy" : "hover:bg-off/60"}`}
+                        >
+                            <div className={`text-[13.5px] font-medium ${active ? "text-white" : "text-ink"}`}>{s.label}</div>
+                            <div className={`mt-0.5 text-[11.5px] ${active ? "text-white/70" : "text-grey"}`}>{s.caption}</div>
+                        </button>
+                    );
+                })}
+            </div>
+
+            <div className="min-h-0 min-w-0 flex-1 overflow-y-auto p-7">
+            {section === "nav" && (
             <section>
                 <BlockHeading
                     title="Primary Navigation"
@@ -117,15 +153,14 @@ export default function LinksTab() {
                     }
                 />
 
-                <div className="overflow-hidden border border-ink/10 bg-white">
-                    <table className="w-full border-collapse">
+                <ListPanel minWidth={480}>
                         <thead>
                             <tr className="bg-off/50">
                                 {["Order", "Label", "Section", "Placement", ""].map((h) => (
                                     <th
                                         key={h}
                                         scope="col"
-                                        className="border-b border-ink/10 px-5 py-3.5 text-left font-mono text-[10px] tracking-[.12em] text-grey uppercase"
+                                        className="border-b border-ink/10 px-5 py-3.5 text-left font-mono text-[11px] tracking-[.12em] text-grey uppercase"
                                     >
                                         {h}
                                     </th>
@@ -134,37 +169,12 @@ export default function LinksTab() {
                         </thead>
                         <tbody>
                             {navLinks.length === 0 && (
-                                <tr>
-                                    <td colSpan={5} className="px-5 py-16 text-center text-[13px] text-grey">
-                                        No navigation links yet.
-                                    </td>
-                                </tr>
+                                <EmptyStateRow colSpan={5} variant="empty" message="No navigation links yet." />
                             )}
                             {navLinks.map((link, i) => (
                                 <tr key={link.id} className="transition hover:bg-off/40">
                                     <td className="border-b border-ink/10 px-5 py-3">
-                                        <div className="flex flex-col gap-0.5 text-grey">
-                                            <button
-                                                disabled={i === 0}
-                                                onClick={() => moveNavLink(link.id, "up")}
-                                                aria-label="Move up"
-                                                className="flex h-4 w-4 items-center justify-center hover:text-ink disabled:opacity-25"
-                                            >
-                                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                                                    <path d="M18 15l-6-6-6 6" />
-                                                </svg>
-                                            </button>
-                                            <button
-                                                disabled={i === navLinks.length - 1}
-                                                onClick={() => moveNavLink(link.id, "down")}
-                                                aria-label="Move down"
-                                                className="flex h-4 w-4 items-center justify-center hover:text-ink disabled:opacity-25"
-                                            >
-                                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                                                    <path d="M6 9l6 6 6-6" />
-                                                </svg>
-                                            </button>
-                                        </div>
+                                        <ReorderButtons index={i} count={navLinks.length} onMove={(dir) => moveNavLink(link.id, dir)} />
                                     </td>
                                     <td className="border-b border-ink/10 px-5 py-3 text-[13.5px] font-medium text-ink">{link.label}</td>
                                     <td className="border-b border-ink/10 px-5 py-3 text-[13px] text-grey">{SECTION_LABELS[link.section]}</td>
@@ -195,54 +205,77 @@ export default function LinksTab() {
                                 </tr>
                             ))}
                         </tbody>
-                    </table>
-                </div>
+                </ListPanel>
             </section>
+            )}
 
+            {section === "footer" && (
             <section>
                 <BlockHeading
                     title="Footer Links"
                     description="The two link columns in the footer. Unlike the header, these can point anywhere — a route, a homepage anchor, or an external URL."
                 />
 
-                <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-6">
                     {footerGroups.map(({ group, heading, links }) => (
-                        <div key={group} className="border border-ink/10 bg-white">
-                            <div className="flex items-center justify-between border-b border-ink/10 px-5 py-3.5">
-                                <span className="font-mono text-[10px] tracking-[.14em] text-grey uppercase">{heading}</span>
-                                <button
-                                    onClick={() => setFooterModal({ group, link: null })}
-                                    className="text-[12px] font-semibold text-pink-dark transition hover:text-pink-btn-hover"
-                                >
+                        <div key={group}>
+                            <div className="mb-3 flex items-end justify-between gap-6">
+                                <h4 className="m-0 text-[15px] font-medium text-ink">{heading}</h4>
+                                <button onClick={() => setFooterModal({ group, link: null })} className={`flex-none ${BTN_ADD}`}>
                                     + Add
                                 </button>
                             </div>
-                            <ul className="divide-y divide-ink/10">
-                                {links.length === 0 && <li className="px-5 py-10 text-center text-[13px] text-grey">No links yet.</li>}
-                                {links.map((link) => (
-                                    <li key={link.id} className="flex items-center gap-3 px-5 py-3 transition hover:bg-off/40">
-                                        <div className="min-w-0 flex-1">
-                                            <div className="truncate text-[13.5px] font-medium text-ink">{link.label}</div>
-                                            <div className="truncate font-mono text-[11.5px] text-grey">{link.href}</div>
-                                        </div>
-                                        <Tooltip label="Edit">
-                                            <button onClick={() => setFooterModal({ group, link })} aria-label="Edit link" className={ICON_BTN}>
-                                                <EditIcon />
-                                            </button>
-                                        </Tooltip>
-                                        <Tooltip label="Remove">
-                                            <button onClick={() => setFooterDelete({ group, link })} aria-label="Remove link" className={ICON_BTN_DANGER}>
-                                                <TrashIcon />
-                                            </button>
-                                        </Tooltip>
-                                    </li>
-                                ))}
-                            </ul>
+                            <ListPanel minWidth={400}>
+                                    <thead>
+                                        <tr className="bg-off/50">
+                                            {["Label", "URL", ""].map((h) => (
+                                                <th
+                                                    key={h}
+                                                    scope="col"
+                                                    className="border-b border-ink/10 px-5 py-3.5 text-left font-mono text-[11px] tracking-[.12em] text-grey uppercase"
+                                                >
+                                                    {h}
+                                                </th>
+                                            ))}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {links.length === 0 && (
+                                            <tr>
+                                                <td colSpan={3} className="border-b border-ink/10 px-5 py-10 text-center text-[13px] text-grey">
+                                                    No links yet.
+                                                </td>
+                                            </tr>
+                                        )}
+                                        {links.map((link) => (
+                                            <tr key={link.id} className="transition hover:bg-off/40">
+                                                <td className="border-b border-ink/10 px-5 py-3 text-[13.5px] font-medium text-ink">{link.label}</td>
+                                                <td className="border-b border-ink/10 px-5 py-3 font-mono text-[11.5px] text-grey">{link.href}</td>
+                                                <td className="border-b border-ink/10 px-5 py-3">
+                                                    <div className="flex items-center justify-end gap-2">
+                                                        <Tooltip label="Edit">
+                                                            <button onClick={() => setFooterModal({ group, link })} aria-label="Edit link" className={ICON_BTN}>
+                                                                <EditIcon />
+                                                            </button>
+                                                        </Tooltip>
+                                                        <Tooltip label="Remove">
+                                                            <button onClick={() => setFooterDelete({ group, link })} aria-label="Remove link" className={ICON_BTN_DANGER}>
+                                                                <TrashIcon />
+                                                            </button>
+                                                        </Tooltip>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                            </ListPanel>
                         </div>
                     ))}
                 </div>
             </section>
+            )}
 
+            {section === "social" && (
             <section>
                 {/* Fixed to five: each icon is a hand-drawn inline SVG in
                     Contact.tsx/Footer.tsx, so a sixth network would have
@@ -252,82 +285,48 @@ export default function LinksTab() {
                     description="Where the five social icons in the footer and the Contact section point. Toggle a platform off to hide its icon from the site; leave a field as # to keep it inert while still shown."
                 />
 
-                <div className="border border-ink/10 bg-white px-7 pt-6 pb-7">
-                    <div className="grid grid-cols-3 gap-4">
-                        <div>
-                            <div className="mb-1.5 flex items-center justify-between gap-2">
-                                <label htmlFor="social-instagram-url" className="font-mono text-[10.5px] uppercase tracking-[.14em] text-grey">Instagram</label>
-                                <Toggle
-                                    checked={socialDraft.instagramEnabled}
-                                    onChange={(v) => handleSocialChange({ instagramEnabled: v })}
-                                />
-                            </div>
-                            <input
-                                id="social-instagram-url"
-                                value={socialDraft.instagramUrl}
-                                onChange={(e) => handleSocialChange({ instagramUrl: e.target.value })}
-                                className={FIELD_INPUT}
-                            />
-                        </div>
-                        <div>
-                            <div className="mb-1.5 flex items-center justify-between gap-2">
-                                <label htmlFor="social-tiktok-url" className="font-mono text-[10.5px] uppercase tracking-[.14em] text-grey">TikTok</label>
-                                <Toggle
-                                    checked={socialDraft.tiktokEnabled}
-                                    onChange={(v) => handleSocialChange({ tiktokEnabled: v })}
-                                />
-                            </div>
-                            <input
-                                id="social-tiktok-url"
-                                value={socialDraft.tiktokUrl}
-                                onChange={(e) => handleSocialChange({ tiktokUrl: e.target.value })}
-                                className={FIELD_INPUT}
-                            />
-                        </div>
-                        <div>
-                            <div className="mb-1.5 flex items-center justify-between gap-2">
-                                <label htmlFor="social-pinterest-url" className="font-mono text-[10.5px] uppercase tracking-[.14em] text-grey">Pinterest</label>
-                                <Toggle
-                                    checked={socialDraft.pinterestEnabled}
-                                    onChange={(v) => handleSocialChange({ pinterestEnabled: v })}
-                                />
-                            </div>
-                            <input
-                                id="social-pinterest-url"
-                                value={socialDraft.pinterestUrl}
-                                onChange={(e) => handleSocialChange({ pinterestUrl: e.target.value })}
-                                className={FIELD_INPUT}
-                            />
-                        </div>
-                        <div>
-                            <div className="mb-1.5 flex items-center justify-between gap-2">
-                                <label htmlFor="social-facebook-url" className="font-mono text-[10.5px] uppercase tracking-[.14em] text-grey">Facebook</label>
-                                <Toggle
-                                    checked={socialDraft.facebookEnabled}
-                                    onChange={(v) => handleSocialChange({ facebookEnabled: v })}
-                                />
-                            </div>
-                            <input
-                                id="social-facebook-url"
-                                value={socialDraft.facebookUrl}
-                                onChange={(e) => handleSocialChange({ facebookUrl: e.target.value })}
-                                className={FIELD_INPUT}
-                            />
-                        </div>
-                        <div>
-                            <div className="mb-1.5 flex items-center justify-between gap-2">
-                                <label htmlFor="social-x-url" className="font-mono text-[10.5px] uppercase tracking-[.14em] text-grey">X</label>
-                                <Toggle checked={socialDraft.xEnabled} onChange={(v) => handleSocialChange({ xEnabled: v })} />
-                            </div>
-                            <input
-                                id="social-x-url"
-                                value={socialDraft.xUrl}
-                                onChange={(e) => handleSocialChange({ xUrl: e.target.value })}
-                                className={FIELD_INPUT}
-                            />
-                        </div>
-                    </div>
-                </div>
+                <ListPanel minWidth={480}>
+                        <thead>
+                            <tr className="bg-off/50">
+                                {["Platform", "Enabled", "URL"].map((h) => (
+                                    <th
+                                        key={h}
+                                        scope="col"
+                                        className="border-b border-ink/10 px-5 py-3.5 text-left font-mono text-[11px] tracking-[.12em] text-grey uppercase"
+                                    >
+                                        {h}
+                                    </th>
+                                ))}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {SOCIAL_PLATFORMS.map((p) => {
+                                const url = socialDraft[p.urlKey] as string;
+                                const error = socialErrors[p.urlKey];
+                                return (
+                                    <tr key={p.urlKey} className="transition hover:bg-off/40">
+                                        <td className="border-b border-ink/10 px-5 py-3 text-[13.5px] font-medium text-ink">{p.label}</td>
+                                        <td className="border-b border-ink/10 px-5 py-3">
+                                            <Toggle
+                                                checked={socialDraft[p.enabledKey] as boolean}
+                                                onChange={(v) => handleSocialChange({ [p.enabledKey]: v } as Partial<SocialLinks>)}
+                                            />
+                                        </td>
+                                        <td className="border-b border-ink/10 px-5 py-3">
+                                            <input
+                                                value={url}
+                                                onChange={(e) => handleSocialChange({ [p.urlKey]: e.target.value } as Partial<SocialLinks>)}
+                                                aria-label={`${p.label} URL`}
+                                                aria-invalid={error ? true : undefined}
+                                                className={`${FIELD_INPUT} h-9 max-w-[360px] py-1.5 ${error ? FIELD_INPUT_INVALID : ""}`}
+                                            />
+                                            {error && <p className={FIELD_ERROR}>{error}</p>}
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                </ListPanel>
 
                 <div className="mt-6 flex justify-end">
                     <button onClick={handleSaveSocial} disabled={savingSocial} className={BTN_PRIMARY + " px-6 py-3"}>
@@ -335,6 +334,9 @@ export default function LinksTab() {
                     </button>
                 </div>
             </section>
+            )}
+            </div>
+        </div>
 
             {navModalOpen && <NavLinkModal link={navEditing} onClose={() => setNavModalOpen(false)} onSave={handleNavSave} />}
 
@@ -365,6 +367,6 @@ export default function LinksTab() {
                 onConfirm={() => footerDelete && deleteFooterLink(footerDelete.group, footerDelete.link.id)}
                 onClose={() => setFooterDelete(null)}
             />
-        </div>
+        </>
     );
 }

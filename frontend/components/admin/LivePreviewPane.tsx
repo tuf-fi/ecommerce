@@ -4,8 +4,10 @@ import { useState } from "react";
 
 type Device = "desktop" | "tablet" | "mobile";
 
+// "none" isn't an animatable value — transitioning to/from it snaps instantly instead of interpolating — so
+// desktop gets a real (if generous) pixel ceiling instead, which transitions smoothly like the other two.
 const DEVICE_WIDTH: Record<Device, string> = {
-    desktop: "max-w-none",
+    desktop: "max-w-[2000px]",
     tablet: "max-w-[768px]",
     mobile: "max-w-[375px]",
 };
@@ -43,12 +45,23 @@ const DEVICES: { key: Device; label: string; icon: () => React.JSX.Element }[] =
     { key: "mobile", label: "Mobile", icon: MobileIcon },
 ];
 
-export default function LivePreviewPane({ label, children }: { label: string; children: React.ReactNode }) {
+export default function LivePreviewPane({
+    label,
+    children,
+    scroll = true,
+}: {
+    label: React.ReactNode;
+    children: React.ReactNode;
+    /** False when ContentEditorShell's `previewScroll="page"` — the parent column is no longer a fixed, bounded
+     *  box, so this pane must give up its own flex/scroll constraints and just flow at its natural height too. */
+    scroll?: boolean;
+}) {
     const [device, setDevice] = useState<Device>("desktop");
 
     return (
-        <div className="flex flex-col border-b border-ink/10 bg-white">
-            <div className="flex flex-none items-center justify-between gap-3 border-b border-ink/10 px-5 py-3.5 font-mono text-[10.5px] tracking-[.06em] text-grey uppercase">
+        <div className={`flex flex-col border-b border-ink/10 bg-white ${scroll ? "lg:min-h-0 lg:flex-1" : ""}`}>
+            {/* Fixed h-[52px] (not py-*) to line up exactly with ContentEditorShell's rail header, which uses the same explicit height. */}
+            <div className="flex h-[52px] flex-none items-center justify-between gap-3 border-b border-ink/10 px-5 font-mono text-[10.5px] tracking-[.06em] text-grey uppercase">
                 <div className="flex items-center gap-1.5">
                     <span className="h-1.5 w-1.5 flex-none animate-pulse rounded-full bg-success" />
                     Live Preview — {label}
@@ -77,11 +90,14 @@ export default function LivePreviewPane({ label, children }: { label: string; ch
                 block flow, not a flex item — as a direct flex child, its auto
                 margins would disable stretch and shrink it to fit-content,
                 collapsing to 0 width since Hero's own children are all
-                absolutely positioned and contribute no intrinsic width. */}
-            <div>
+                absolutely positioned and contribute no intrinsic width.
+                At `lg`+, when `scroll`, it also carries the scroll: the pane is capped to the viewport (via the
+                parent's fixed inset-y-0), so tall previews scroll in place here instead of growing the whole page.
+                When `!scroll`, none of that applies — the parent is normal flow now, so this just flows too. */}
+            <div className={scroll ? "lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:[scrollbar-width:none] lg:[&::-webkit-scrollbar]:hidden" : undefined}>
                 <div
-                    className={`${DEVICE_WIDTH[device]} mx-auto transition-[max-width] duration-300 ${
-                        device === "desktop" ? "" : "border border-ink/10"
+                    className={`${DEVICE_WIDTH[device]} mx-auto border transition-[max-width,border-color] duration-300 ${
+                        device === "desktop" ? "border-transparent" : "border-ink/10"
                     }`}
                 >
                     {children}

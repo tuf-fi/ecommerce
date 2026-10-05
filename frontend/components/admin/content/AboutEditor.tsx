@@ -8,11 +8,7 @@ import ContentEditorShell from "./ContentEditorShell";
 import { FIELD_INPUT, FIELD_LABEL } from "../formClasses";
 import { useAsyncAction, wait } from "@/library/useAsyncAction";
 
-// Edits are staged in local `draft` state and only written to the shared
-// content store (which the live customer-facing site also reads) inside
-// handleSave — see PageContentEditor.tsx for the reference pattern. The live
-// preview below still updates on every keystroke because it's fed `draft`
-// directly (via AboutSection's `previewData` prop), not the shared context.
+// Edits stage in local `draft`, written to the shared content store only on handleSave — see PageContentEditor.tsx.
 export default function AboutEditor() {
     const { about, updateAbout } = useContent();
     const [draft, setDraft] = useState<AboutContent>(about);
@@ -38,7 +34,6 @@ export default function AboutEditor() {
             saving={saving}
             onSave={handleSave}
             dirty={dirty}
-            previewLabel="cindyrella.ph/#about"
             preview={<AboutSection preview previewData={draft} />}
         >
             <div className="mb-4">

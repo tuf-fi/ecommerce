@@ -1,5 +1,8 @@
 "use client";
 
+import { toast } from "sonner";
+import { validateAndReadImage } from "@/library/image-upload";
+
 export default function AvatarUploadField({
     photo,
     onPhotoChange,
@@ -7,16 +10,19 @@ export default function AvatarUploadField({
     placeholder,
 }: {
     photo: string | null | undefined;
-    onPhotoChange: (dataUrl: string) => void;
+    onPhotoChange: (url: string) => void;
     name: string;
     placeholder: string;
 }) {
-    function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    async function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
         const file = e.target.files?.[0];
         if (!file) return;
-        const reader = new FileReader();
-        reader.onload = () => onPhotoChange(reader.result as string);
-        reader.readAsDataURL(file);
+        const result = await validateAndReadImage(file);
+        if (!result.ok) {
+            toast.error(result.reason);
+            return;
+        }
+        onPhotoChange(result.url);
     }
 
     return (

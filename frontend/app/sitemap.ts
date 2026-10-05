@@ -1,12 +1,10 @@
 import type { MetadataRoute } from "next";
-import { PRODUCTS } from "@/library/products";
+import { fetchCatalog } from "@/library/api/products";
 import { BLOG_POSTS, RITUALS_DEFAULT, STATIC_PAGES, slugify } from "@/library/admin/content";
 import { SITE_URL } from "@/library/siteConfig";
 
-// Built from the same static seed data the dynamic routes' generateMetadata
-// already reads (see shop/[id], journal/[slug], rituals/[id]) — there's no
-// backend yet, so this is the full set of real, crawlable URLs.
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+    const PRODUCTS = await fetchCatalog();
     const staticRoutes: MetadataRoute.Sitemap = [
         { url: `${SITE_URL}/`, changeFrequency: "weekly", priority: 1 },
         { url: `${SITE_URL}/shop`, changeFrequency: "daily", priority: 0.9 },

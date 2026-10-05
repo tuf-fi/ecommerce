@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { BASE_DELAY, EASE, VIEWPORT } from "./constants";
+import { BASE_DELAY, EASE, VIEWPORT, usePrefersReducedMotion } from "./constants";
 
 export default function FadeIn({
     children,
@@ -14,6 +14,12 @@ export default function FadeIn({
     duration?: number;
     className?: string;
 }) {
+    const prefersReducedMotion = usePrefersReducedMotion();
+
+    if (prefersReducedMotion) {
+        return <div className={className}>{children}</div>;
+    }
+
     return (
         <motion.div
             className={className}

@@ -1,7 +1,7 @@
 "use client";
 
 import Modal from "@/components/ui/Modal";
-import { ViewHeader, DetailBody } from "@/components/admin/modals/ViewModalLayout";
+import { ViewHeader, DetailBody, SectionLabel } from "@/components/admin/modals/ViewModalLayout";
 import { Testimonial } from "@/library/admin/types";
 
 function initials(name: string) {
@@ -27,13 +27,12 @@ export default function TestimonialViewModal({
     return (
         <Modal open={open} onClose={onClose} maxWidth="max-w-[420px]">
             <ViewHeader
-                eyebrow="Testimonial"
                 title={testimonial.name}
-                meta={
-                    <span className="font-mono text-[12px] text-grey">
+                caption={
+                    <>
                         {testimonial.position}
                         {testimonial.company && ` · ${testimonial.company}`}
-                    </span>
+                    </>
                 }
                 thumbnail={
                     <div className="relative h-12 w-12 flex-none overflow-hidden rounded-full bg-blue-soft">
@@ -49,8 +48,8 @@ export default function TestimonialViewModal({
                 }
             />
             <DetailBody>
-                <span className="mb-1.5 block font-mono text-[10px] tracking-[.14em] text-grey uppercase">Message</span>
-                <p className="text-[13px] leading-relaxed whitespace-pre-wrap text-ink/85">{testimonial.message}</p>
+                <SectionLabel label="Message" />
+                <p className="text-[13.5px] leading-relaxed whitespace-pre-wrap text-ink/85">{testimonial.message}</p>
             </DetailBody>
         </Modal>
     );

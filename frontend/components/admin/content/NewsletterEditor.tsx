@@ -4,15 +4,12 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { NewsletterContent, useContent } from "@/library/content";
 import Newsletter from "@/components/sections/Newsletter";
+import Footer from "@/components/layout/Footer";
 import ContentEditorShell from "./ContentEditorShell";
 import { FIELD_INPUT, FIELD_LABEL } from "../formClasses";
 import { useAsyncAction, wait } from "@/library/useAsyncAction";
 
-// Edits are staged in local `draft` state and only written to the shared
-// content store (which the live customer-facing site also reads) inside
-// handleSave — see PageContentEditor.tsx for the reference pattern. The live
-// preview below still updates on every keystroke because it's fed `draft`
-// directly (via Newsletter's `previewData` prop), not the shared context.
+// Edits stage in local `draft`, written to the shared content store only on handleSave — see PageContentEditor.tsx.
 export default function NewsletterEditor() {
     const { newsletter, updateNewsletter } = useContent();
     const [draft, setDraft] = useState<NewsletterContent>(newsletter);
@@ -38,10 +35,22 @@ export default function NewsletterEditor() {
             saving={saving}
             onSave={handleSave}
             dirty={dirty}
-            previewLabel="cindyrella.ph/#newsletter"
-            preview={<Newsletter preview previewData={draft} />}
+            preview={
+                <>
+                    <Newsletter preview previewData={draft} />
+                    {/* Newsletter sits directly above the sitewide footer on the real site — a clipped glimpse (not
+                        the whole thing) shows how the section reads against it, faded rather than hard-cropped. */}
+                    <div className="relative max-h-[280px] overflow-hidden">
+                        <Footer preview />
+                        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-footer to-transparent" />
+                    </div>
+                </>
+            }
         >
-            <div className="mb-4 grid grid-cols-2 gap-4">
+            {/* Stacked, not side-by-side — the panel's fixed ~360px width
+                leaves too little room per field for a two-column grid to read
+                as anything but cramped. */}
+            <div className="mb-4 flex flex-col gap-4">
                 <div>
                     <label htmlFor="newsletter-headline" className={FIELD_LABEL}>Headline</label>
                     <input

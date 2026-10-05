@@ -1,0 +1,450 @@
+[
+  {
+    "id": 1,
+    "category": "Serum",
+    "title": "Overnight Retinol Serum",
+    "price": 2800,
+    "rating": 4.5,
+    "count": 133,
+    "desc": "A slow-release retinol treatment for nightly use — softens fine lines and evens texture while you sleep, without the usual sting.",
+    "concerns": [
+      "fine-lines",
+      "texture"
+    ],
+    "imageKey": "Overnight Retinol Serum",
+    "sizes": [
+      {
+        "id": "15ml",
+        "label": "15ml",
+        "price": 2800,
+        "stock": 20
+      },
+      {
+        "id": "30ml",
+        "label": "30ml",
+        "price": 4800,
+        "stock": 14
+      }
+    ],
+    "stock": 0,
+    "expiry": null
+  },
+  {
+    "id": 2,
+    "category": "Treatment",
+    "title": "Barrier Repair Cream",
+    "price": 2150,
+    "rating": 4.8,
+    "count": 96,
+    "desc": "A rich, ceramide-forward cream that rebuilds a compromised moisture barrier — for skin that feels tight, dry, or reactive.",
+    "concerns": [
+      "dryness",
+      "redness"
+    ],
+    "imageKey": "Barrier Repair Cream",
+    "sizes": [
+      {
+        "id": "30ml",
+        "label": "30ml",
+        "price": 2150,
+        "stock": 6
+      },
+      {
+        "id": "50ml",
+        "label": "50ml",
+        "price": 3400,
+        "stock": 0
+      }
+    ],
+    "stock": 0,
+    "expiry": "2026-11-15"
+  },
+  {
+    "id": 3,
+    "category": "Moisturizer",
+    "title": "Quiet Glow Gel Cream",
+    "price": 1890,
+    "rating": 4.6,
+    "count": 210,
+    "desc": "A lightweight gel-cream that leaves skin dewy without shine — the everyday moisturizer for combination skin.",
+    "concerns": [
+      "dullness"
+    ],
+    "imageKey": "Quiet Glow Gel Cream",
+    "sizes": [
+      {
+        "id": "30ml",
+        "label": "30ml",
+        "price": 1890,
+        "stock": 42
+      },
+      {
+        "id": "50ml",
+        "label": "50ml",
+        "price": 2900,
+        "stock": 30
+      }
+    ],
+    "stock": 0,
+    "expiry": null
+  },
+  {
+    "id": 4,
+    "category": "Body",
+    "title": "Rice Milk Body Wash",
+    "price": 980,
+    "rating": 4.4,
+    "count": 74,
+    "desc": "A gentle, fragrance-light body wash built around rice milk extract — cleans without stripping.",
+    "concerns": [
+      "dryness"
+    ],
+    "imageKey": "Rice Milk Body Wash",
+    "sizes": [
+      {
+        "id": "250ml",
+        "label": "250ml",
+        "price": 980,
+        "stock": 55
+      },
+      {
+        "id": "500ml",
+        "label": "500ml",
+        "price": 1650,
+        "stock": 38
+      }
+    ],
+    "stock": 0,
+    "expiry": "2026-09-30"
+  },
+  {
+    "id": 5,
+    "category": "Serum",
+    "title": "Vitamin C Brightening Drop",
+    "price": 2450,
+    "rating": 4.7,
+    "count": 168,
+    "desc": "A stabilized vitamin C serum that evens tone and fades the look of dark spots over consistent use.",
+    "concerns": [
+      "dullness"
+    ],
+    "imageKey": "Vitamin C Brightening Drop",
+    "sizes": [
+      {
+        "id": "15ml",
+        "label": "15ml",
+        "price": 2450,
+        "stock": 17
+      },
+      {
+        "id": "30ml",
+        "label": "30ml",
+        "price": 4200,
+        "stock": 9
+      }
+    ],
+    "stock": 0,
+    "expiry": null
+  },
+  {
+    "id": 6,
+    "category": "Treatment",
+    "title": "Niacinamide Pore Refiner",
+    "price": 1650,
+    "rating": 4.5,
+    "count": 142,
+    "desc": "A daily treatment that refines the look of pores and balances oil — no tightness, no white cast.",
+    "concerns": [
+      "breakouts",
+      "texture"
+    ],
+    "imageKey": "Niacinamide Pore Refiner",
+    "sizes": [],
+    "stock": 4,
+    "expiry": "2027-01-10"
+  },
+  {
+    "id": 7,
+    "category": "Sets",
+    "title": "The Ritual Edit, Full Set",
+    "price": 4600,
+    "rating": 4.9,
+    "count": 58,
+    "desc": "The complete three-step routine — cleanse, treat, moisturize — in one considered set.",
+    "concerns": [],
+    "imageKey": "The Ritual Edit, Full Set",
+    "sizes": [],
+    "stock": 12,
+    "expiry": null
+  },
+  {
+    "id": 8,
+    "category": "Moisturizer",
+    "title": "Ceramide Sleep Balm",
+    "price": 2050,
+    "rating": 4.6,
+    "count": 88,
+    "desc": "A dense overnight balm that seals in moisture and repairs the skin barrier by morning.",
+    "concerns": [
+      "dryness"
+    ],
+    "imageKey": "Ceramide Sleep Balm",
+    "sizes": [],
+    "stock": 41,
+    "expiry": null
+  },
+  {
+    "id": 9,
+    "category": "Serum",
+    "title": "Squalane Barrier Drops",
+    "price": 1980,
+    "rating": 4.5,
+    "count": 121,
+    "desc": "A single-ingredient oil that mimics skin's own squalane — seals in moisture without sitting heavy or clogging pores.",
+    "concerns": [
+      "dryness"
+    ],
+    "imageKey": "Overnight Retinol Serum",
+    "sizes": [],
+    "stock": 3,
+    "expiry": "2026-10-05"
+  },
+  {
+    "id": 10,
+    "category": "Treatment",
+    "title": "Azelaic Acid Clarifying Gel",
+    "price": 2250,
+    "rating": 4.4,
+    "count": 77,
+    "desc": "A 10% azelaic acid gel that fades post-breakout marks and evens tone — gentle enough for daily use.",
+    "concerns": [
+      "breakouts",
+      "redness"
+    ],
+    "imageKey": "Barrier Repair Cream",
+    "sizes": [],
+    "stock": 27,
+    "expiry": null
+  },
+  {
+    "id": 11,
+    "category": "Moisturizer",
+    "title": "Oat Milk Comfort Cream",
+    "price": 1750,
+    "rating": 4.7,
+    "count": 156,
+    "desc": "A colloidal-oat cream built for reactive, easily-irritated skin — calms redness without a heavy finish.",
+    "concerns": [
+      "redness"
+    ],
+    "imageKey": "Quiet Glow Gel Cream",
+    "sizes": [],
+    "stock": 0,
+    "expiry": "2026-09-20"
+  },
+  {
+    "id": 12,
+    "category": "Body",
+    "title": "Shea Butter Hand Balm",
+    "price": 620,
+    "rating": 4.6,
+    "count": 94,
+    "desc": "A thick, unscented balm for hands that see too much hand sanitizer — softens rough, cracked skin fast.",
+    "concerns": [
+      "dryness"
+    ],
+    "imageKey": "Rice Milk Body Wash",
+    "sizes": [],
+    "stock": 19,
+    "expiry": null
+  },
+  {
+    "id": 13,
+    "category": "Serum",
+    "title": "Peptide Firming Concentrate",
+    "price": 3100,
+    "rating": 4.8,
+    "count": 63,
+    "desc": "A five-peptide complex that supports skin's natural firmness over time — no filler, no fragrance.",
+    "concerns": [
+      "fine-lines"
+    ],
+    "imageKey": "Vitamin C Brightening Drop",
+    "sizes": [],
+    "stock": 8,
+    "expiry": null
+  },
+  {
+    "id": 14,
+    "category": "Treatment",
+    "title": "Salicylic Acid Spot Gel",
+    "price": 890,
+    "rating": 4.3,
+    "count": 203,
+    "desc": "A targeted 2% BHA gel for occasional breakouts — dries down clear under makeup.",
+    "concerns": [
+      "breakouts"
+    ],
+    "imageKey": "Niacinamide Pore Refiner",
+    "sizes": [],
+    "stock": 63,
+    "expiry": null
+  },
+  {
+    "id": 15,
+    "category": "Moisturizer",
+    "title": "Cica Recovery Balm",
+    "price": 2400,
+    "rating": 4.7,
+    "count": 118,
+    "desc": "A centella-forward balm for compromised skin post-treatment — reduces the look of irritation overnight.",
+    "concerns": [
+      "redness"
+    ],
+    "imageKey": "The Ritual Edit, Full Set",
+    "sizes": [],
+    "stock": 15,
+    "expiry": null
+  },
+  {
+    "id": 16,
+    "category": "Body",
+    "title": "Coconut Milk Body Lotion",
+    "price": 1050,
+    "rating": 4.5,
+    "count": 85,
+    "desc": "A fast-absorbing lotion with real coconut milk extract — softens without the greasy afterfeel.",
+    "concerns": [
+      "dryness"
+    ],
+    "imageKey": "Ceramide Sleep Balm",
+    "sizes": [],
+    "stock": 2,
+    "expiry": "2026-12-01"
+  },
+  {
+    "id": 17,
+    "category": "Sets",
+    "title": "The Barrier Repair Duo",
+    "price": 3800,
+    "rating": 4.8,
+    "count": 49,
+    "desc": "Barrier Repair Cream and Ceramide Sleep Balm, paired for skin that needs to rebuild fast.",
+    "concerns": [],
+    "imageKey": "Overnight Retinol Serum",
+    "sizes": [],
+    "stock": 9,
+    "expiry": null
+  },
+  {
+    "id": 18,
+    "category": "Serum",
+    "title": "Hyaluronic Acid Hydration Drops",
+    "price": 1690,
+    "rating": 4.6,
+    "count": 174,
+    "desc": "A multi-weight hyaluronic acid serum that plumps on contact and holds moisture through the day.",
+    "concerns": [
+      "dryness"
+    ],
+    "imageKey": "Barrier Repair Cream",
+    "sizes": [],
+    "stock": 47,
+    "expiry": null
+  },
+  {
+    "id": 19,
+    "category": "Treatment",
+    "title": "Retinal Night Treatment",
+    "price": 3250,
+    "rating": 4.7,
+    "count": 91,
+    "desc": "A faster-converting retinal for visible texture change — start slow, two nights a week.",
+    "concerns": [
+      "fine-lines",
+      "texture"
+    ],
+    "imageKey": "Quiet Glow Gel Cream",
+    "sizes": [],
+    "stock": 0,
+    "expiry": "2027-02-14"
+  },
+  {
+    "id": 20,
+    "category": "Moisturizer",
+    "title": "Cica Recovery Balm II",
+    "price": 2500,
+    "rating": 4.5,
+    "count": 67,
+    "desc": "A richer follow-up to our original balm, built for colder months and drier skin.",
+    "concerns": [
+      "redness",
+      "dryness"
+    ],
+    "imageKey": "Rice Milk Body Wash",
+    "sizes": [],
+    "stock": 31,
+    "expiry": null
+  },
+  {
+    "id": 21,
+    "category": "Body",
+    "title": "Rose Water Body Mist",
+    "price": 780,
+    "rating": 4.4,
+    "count": 112,
+    "desc": "A light, alcohol-free mist for a quick refresh — not a fragrance, just rose water and skin-safe humectants.",
+    "concerns": [],
+    "imageKey": "Vitamin C Brightening Drop",
+    "sizes": [],
+    "stock": 5,
+    "expiry": null
+  },
+  {
+    "id": 22,
+    "category": "Serum",
+    "title": "Tranexamic Acid Brightening Serum",
+    "price": 2650,
+    "rating": 4.6,
+    "count": 58,
+    "desc": "Targets stubborn discoloration that vitamin C alone doesn't touch — pairs well with SPF, not with retinol.",
+    "concerns": [
+      "dullness"
+    ],
+    "imageKey": "Niacinamide Pore Refiner",
+    "sizes": [],
+    "stock": 24,
+    "expiry": null
+  },
+  {
+    "id": 23,
+    "category": "Treatment",
+    "title": "Enzyme Resurfacing Mask",
+    "price": 1450,
+    "rating": 4.5,
+    "count": 139,
+    "desc": "A 10-minute fruit-enzyme mask that lifts dull surface skin without the scrubbing.",
+    "concerns": [
+      "texture",
+      "dullness"
+    ],
+    "imageKey": "The Ritual Edit, Full Set",
+    "sizes": [],
+    "stock": 7,
+    "expiry": null
+  },
+  {
+    "id": 24,
+    "category": "Sets",
+    "title": "The Glow Starter Kit",
+    "price": 2900,
+    "rating": 4.8,
+    "count": 42,
+    "desc": "Vitamin C Brightening Drop and Quiet Glow Gel Cream, sized for a first try at the routine.",
+    "concerns": [],
+    "imageKey": "Ceramide Sleep Balm",
+    "sizes": [],
+    "stock": 18,
+    "expiry": null
+  }
+]

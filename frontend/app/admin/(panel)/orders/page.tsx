@@ -1,36 +1,46 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import { useSearchParams } from "next/navigation";
 import { useAdminStore } from "@/library/adminStore";
 import { orderItemCount, orderTotal } from "@/library/admin/orders";
 import { AdminOrder, AdminOrderStatus } from "@/library/admin/types";
 import { useScrollTopOnChange } from "@/library/useScrollTopOnChange";
 import SearchField from "@/components/admin/SearchField";
+import { Toolbar, ToolbarFilters, FilterField } from "@/components/admin/Toolbar";
 import StatusBadge from "@/components/admin/StatusBadge";
 import Pagination from "@/components/ui/Pagination";
 import { ORDER_STATUS_TONE, ORDER_STATUSES } from "@/components/admin/orderStatus";
 import OrderModal from "@/components/admin/modals/OrderModal";
 import BulkActionBar from "@/components/admin/BulkActionBar";
 import ConfirmModal from "@/components/ui/ConfirmModal";
-import { FILTER_SELECT } from "@/components/admin/formClasses";
+import { FILTER_SELECT, BTN_BULK_PRIMARY, BTN_BULK_SECONDARY, BTN_SECONDARY } from "@/components/admin/formClasses";
+import { ImportIcon, ExportIcon } from "@/components/admin/icons";
+import { downloadOrdersCsv } from "@/library/api/orders";
 import { toCsv, downloadCsv } from "@/library/admin/csv";
 import { useMounted } from "@/library/useMounted";
 import Skeleton, { SkeletonGroup } from "@/components/ui/Skeleton";
+import ListPanel from "@/components/admin/ListPanel";
+import { EmptyStateRow } from "@/components/admin/EmptyState";
+import StatTile, { STAT_TONE_CLASSES, STAT_TONE_SHADOW, StatTileTone } from "@/components/admin/StatTile";
 
 type SortKey = "date-desc" | "date-asc" | "total-desc" | "total-asc";
 
 const PAGE_SIZE = 10;
 
-const TONE_DOT_CLASSES: Record<string, string> = {
-    success: "bg-success",
-    warning: "bg-pink-dark",
-    alert: "bg-alert",
-    neutral: "bg-ink/30",
+// Separate from ORDER_STATUS_TONE: tiles need each status visually distinct, unlike the table's grouped tones.
+const STAT_STATUS_TONE: Record<AdminOrderStatus, StatTileTone> = {
+    Pending: "warning",
+    Paid: "blue",
+    Shipped: "neutral",
+    Delivered: "success",
+    Cancelled: "alert",
 };
 
 export default function OrdersPage() {
-    const { orders, updateOrderStatus, bulkUpdateOrderStatus } = useAdminStore();
+    const { orders, updateOrderStatus, bulkUpdateOrderStatus, importOrders, reviewPayment } = useAdminStore();
+    const importInputRef = useRef<HTMLInputElement>(null);
     const mounted = useMounted();
     const searchParams = useSearchParams();
     const [search, setSearch] = useState("");
@@ -40,8 +50,7 @@ export default function OrdersPage() {
     const [selected, setSelected] = useState<Set<string>>(new Set());
     const [bulkStatus, setBulkStatus] = useState<AdminOrderStatus>(ORDER_STATUSES[0]);
     const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false);
-    // Lazy initializer instead of an effect: resolves the ?order= deep link
-    // (from a notification click) once, at the navigation that mounts this page.
+    // Lazy initializer, not an effect: resolves the ?order= deep link once, at mount.
     const [activeOrder, setActiveOrder] = useState<AdminOrder | null>(() => {
         const ref = searchParams.get("order");
         return ref ? (orders.find((o) => o.no === ref) ?? null) : null;
@@ -78,8 +87,7 @@ export default function OrdersPage() {
         return sorted;
     }, [orders, status, search, sort]);
 
-    // Reset to page 1 whenever the filter set changes — a render-time state
-    // adjustment rather than an effect (see InventoryPage for the pattern).
+    // Reset to page 1 on filter change; a render-time state adjustment, not an effect (see InventoryPage).
     const filterKey = `${status}|${search}|${sort}`;
     const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
     if (filterKey !== prevFilterKey) {
@@ -125,6 +133,29 @@ export default function OrdersPage() {
         clearSelection();
     }
 
+    async function exportAll() {
+        try {
+            await downloadOrdersCsv(status);
+        } catch {
+            toast.error("Couldn't export the orders. Please try again.");
+        }
+    }
+
+    async function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
+        const file = e.target.files?.[0];
+        e.target.value = "";
+        if (!file) return;
+        const result = await importOrders(file);
+        if (!result) return;
+        if (result.updated > 0) toast.success(`${result.updated} order${result.updated === 1 ? "" : "s"} updated.`);
+        if (result.skipped.length > 0) {
+            console.warn("Order import — skipped rows:", result.skipped);
+            toast.error(`${result.skipped.length} row${result.skipped.length === 1 ? "" : "s"} skipped: ${result.skipped[0]}${result.skipped.length > 1 ? " (see the console for the rest)" : ""}`);
+        } else if (result.updated === 0) {
+            toast.error("No changes were made.");
+        }
+    }
+
     function exportSelected() {
         const rows = orders.filter((o) => selected.has(o.no));
         const csv = toCsv(rows, [
@@ -142,37 +173,66 @@ export default function OrdersPage() {
 
     return (
         <div>
-            <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-5">
+            {/* Solid fill carries the status color (like Dashboard's StatCard); active filter gets an inset ring, not just a border. */}
+            <div className="mb-6 grid grid-cols-2 gap-3.5 sm:grid-cols-5">
                 {ORDER_STATUSES.map((s) => (
-                    <button
+                    <StatTile
                         key={s}
+                        label={s}
+                        count={statusCounts[s]}
+                        tone={STAT_STATUS_TONE[s]}
+                        active={status === s}
                         onClick={() => setStatus((current) => (current === s ? "All" : s))}
-                        className={`border bg-white px-4 py-4 text-left transition ${
-                            status === s ? "border-pink-dark" : "border-ink/10 hover:border-ink/25"
-                        }`}
-                    >
-                        <div className="mb-1.5 flex items-center gap-1.5 font-mono text-[10px] tracking-[.1em] text-grey uppercase">
-                            <span className={`h-1.5 w-1.5 rounded-full ${TONE_DOT_CLASSES[ORDER_STATUS_TONE[s]]}`} />
-                            {s}
-                        </div>
-                        <div className="font-display text-[22px] font-medium text-ink">{statusCounts[s]}</div>
-                    </button>
+                    />
                 ))}
             </div>
 
-            <div className="mb-6 flex flex-wrap items-center gap-3">
-                <SearchField value={search} onChange={setSearch} placeholder="Search by order # or customer" />
-                <select value={sort} onChange={(e) => setSort(e.target.value as SortKey)} className={FILTER_SELECT}>
-                    <option value="date-desc">Date (Newest)</option>
-                    <option value="date-asc">Date (Oldest)</option>
-                    <option value="total-desc">Total (High–Low)</option>
-                    <option value="total-asc">Total (Low–High)</option>
-                </select>
-            </div>
+            <Toolbar
+                actions={
+                    <>
+                        <input ref={importInputRef} type="file" accept=".csv,text/csv" onChange={handleImportFile} className="hidden" aria-label="Import order statuses from CSV" />
+                        <button onClick={() => importInputRef.current?.click()} className={BTN_SECONDARY} title="Update many orders' status from a CSV with Order and Status columns">
+                            <ImportIcon />
+                            Import
+                        </button>
+                        <button onClick={exportAll} className={BTN_SECONDARY} title={status === "All" ? "Download every order" : `Download every ${status.toLowerCase()} order`}>
+                            <ExportIcon />
+                            Export
+                        </button>
+                    </>
+                }
+                filters={
+                    <ToolbarFilters>
+                        <FilterField label="Search" className="min-w-[240px] flex-1">
+                            <SearchField value={search} onChange={setSearch} placeholder="Search by order # or customer" className="w-full" />
+                        </FilterField>
+                        <FilterField label="Status" className="w-full flex-none sm:w-[160px]">
+                            <select
+                                value={status}
+                                onChange={(e) => setStatus(e.target.value as AdminOrderStatus | "All")}
+                                className={`${FILTER_SELECT} w-full`}
+                            >
+                                <option value="All">All statuses</option>
+                                {ORDER_STATUSES.map((s) => (
+                                    <option key={s} value={s}>
+                                        {s}
+                                    </option>
+                                ))}
+                            </select>
+                        </FilterField>
+                        <FilterField label="Sort by" className="w-full flex-none sm:w-[190px]">
+                            <select value={sort} onChange={(e) => setSort(e.target.value as SortKey)} className={`${FILTER_SELECT} w-full`}>
+                                <option value="date-desc">Date (Newest)</option>
+                                <option value="date-asc">Date (Oldest)</option>
+                                <option value="total-desc">Total (High–Low)</option>
+                                <option value="total-asc">Total (Low–High)</option>
+                            </select>
+                        </FilterField>
+                    </ToolbarFilters>
+                }
+            />
 
-            <div className="overflow-hidden border border-ink/10 bg-white">
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[720px] border-collapse">
+            <ListPanel minWidth={720} footer={<>Showing {filtered.length} of {orders.length}</>}>
                     <thead>
                             <tr className="bg-off/50">
                                 <th scope="col" className="w-11 border-b border-ink/10 px-5 py-3.5">
@@ -185,7 +245,7 @@ export default function OrdersPage() {
                                     />
                                 </th>
                                 {["Order", "Customer", "Date", "Items", "Total", "Status"].map((h) => (
-                                    <th key={h} scope="col" className="border-b border-ink/10 px-5 py-3.5 text-left font-mono text-[10px] tracking-[.12em] text-grey uppercase">
+                                    <th key={h} scope="col" className="border-b border-ink/10 px-5 py-3.5 text-left font-mono text-[11px] tracking-[.12em] text-grey uppercase">
                                         {h}
                                     </th>
                                 ))}
@@ -193,11 +253,7 @@ export default function OrdersPage() {
                         </thead>
                         <tbody>
                             {paged.length === 0 && (
-                                <tr>
-                                    <td colSpan={7} className="px-5 py-16 text-center text-[13px] text-grey">
-                                        No orders match this search.
-                                    </td>
-                                </tr>
+                                <EmptyStateRow colSpan={7} variant="filtered" message="No orders match this search." />
                             )}
                             {paged.map((o) => (
                                 <tr
@@ -230,13 +286,14 @@ export default function OrdersPage() {
                                     <td className="border-b border-ink/10 px-5 py-3.5 font-mono text-[12.5px] text-ink">₱{orderTotal(o).toLocaleString()}</td>
                                     <td className="border-b border-ink/10 px-5 py-3.5">
                                         <StatusBadge label={o.status} tone={ORDER_STATUS_TONE[o.status]} />
+                                        {o.status === "Pending" && o.payment?.state === "review" && (
+                                            <span className="mt-1 block font-mono text-[10px] tracking-[.1em] text-pink-dark uppercase">Payment to review</span>
+                                        )}
                                     </td>
                                 </tr>
                             ))}
                         </tbody>
-                    </table>
-              </div>
-            </div>
+            </ListPanel>
 
             <Pagination page={currentPage} totalPages={totalPages} onChange={setPage} />
 
@@ -253,21 +310,15 @@ export default function OrdersPage() {
                         </option>
                     ))}
                 </select>
-                <button
-                    onClick={applyBulkStatus}
-                    className="flex h-9 items-center bg-pink-btn px-4 text-[12px] font-semibold text-white transition hover:bg-pink-btn-hover"
-                >
+                <button onClick={applyBulkStatus} className={BTN_BULK_PRIMARY}>
                     Apply
                 </button>
-                <button
-                    onClick={exportSelected}
-                    className="flex h-9 items-center border border-white/25 px-3.5 text-[12px] font-semibold text-white transition hover:border-white hover:bg-white/10"
-                >
+                <button onClick={exportSelected} className={BTN_BULK_SECONDARY}>
                     Export CSV
                 </button>
             </BulkActionBar>
 
-            <OrderModal open={modalOrder !== null} order={modalOrder} onClose={() => setActiveOrder(null)} onStatusChange={updateOrderStatus} />
+            <OrderModal open={modalOrder !== null} order={modalOrder} onClose={() => setActiveOrder(null)} onStatusChange={updateOrderStatus} onReviewPayment={reviewPayment} />
 
             <ConfirmModal
                 open={bulkConfirmOpen}
@@ -283,29 +334,30 @@ export default function OrdersPage() {
     );
 }
 
-// Mirrors the populated orders page — 5 status-count filter cards, the
-// search/sort toolbar, and the order table with pagination.
 function OrdersSkeleton() {
     return (
         <SkeletonGroup>
-            <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-5">
-                {Array.from({ length: 5 }).map((_, i) => (
-                    <div key={i} className="border border-ink/10 bg-white px-4 py-4">
-                        <div className="mb-1.5 flex items-center gap-1.5">
-                            <Skeleton tone="soft" className="h-1.5 w-1.5 rounded-full" />
-                            <Skeleton tone="soft" className="h-[10px] w-14" />
+            <div className="mb-6 grid grid-cols-2 gap-3.5 sm:grid-cols-5">
+                {ORDER_STATUSES.map((s) => {
+                    const toneKey: StatTileTone = STAT_STATUS_TONE[s];
+                    return (
+                        <div key={s} className={`px-4 py-5 ${STAT_TONE_CLASSES[toneKey]} ${STAT_TONE_SHADOW[toneKey]}`}>
+                            <Skeleton tone="onSolid" className="mb-2 h-[10px] w-14" />
+                            <Skeleton tone="onSolid" className="h-[26px] w-8" />
                         </div>
-                        <Skeleton className="h-[22px] w-8" />
-                    </div>
-                ))}
+                    );
+                })}
             </div>
 
-            <div className="mb-6 flex flex-wrap items-center gap-3">
-                <Skeleton tone="outline" className="h-11 w-64" />
-                <Skeleton tone="outline" className="h-11 w-48" />
+            <div className="mb-10 flex flex-wrap items-end justify-between gap-x-8 gap-y-5 border-b border-ink/10 pb-6">
+                <div className="flex flex-1 flex-wrap items-end gap-4">
+                    <Skeleton tone="outline" className="h-11 flex-1 min-w-[240px]" />
+                    <Skeleton tone="outline" className="h-11 w-[160px]" />
+                    <Skeleton tone="outline" className="h-11 w-[190px]" />
+                </div>
             </div>
 
-            <div className="overflow-hidden border border-ink/10 bg-white">
+            <div className="overflow-hidden border border-ink/10 bg-white shadow-card">
                 <div className="border-b border-ink/10 bg-off/50 px-5 py-3.5">
                     <Skeleton tone="soft" className="h-[10px] w-full" />
                 </div>
@@ -320,6 +372,9 @@ function OrdersSkeleton() {
                         <Skeleton tone="outline" className="h-[19px] w-20 rounded-pill" />
                     </div>
                 ))}
+                <div className="border-t border-ink/10 bg-off/50 px-5 py-2.5 text-right">
+                    <Skeleton tone="soft" className="ml-auto h-[11px] w-28" />
+                </div>
             </div>
 
             <div className="mt-8 flex justify-center gap-1.5">

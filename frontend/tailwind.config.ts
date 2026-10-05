@@ -32,11 +32,21 @@ const config: Config = {
         },
         blue: {
           soft: "var(--color-blue-soft)",
+          accent: "var(--color-blue-accent)",
+          "accent-hover": "var(--color-blue-accent-hover)",
         },
         gold: "var(--color-gold)",
         success: {
           DEFAULT: "var(--color-success)",
           dark: "var(--color-success-dark)",
+        },
+        // Dedicated "warning" hue — introduced so StatusBadge/StatTile's warning
+        // tone stops borrowing pink-dark (pink is CTAs/accents only; gold is
+        // ratings only). Distinct from gold: punchier orange-amber vs. gold's
+        // muted brownish-tan.
+        amber: {
+          DEFAULT: "var(--color-amber)",
+          dark: "var(--color-amber-dark)",
         },
       },
       fontFamily: {
@@ -57,6 +67,7 @@ const config: Config = {
         card: "0 1px 3px rgba(61,90,115,.05)",
         "card-hover": "0 16px 28px rgba(61,90,115,.14)",
         modal: "0 24px 60px rgba(61,90,115,.22)",
+        tooltip: "0 8px 20px -4px rgba(61,90,115,.32)",
         glow: "0 20px 50px rgba(61,90,115,.16)",
       },
       backgroundImage: {

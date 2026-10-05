@@ -29,12 +29,21 @@ function ProductImage({ id, aspect, title }: { id: number; aspect: string; title
             <Image src={product.image} alt={title} fill sizes="(min-width: 1024px) 60vw, 100vw" className="object-cover" />
             <span
                 role="button"
+                tabIndex={0}
                 aria-label="Toggle wishlist"
                 onClick={(e) => {
+                    e.preventDefault();
                     e.stopPropagation();
                     toggleWishlist(id);
                 }}
-                className={`absolute top-3 right-3 flex h-8 w-8 items-center justify-center border transition hover:border-pink-btn hover:bg-pink-btn hover:text-white ${
+                onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        toggleWishlist(id);
+                    }
+                }}
+                className={`absolute top-3 right-3 flex h-11 w-11 items-center justify-center border transition hover:border-pink-btn hover:bg-pink-btn hover:text-white ${
                     isWished ? "border-pink-btn bg-pink-btn text-white" : "border-white/40 bg-white/80 text-ink"
                 }`}
             >
@@ -47,22 +56,15 @@ function ProductImage({ id, aspect, title }: { id: number; aspect: string; title
 }
 
 export default function BestSellers(){
-    const { addToCart, openModal, isLoggedIn } = useStore();
+    const { addToCart } = useStore();
     const { sectionVisibility } = useContent();
 
     function handleAddToBag(id: number) {
-        if (!isLoggedIn) {
-            openModal("login");
-            return;
-        }
         const product = getProduct(id);
         addToCart(id, 1, product ? cheapestSizeId(product) : null);
     }
 
-    // No `preview` escape hatch here, unlike the other sections: Best Sellers
-    // has no editable copy of its own (every string is product data or fixed
-    // microcopy), so it has no editor and therefore no preview pane to render
-    // into — only the visibility toggle in the Pages list.
+    // No preview prop: Best Sellers has no editable copy, so there's no editor/preview pane — only the visibility toggle.
     if (!sectionVisibility.bestSellers) return null;
 
     return(
@@ -81,14 +83,14 @@ export default function BestSellers(){
                         >
                             <Link
                                 href={`/shop/${row.id}`}
-                                className={`grid gap-12 ${row.cols} ${row.align} ${row.overlap}`}
+                                className={`group grid gap-12 ${row.cols} ${row.align} ${row.overlap}`}
                             >
                                 {row.imageFirst && <ProductImage id={row.id} aspect={row.aspect} title={product.title} />}
 
                                 <div className={row.imageFirst ? "" : "text-right"}>
                                     <span className="font-mono text-[10px] uppercase tracking-[.16em] text-grey">{product.category}</span>
                                     <span
-                                        className={`mt-2 mb-3 block w-full text-[clamp(20px,2vw,26px)] font-medium text-ink ${row.imageFirst ? "text-left" : "text-right"}`}
+                                        className={`mt-2 mb-3 block w-full text-[clamp(20px,2vw,26px)] font-medium text-ink transition-colors group-hover:text-pink-dark ${row.imageFirst ? "text-left" : "text-right"}`}
                                     >
                                         {product.title}
                                     </span>
