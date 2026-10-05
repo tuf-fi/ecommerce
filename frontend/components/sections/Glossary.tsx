@@ -8,43 +8,42 @@ import RevealIn from "../ui/motion/RevealIn";
 import { useContent } from "@/library/content";
 import { PRODUCTS } from "@/library/products";
 
-// No `preview` prop: this section is edited through ConcernsTab's CRUD screen
-// (see the dispatcher in admin/content/pages/[slug]) rather than a
-// ContentEditorShell editor, so there's no live-preview pane to render into.
+// No preview prop: edited via ConcernsTab's CRUD screen, not a ContentEditorShell editor, so there's no preview pane.
 export default function Glossary(){
     const { concerns, sectionVisibility } = useContent();
 
     if (!sectionVisibility.glossary) return null;
 
     return(
-        <SectionContainer tint="pink-soft" id="concern">
+        <SectionContainer id="concern">
             <SectionTitle num="04" title="Shop by Concern" />
 
-            {/* Horizontally scrollable instead of a fixed grid so the row holds
-                up whether the CMS-managed list has fewer tiles (no dangling
-                empty grid tracks) or more (scrolls instead of wrapping into an
-                uneven second row). */}
-            <div className="thin-scrollbar flex gap-4 overflow-x-auto pb-2">
+            {/* Horizontally scrollable so the row holds up whether the CMS list has fewer or more tiles than a fixed grid. */}
+            <div className="thin-scrollbar flex justify-center gap-4 overflow-x-auto pb-2">
                 {concerns.map((concern, index) => {
                     const count = PRODUCTS.filter((p) => p.concerns?.includes(concern.key)).length;
                     return (
                         <RevealIn key={concern.id} direction="bottom" delay={index * 0.09} distance={28} className="flex-none">
-                            <Link href={`/shop?concern=${concern.key}`} aria-label={`Shop for ${concern.title}`} className="group flex w-[150px] flex-col gap-3 sm:w-[170px]">
-                                <div className="relative aspect-[3/4] w-full overflow-hidden border border-ink/10">
-                                    {concern.image && (
-                                        <Image
-                                            src={concern.image}
-                                            alt=""
-                                            fill
-                                            sizes="170px"
-                                            className="object-cover transition duration-500 group-hover:scale-105"
-                                            unoptimized={typeof concern.image === "string"}
-                                        />
-                                    )}
-                                </div>
-                                <div className="flex flex-col items-center gap-1">
-                                    <span className="text-center font-mono text-[11px] uppercase tracking-[.1em] text-ink">{concern.title}</span>
-                                    <span className="text-center font-mono text-[10px] text-grey">{count} product{count === 1 ? "" : "s"}</span>
+                            {/* Overlaid caption matches the site's other photography-led tiles (Moments/Rituals, Journal). */}
+                            <Link
+                                href={`/shop?concern=${concern.key}`}
+                                aria-label={`Shop for ${concern.title}`}
+                                className="group relative flex aspect-[3/4] w-[160px] flex-none overflow-hidden border border-ink/10 sm:w-[190px]"
+                            >
+                                {concern.image && (
+                                    <Image
+                                        src={concern.image}
+                                        alt=""
+                                        fill
+                                        sizes="190px"
+                                        className="object-cover transition duration-500 group-hover:scale-105"
+                                        unoptimized={typeof concern.image === "string"}
+                                    />
+                                )}
+                                <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/15 to-transparent transition-colors duration-300 group-hover:from-black/90" />
+                                <div className="absolute inset-x-0 bottom-0 flex flex-col items-center gap-1 p-4 text-center">
+                                    <span className="font-mono text-[11px] uppercase tracking-[.1em] text-white">{concern.title}</span>
+                                    <span className="font-mono text-[10px] text-white/70">{count} product{count === 1 ? "" : "s"}</span>
                                 </div>
                             </Link>
                         </RevealIn>

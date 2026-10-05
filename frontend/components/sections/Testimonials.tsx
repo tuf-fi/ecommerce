@@ -21,12 +21,7 @@ function initials(name: string) {
         .toUpperCase();
 }
 
-// The quotation mark is a fixed, non-animated anchor for the whole block —
-// only the message/avatar/name beneath it slide on rotation, per the
-// explicit note that the quote itself should stay in place while the
-// testimonial content changes. Direction is deliberate: the outgoing
-// testimonial exits toward the left while the incoming one enters from the
-// right, like a single-lane carousel rather than a plain cross-fade.
+// Quotation mark stays fixed while content slides; exit direction (left) vs enter (right) reads as a single-lane carousel, not a cross-fade.
 function FeaturedTestimonial({ pool }: { pool: Testimonial[] }) {
     const [index, setIndex] = useState(0);
 
@@ -55,7 +50,7 @@ function FeaturedTestimonial({ pool }: { pool: Testimonial[] }) {
                     >
                         <p className="mb-7 max-w-[720px] text-[21px] leading-relaxed text-ink sm:text-[26px]">{featured.message}</p>
                         <div className="flex items-center gap-3.5">
-                            <span className="flex h-11 w-11 flex-none items-center justify-center overflow-hidden rounded-full bg-navy font-mono text-[12px] text-white">
+                            <span className="flex h-11 w-11 flex-none items-center justify-center overflow-hidden rounded-full bg-blue-accent font-mono text-[12px] text-white">
                                 {featured.image ? (
                                     // eslint-disable-next-line @next/next/no-img-element
                                     <img src={featured.image} alt="" className="h-full w-full object-cover" />
@@ -84,7 +79,7 @@ export default function Testimonials() {
     if (testimonials.length === 0) return null;
 
     return (
-        <SectionContainer tint="blue-soft" id="testimonials">
+        <SectionContainer id="testimonials">
             <SectionTitle num="08" title="Testimonials" />
 
             <RevealIn direction="bottom">

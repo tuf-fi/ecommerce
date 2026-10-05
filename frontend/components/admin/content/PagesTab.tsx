@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { Fragment, useMemo, useState } from "react";
 import Link from "next/link";
 import { SectionKey, useContent } from "@/library/content";
 import { StaticPage } from "@/library/admin/types";
@@ -8,34 +8,54 @@ import Toggle from "@/components/ui/Toggle";
 import Tooltip from "@/components/ui/Tooltip";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { ICON_BTN } from "@/components/admin/formClasses";
+import ListPanel from "@/components/admin/ListPanel";
+import { EditIcon } from "@/components/admin/icons";
 
-// Fixed display order for known categories — anything else (a category added
-// later without updating this list) just gets appended after, so nothing
-// silently disappears from the tab.
-const CATEGORY_ORDER = ["Landing Page", "Security", "Pages", "Support"];
+type PagesSection = "landing" | "pages" | "security" | "support";
+
+const PAGES_SECTIONS: { key: PagesSection; label: string; category: string; caption: string; description: string }[] = [
+    {
+        key: "landing",
+        label: "Landing Page Sections",
+        category: "Landing Page",
+        caption: "Homepage sections & toggles",
+        description: "Sections shown on the homepage, in order. Toggle a section off to hide it from the site.",
+    },
+    {
+        key: "pages",
+        label: "Pages",
+        category: "Pages",
+        caption: "Shop, wishlist & cart",
+        description: "Core shopping routes — headline and accent copy only.",
+    },
+    {
+        key: "security",
+        label: "Security",
+        category: "Security",
+        caption: "Privacy & terms",
+        description: "Legal pages linked from the footer.",
+    },
+    {
+        key: "support",
+        label: "Support",
+        category: "Support",
+        caption: "Shipping & returns",
+        description: "Customer support pages linked from the footer.",
+    },
+];
 
 type PageRow = Pick<StaticPage, "slug" | "name" | "category"> & {
     updated?: string;
-    // Set on rows that back a homepage section — this is what the Visible
-    // column toggles. Absent on the Shop/Wishlist/Cart intros and the static
-    // pages, which are routes of their own rather than sections of the
-    // homepage, and so can't be switched off from here.
+    // Set on rows that back a homepage section; absent on routes that can't be toggled off from here.
     sectionKey?: SectionKey;
-    // False for a row that exists only to carry that toggle, with no editor
-    // behind it. Defaults to true.
+    // False for a toggle-only row with no editor behind it. Defaults to true.
     hasEditor?: boolean;
 };
 
-// None of these are real StaticPage entries — each backs a different kind of
-// editor (Hero/About/intro content lives in its own `useContent()` state, and
-// Testimonials/Rituals/Concerns each have their own full CRUD screen) but
-// still needs a row here so everything editable is reachable from one
-// categorized list. The Landing Page rows are ordered the way the homepage
-// itself renders them.
+// None of these are real StaticPage entries — each backs a different editor but still needs a row here to be reachable from one categorized list.
 const HERO_ROW: PageRow = { slug: "hero", name: "Hero", category: "Landing Page", sectionKey: "hero" };
 const ABOUT_ROW: PageRow = { slug: "about", name: "About", category: "Landing Page", sectionKey: "about" };
-// Best Sellers is the one toggle-only row: every string in that section is
-// product data or fixed microcopy, so there's no editor to click through to.
+// Best Sellers is toggle-only: every string in that section is product data or fixed microcopy, so there's no editor to click through to.
 const BEST_SELLERS_ROW: PageRow = {
     slug: "bestsellers",
     name: "Best Sellers",
@@ -43,51 +63,42 @@ const BEST_SELLERS_ROW: PageRow = {
     sectionKey: "bestSellers",
     hasEditor: false,
 };
-const RITUALS_ROW: PageRow = { slug: "rituals", name: "Rituals", category: "Landing Page", sectionKey: "moments" };
 const PHILOSOPHY_ROW: PageRow = { slug: "philosophy", name: "Philosophy", category: "Landing Page", sectionKey: "philosophy" };
-const CONCERNS_ROW: PageRow = { slug: "concerns", name: "Shop by Concern", category: "Landing Page", sectionKey: "glossary" };
-const CATALOGUE_ROW: PageRow = { slug: "catalogue", name: "Shop All", category: "Landing Page", sectionKey: "catalogue" };
-const TESTIMONIALS_ROW: PageRow = { slug: "testimonials", name: "Testimonials", category: "Landing Page", sectionKey: "testimonials" };
+// Toggle-only like Best Sellers: the grid pulls from Inventory and the CTA label has no admin editor of its own.
+const SHOP_ALL_ROW: PageRow = {
+    slug: "catalogue",
+    name: "Shop All",
+    category: "Landing Page",
+    sectionKey: "catalogue",
+    hasEditor: false,
+};
 const NEWSLETTER_ROW: PageRow = { slug: "newsletter", name: "Newsletter", category: "Landing Page", sectionKey: "newsletter" };
 const SHOP_ROW: PageRow = { slug: "shop", name: "Shop", category: "Pages" };
 const WISHLIST_ROW: PageRow = { slug: "wishlist", name: "Wishlist", category: "Pages" };
 const CART_ROW: PageRow = { slug: "cart", name: "Cart", category: "Pages" };
 
-// Contact and Journal are homepage sections too, but each already has its own
-// top-level tab, so their toggles live there rather than being duplicated here.
+// Contact and Journal are homepage sections too, but each has its own top-level tab, so their toggles live there instead.
+// Rituals/Shop by Concern/FAQs/Testimonials live in their own "Content Collections" tab instead of here —
+// each backs a list of repeatable items rather than a single fixed content block.
+const EXCLUDED_SLUGS = new Set(["faq"]);
 
 function rowHref(row: PageRow) {
     return `/admin/content/pages/${row.slug}`;
 }
 
-function sortCategories(categories: string[]) {
-    return [...categories].sort((a, b) => {
-        const ai = CATEGORY_ORDER.indexOf(a);
-        const bi = CATEGORY_ORDER.indexOf(b);
-        if (ai === -1 && bi === -1) return a.localeCompare(b);
-        if (ai === -1) return 1;
-        if (bi === -1) return -1;
-        return ai - bi;
-    });
-}
-
 export default function PagesTab() {
     const { pages, sectionVisibility, updateSectionVisibility } = useContent();
+    const [section, setSection] = useState<PagesSection>("landing");
 
-    const groups = useMemo(() => {
+    const rowsByCategory = useMemo(() => {
         const rows: PageRow[] = [
             HERO_ROW,
             ABOUT_ROW,
             BEST_SELLERS_ROW,
-            RITUALS_ROW,
             PHILOSOPHY_ROW,
-            CONCERNS_ROW,
-            CATALOGUE_ROW,
-            // The FAQ is a real StaticPage row but also a homepage section, so
-            // it picks up a sectionKey on the way through.
-            ...pages.map((p) => (p.slug === "faq" ? { ...p, sectionKey: "faq" as const } : p)),
-            TESTIMONIALS_ROW,
+            SHOP_ALL_ROW,
             NEWSLETTER_ROW,
+            ...pages.filter((p) => !EXCLUDED_SLUGS.has(p.slug)),
             SHOP_ROW,
             WISHLIST_ROW,
             CART_ROW,
@@ -98,95 +109,116 @@ export default function PagesTab() {
             list.push(row);
             byCategory.set(row.category, list);
         }
-        return sortCategories([...byCategory.keys()]).map((category) => ({
-            category,
-            rows: byCategory.get(category)!,
-        }));
+        return byCategory;
     }, [pages]);
 
+    const activeSection = PAGES_SECTIONS.find((s) => s.key === section)!;
+    // Editable rows first, toggle-only rows clustered at the end — so which rows you can click into
+    // isn't interspersed with which rows are display-only, without needing a separate view.
+    const activeRows = useMemo(() => {
+        const rows = rowsByCategory.get(activeSection.category) ?? [];
+        return [...rows].sort((a, b) => Number(a.hasEditor === false) - Number(b.hasEditor === false));
+    }, [rowsByCategory, activeSection.category]);
+    const firstToggleOnlyIndex = activeRows.findIndex((p) => p.hasEditor === false);
+
     return (
-        <div>
-            <div className="mb-5 flex items-center justify-between">
-                <h3 className="m-0 text-[15px] font-medium text-ink">Static Pages</h3>
-                <span className="font-mono text-[11px] text-grey">Editable without a developer</span>
+        <div className="flex flex-col border border-ink/10 bg-white sm:flex-row sm:max-h-[70vh]">
+            <div className="flex flex-none divide-x divide-ink/10 border-b border-ink/10 sm:w-64 sm:flex-col sm:divide-x-0 sm:divide-y sm:border-r sm:border-b-0">
+                {PAGES_SECTIONS.map((s) => {
+                    const active = section === s.key;
+                    return (
+                        <button
+                            key={s.key}
+                            onClick={() => setSection(s.key)}
+                            className={`flex-1 px-5 py-4 text-left transition sm:flex-none ${active ? "bg-navy" : "hover:bg-off/60"}`}
+                        >
+                            <div className={`text-[13.5px] font-medium ${active ? "text-white" : "text-ink"}`}>{s.label}</div>
+                            <div className={`mt-0.5 text-[11.5px] ${active ? "text-white/70" : "text-grey"}`}>{s.caption}</div>
+                        </button>
+                    );
+                })}
             </div>
 
-            <div className="space-y-8">
-                {groups.map(({ category, rows }) => (
-                    <div key={category}>
-                        <div className="mb-2 font-mono text-[10px] tracking-[.14em] text-grey uppercase">{category}</div>
-                        <div className="overflow-hidden border border-ink/10 bg-white">
-                            <table className="w-full table-fixed border-collapse">
-                                <colgroup>
-                                    <col />
-                                    <col className="w-[180px]" />
-                                    <col className="w-[92px]" />
-                                    <col className="w-[76px]" />
-                                </colgroup>
-                                <thead>
-                                    <tr className="bg-off/50">
-                                        {["Page", "Last Updated", "Visible", ""].map((h) => (
-                                            <th
-                                                key={h}
-                                                scope="col"
-                                                className="border-b border-ink/10 px-5 py-3.5 text-left font-mono text-[10px] tracking-[.12em] text-grey uppercase"
-                                            >
-                                                {h}
-                                            </th>
-                                        ))}
+            <div className="min-h-0 min-w-0 flex-1 overflow-y-auto p-7">
+                <div className="mb-5">
+                    <h3 className="m-0 text-[15px] font-medium text-ink">{activeSection.label}</h3>
+                    <p className="mt-1 text-[12px] text-grey">{activeSection.description}</p>
+                </div>
+
+                <ListPanel tableClassName="w-full table-fixed border-collapse">
+                    <colgroup>
+                        <col />
+                        <col className="w-[180px]" />
+                        <col className="w-[92px]" />
+                        <col className="w-[76px]" />
+                    </colgroup>
+                    <thead>
+                        <tr className="bg-off/50">
+                            {["Page", "Last Updated", "Visible", ""].map((h) => (
+                                <th
+                                    key={h}
+                                    scope="col"
+                                    className="border-b border-ink/10 px-5 py-3.5 text-left font-mono text-[11px] tracking-[.12em] text-grey uppercase"
+                                >
+                                    {h}
+                                </th>
+                            ))}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {activeRows.map((p, i) => (
+                            <Fragment key={p.slug}>
+                                {i === firstToggleOnlyIndex && i > 0 && (
+                                    <tr aria-hidden="true">
+                                        <td colSpan={4} className="border-b border-ink/10 bg-off/30 px-5 py-1.5 font-mono text-[10px] tracking-[.12em] text-grey uppercase">
+                                            Display only — no editor
+                                        </td>
                                     </tr>
-                                </thead>
-                                <tbody>
-                                    {rows.map((p) => (
-                                        <tr key={p.slug} className="transition hover:bg-off/40">
-                                            <td className="border-b border-ink/10 px-5 py-3.5 text-[13.5px] font-medium text-ink">
-                                                {p.hasEditor === false ? (
-                                                    <span className="flex items-center gap-2">
-                                                        <span className="text-grey">{p.name}</span>
-                                                        <StatusBadge label="No editor" tone="neutral" />
-                                                    </span>
-                                                ) : (
-                                                    <Link href={rowHref(p)} className="block">
-                                                        {p.name}
+                                )}
+                                <tr className="transition hover:bg-off/40">
+                                    <td className="border-b border-ink/10 px-5 py-3.5 text-[13.5px] font-medium text-ink">
+                                        {p.hasEditor === false ? (
+                                            <span className="flex items-center gap-2">
+                                                <span className="text-grey">{p.name}</span>
+                                                <StatusBadge label="No editor" tone="neutral" />
+                                            </span>
+                                        ) : (
+                                            <Link href={rowHref(p)} className="block">
+                                                {p.name}
+                                            </Link>
+                                        )}
+                                    </td>
+                                    <td className="border-b border-ink/10 px-5 py-3.5 font-mono text-[12px] text-grey">
+                                        {p.updated ?? "—"}
+                                    </td>
+                                    {/* Reversible in one click, so no ConfirmModal — the
+                                        confirm-before-delete rule is for one-way actions. */}
+                                    <td className="border-b border-ink/10 px-5 py-3.5">
+                                        {p.sectionKey ? (
+                                            <Toggle
+                                                checked={sectionVisibility[p.sectionKey]}
+                                                onChange={(v) => updateSectionVisibility(p.sectionKey!, v)}
+                                            />
+                                        ) : (
+                                            <span className="font-mono text-[12px] text-grey">—</span>
+                                        )}
+                                    </td>
+                                    <td className="border-b border-ink/10 px-5 py-3.5">
+                                        <div className="flex justify-end">
+                                            {p.hasEditor !== false && (
+                                                <Tooltip label="Edit">
+                                                    <Link href={rowHref(p)} aria-label="Edit page" className={ICON_BTN}>
+                                                        <EditIcon />
                                                     </Link>
-                                                )}
-                                            </td>
-                                            <td className="border-b border-ink/10 px-5 py-3.5 font-mono text-[12px] text-grey">
-                                                {p.updated ?? "—"}
-                                            </td>
-                                            {/* Reversible in one click, so no ConfirmModal — the
-                                                confirm-before-delete rule is for one-way actions. */}
-                                            <td className="border-b border-ink/10 px-5 py-3.5">
-                                                {p.sectionKey ? (
-                                                    <Toggle
-                                                        checked={sectionVisibility[p.sectionKey]}
-                                                        onChange={(v) => updateSectionVisibility(p.sectionKey!, v)}
-                                                    />
-                                                ) : (
-                                                    <span className="font-mono text-[12px] text-grey">—</span>
-                                                )}
-                                            </td>
-                                            <td className="border-b border-ink/10 px-5 py-3.5">
-                                                <div className="flex justify-end">
-                                                    {p.hasEditor !== false && (
-                                                        <Tooltip label="Edit">
-                                                            <Link href={rowHref(p)} aria-label="Edit page" className={ICON_BTN}>
-                                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                                                                    <path d="M12 20h9" />
-                                                                    <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5Z" />
-                                                                </svg>
-                                                            </Link>
-                                                        </Tooltip>
-                                                    )}
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                ))}
+                                                </Tooltip>
+                                            )}
+                                        </div>
+                                    </td>
+                                </tr>
+                            </Fragment>
+                        ))}
+                    </tbody>
+                </ListPanel>
             </div>
         </div>
     );

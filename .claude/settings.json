@@ -65,7 +65,9 @@
       "Bash(node test-view-modals3.mjs)",
       "Bash(node test-view-modals4.mjs)",
       "Bash(echo \"TSC_EXIT=$?\")",
-      "Bash(echo \"ESLINT_EXIT=$?\")"
+      "Bash(echo \"ESLINT_EXIT=$?\")",
+      "Bash(.claude/skills/impeccable/scripts/impeccable.cmd context *)",
+      "Bash(echo \"EXIT_CODE=$?\")"
     ],
     "additionalDirectories": [
       "c:\\Users\\jbesayte\\Desktop\\ecommerce\\frontend\\app\\rituals"

@@ -8,11 +8,7 @@ import ContentEditorShell from "./ContentEditorShell";
 import { FIELD_INPUT, FIELD_LABEL } from "../formClasses";
 import { useAsyncAction, wait } from "@/library/useAsyncAction";
 
-// Edits are staged in local `draft` state and only written to the shared
-// content store (which the live customer-facing site also reads) inside
-// handleSave — see PageContentEditor.tsx for the reference pattern. The live
-// preview below still updates on every keystroke because it's fed `draft`
-// directly (via Philosophy's `previewData` prop), not the shared context.
+// Edits stage in local `draft`, written to the shared content store only on handleSave — see PageContentEditor.tsx.
 export default function PhilosophyEditor() {
     const { philosophy, updatePhilosophy } = useContent();
     const [draft, setDraft] = useState<PhilosophyContent>(philosophy);
@@ -38,7 +34,6 @@ export default function PhilosophyEditor() {
             saving={saving}
             onSave={handleSave}
             dirty={dirty}
-            previewLabel="cindyrella.ph/#philosophy"
             preview={<Philosophy preview previewData={draft} />}
         >
             <div className="mb-4">

@@ -15,9 +15,9 @@ function FaqAccordion({ compact }: { compact: boolean }) {
                 <RevealIn key={item.id} direction="bottom" delay={index * 0.1} distance={20}>
                     <Accordion.Item value={String(item.id)} className="py-5">
                         <Accordion.Header>
-                            <Accordion.Trigger className="group flex w-full cursor-pointer items-center justify-between gap-6 text-left text-[15px] font-medium text-ink">
+                            <Accordion.Trigger className="group flex w-full cursor-pointer items-center justify-between gap-6 text-left text-[15px] font-medium text-ink transition-colors hover:text-pink-dark">
                                 {item.q}
-                                <span className="flex-none font-mono text-lg text-grey transition-transform duration-300 ease-in-out group-data-[state=open]:rotate-45">+</span>
+                                <span className="flex-none font-mono text-lg text-grey transition-all duration-300 ease-in-out group-hover:text-pink-dark group-data-[state=open]:rotate-45 group-data-[state=open]:text-pink-dark">+</span>
                             </Accordion.Trigger>
                         </Accordion.Header>
                         <Accordion.Content className="overflow-hidden data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
@@ -30,10 +30,7 @@ function FaqAccordion({ compact }: { compact: boolean }) {
     );
 }
 
-// `preview` renders inside the admin's live-preview pane, which is far
-// narrower than the real page — the two-column layout (`.9fr_1.1fr`) and the
-// full-bleed tinted background both assume the real homepage's width, so
-// preview mode stacks to one column and skips the background/eyebrow intro.
+// preview mode stacks to one column and skips the tinted background, since the real two-column layout assumes full page width.
 export default function Faqs({ preview = false }: { preview?: boolean } = {}) {
     const { sectionVisibility } = useContent();
 
@@ -44,7 +41,7 @@ export default function Faqs({ preview = false }: { preview?: boolean } = {}) {
     if (!sectionVisibility.faq) return null;
 
     return(
-        <SectionContainer tint="pink-soft" id="faq">
+        <SectionContainer id="faq">
             <SectionTitle num="07" title="FAQ" />
 
             <div className="grid grid-cols-[.9fr_1.1fr] gap-14">
@@ -55,7 +52,7 @@ export default function Faqs({ preview = false }: { preview?: boolean } = {}) {
                         before you ask.
                     </h2>
                     <p className="mb-6 max-w-[320px] text-[13.5px] text-grey">Can&apos;t find what you&apos;re looking for? We&apos;re happy to help directly.</p>
-                    <a href="#contact" className="inline-flex items-center gap-2 text-[12.5px] font-semibold uppercase tracking-wide text-ink underline decoration-ink/30 underline-offset-4 hover:decoration-ink">
+                    <a href="#contact" className="inline-flex items-center gap-2 text-[12.5px] font-semibold uppercase tracking-wide text-pink-dark underline decoration-pink-dark/40 underline-offset-4 transition-colors hover:decoration-pink-dark">
                         Get in touch →
                     </a>
                 </FadeIn>

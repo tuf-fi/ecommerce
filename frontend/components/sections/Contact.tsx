@@ -1,22 +1,30 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent } from "react";
+import { toast } from "sonner";
+import { ApiError } from "@/library/api/client";
+import { sendContactMessage } from "@/library/api/marketing";
 import Image from "next/image";
 import SectionContainer from "../ui/Section";
 import SectionTitle from "../ui/SectionTitle";
 import { contactImage } from "../ui/images";
-import { useAsyncAction, wait } from "@/library/useAsyncAction";
+import { useAsyncAction } from "@/library/useAsyncAction";
 import { useContent } from "@/library/content";
 
 export default function Contact({ preview = false }: { preview?: boolean } = {}) {
     const { contact, contactInfo, socialLinks, sectionVisibility } = useContent();
-    const [sent, setSent] = useState(false);
 
     const [submitting, handleSubmit] = useAsyncAction(async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        // TODO: send to a real inbox/CRM.
-        await wait();
-        setSent(true);
+        const form = e.currentTarget;
+        const field = (id: string) => (form.elements.namedItem(id) as HTMLInputElement | HTMLTextAreaElement).value;
+        try {
+            await sendContactMessage({ name: field("contact-name"), email: field("contact-email"), message: field("contact-message") });
+            form.reset();
+            toast.success("Message sent", { description: "We'll get back to you within 1 business day." });
+        } catch (err) {
+            toast.error(err instanceof ApiError ? err.message : "Couldn't send that. Please try again.");
+        }
     });
 
     if (!preview && !sectionVisibility.contact) return null;
@@ -37,27 +45,20 @@ export default function Contact({ preview = false }: { preview?: boolean } = {})
 
                     <div className="grid grid-cols-2 divide-x divide-ink/15 border border-ink/15">
                         <div className="p-9">
-                            {sent ? (
-                                <div className="py-8">
-                                    <div className="mb-3 flex h-[42px] w-[42px] items-center justify-center rounded-full bg-success text-lg text-white">✓</div>
-                                    <p className="mb-1.5 text-base font-medium text-ink">Message sent</p>
-                                    <p className="text-[12.5px] text-grey">We&apos;ll get back to you within 1 business day.</p>
-                                </div>
-                            ) : (
-                                <form onSubmit={handleSubmit}>
+                            <form onSubmit={handleSubmit}>
                                     <h4 className="mb-3 text-lg font-medium text-ink">Send a Message</h4>
 
                                     <div className="mb-6">
-                                        <label className="mb-2 block font-mono text-[10.5px] uppercase tracking-[.14em] text-grey">Full Name</label>
-                                        <input required placeholder="Your name" className="w-full border-b border-ink/25 bg-transparent px-0.5 py-2 text-sm text-ink outline-none transition placeholder:text-ink/30 focus:border-pink-dark" />
+                                        <label htmlFor="contact-name" className="mb-2 block font-mono text-[11px] uppercase tracking-[.14em] text-grey">Full Name</label>
+                                        <input id="contact-name" name="contact-name" required placeholder="Your name" className="w-full border-b border-ink/25 bg-transparent px-0.5 py-2 text-sm text-ink outline-none transition placeholder:text-ink/30 focus:border-pink-dark focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-1" />
                                     </div>
                                     <div className="mb-6">
-                                        <label className="mb-2 block font-mono text-[10.5px] uppercase tracking-[.14em] text-grey">E-mail</label>
-                                        <input required type="email" placeholder="you@email.com" className="w-full border-b border-ink/25 bg-transparent px-0.5 py-2 text-sm text-ink outline-none transition placeholder:text-ink/30 focus:border-pink-dark" />
+                                        <label htmlFor="contact-email" className="mb-2 block font-mono text-[11px] uppercase tracking-[.14em] text-grey">E-mail</label>
+                                        <input id="contact-email" name="contact-email" required type="email" placeholder="you@email.com" className="w-full border-b border-ink/25 bg-transparent px-0.5 py-2 text-sm text-ink outline-none transition placeholder:text-ink/30 focus:border-pink-dark focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-1" />
                                     </div>
                                     <div className="mb-8">
-                                        <label className="mb-2 block font-mono text-[10.5px] uppercase tracking-[.14em] text-grey">Message</label>
-                                        <textarea required rows={2} placeholder="How can we help?" className="w-full resize-none border-b border-ink/25 bg-transparent px-0.5 py-2 text-sm text-ink outline-none transition placeholder:text-ink/30 focus:border-pink-dark" />
+                                        <label htmlFor="contact-message" className="mb-2 block font-mono text-[11px] uppercase tracking-[.14em] text-grey">Message</label>
+                                        <textarea id="contact-message" name="contact-message" required rows={2} placeholder="How can we help?" className="w-full resize-none border-b border-ink/25 bg-transparent px-0.5 py-2 text-sm text-ink outline-none transition placeholder:text-ink/30 focus:border-pink-dark focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-1" />
                                     </div>
                                     <button
                                         type="submit"
@@ -66,8 +67,7 @@ export default function Contact({ preview = false }: { preview?: boolean } = {})
                                     >
                                         {submitting ? "Sending…" : "Contact Us"}
                                     </button>
-                                </form>
-                            )}
+                            </form>
                         </div>
 
                         <div className="flex flex-col gap-8 p-9">

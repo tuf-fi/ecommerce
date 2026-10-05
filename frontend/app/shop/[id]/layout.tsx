@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import { getProduct } from "@/library/products";
+import { fetchCatalog } from "@/library/api/products";
 
 export async function generateMetadata({ params }: LayoutProps<"/shop/[id]">): Promise<Metadata> {
     const { id } = await params;
-    const product = getProduct(Number(id));
+    const product = (await fetchCatalog()).find((p) => p.id === Number(id));
 
     if (!product) {
         return {
@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: LayoutProps<"/shop/[id]">): P
         openGraph: {
             title: product.title,
             description: product.desc,
-            images: [{ url: product.image.src }],
+            images: [{ url: typeof product.image === "string" ? product.image : product.image.src }],
         },
     };
 }

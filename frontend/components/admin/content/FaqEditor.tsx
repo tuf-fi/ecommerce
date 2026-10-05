@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Faq } from "@/library/admin/types";
 import Tooltip from "@/components/ui/Tooltip";
@@ -8,7 +8,14 @@ import ConfirmModal from "@/components/ui/ConfirmModal";
 import Pagination from "@/components/ui/Pagination";
 import FaqModal from "@/components/admin/modals/FaqModal";
 import FaqViewModal from "@/components/admin/modals/FaqViewModal";
+import SearchField from "@/components/admin/SearchField";
+import { Toolbar, ToolbarFilters, FilterField } from "@/components/admin/Toolbar";
 import { BTN_ADD, ICON_BTN, ICON_BTN_DANGER } from "@/components/admin/formClasses";
+import { EditIcon, TrashIcon, BackLink } from "@/components/admin/icons";
+import ReorderButtons from "@/components/admin/ReorderButtons";
+
+// Shared between the header and every row so their columns always line up exactly.
+const GRID_COLS = "grid-cols-[24px_1fr_100px]";
 
 const PAGE_SIZE = 10;
 const BACK_HREF = "/admin/content?tab=pages";
@@ -33,10 +40,23 @@ export default function FaqEditor({
     const [deleteId, setDeleteId] = useState<number | null>(null);
     const deleting = faqs.find((f) => f.id === deleteId) ?? null;
 
+    const [search, setSearch] = useState("");
+    const filtered = useMemo(() => {
+        if (!search.trim()) return faqs;
+        const q = search.trim().toLowerCase();
+        return faqs.filter((f) => f.q.toLowerCase().includes(q));
+    }, [faqs, search]);
+
     const [page, setPage] = useState(1);
-    const totalPages = Math.max(1, Math.ceil(faqs.length / PAGE_SIZE));
+    // Render-time reset to page 1 on search change, rather than an effect (see InventoryPage).
+    const [prevSearch, setPrevSearch] = useState(search);
+    if (search !== prevSearch) {
+        setPrevSearch(search);
+        setPage(1);
+    }
+    const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
     const currentPage = Math.min(page, totalPages);
-    const paged = faqs.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+    const paged = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
     function handleSave(data: Omit<Faq, "id">, id?: number) {
         if (id) onUpdate(id, data);
@@ -45,93 +65,68 @@ export default function FaqEditor({
 
     return (
         <div>
-            <div className="mb-6 flex items-center justify-between">
-                <button onClick={() => router.push(BACK_HREF)} className="text-[12.5px] font-medium text-ink hover:text-pink-dark">
-                    ← Back to Pages
-                </button>
-                <button
-                    onClick={() => {
-                        setEditing(null);
-                        setModalOpen(true);
-                    }}
-                    className={BTN_ADD}
-                >
-                    + Add FAQ
-                </button>
+            {/* Reached via its own /admin/content/pages/faq route (see the
+                dispatcher in pages/[slug]/page.tsx), same as Concerns/Rituals/
+                Testimonials — needs its own way back and section heading for
+                the same reason those do, since this route renders with no tab
+                bar above it. */}
+            <div className="mb-6">
+                <BackLink label="Pages" onClick={() => router.push(BACK_HREF)} />
             </div>
 
-            <div className="overflow-hidden border border-ink/10 bg-white">
-                <table className="w-full border-collapse">
-                    <thead>
-                        <tr className="bg-off/50">
-                            {["ID", "Question", ""].map((h) => (
-                                <th key={h} scope="col" className="border-b border-ink/10 px-5 py-3.5 text-left font-mono text-[10px] tracking-[.12em] text-grey uppercase">
-                                    {h}
-                                </th>
-                            ))}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {faqs.length === 0 && (
-                            <tr>
-                                <td colSpan={3} className="px-5 py-16 text-center text-[13px] text-grey">
-                                    No FAQs yet.
-                                </td>
-                            </tr>
-                        )}
-                        {paged.map((f) => {
-                            const i = faqs.findIndex((x) => x.id === f.id);
-                            return (
-                                <tr
-                                    key={f.id}
-                                    onClick={() => setViewing(f)}
-                                    role="button"
-                                    tabIndex={0}
-                                    aria-label={`View FAQ: ${f.q}`}
-                                    onKeyDown={(e) => {
-                                        if (e.key === "Enter" || e.key === " ") {
-                                            e.preventDefault();
-                                            setViewing(f);
-                                        }
-                                    }}
-                                    className="cursor-pointer transition hover:bg-off/40"
-                                >
-                                    <td className="border-b border-ink/10 px-5 py-3">
-                                        <div className="flex items-center gap-2.5">
-                                            <span className="font-mono text-[12px] text-grey">{f.id}</span>
-                                            <div className="flex flex-col gap-0.5 text-grey">
-                                                <button
-                                                    disabled={i === 0}
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        onMove(f.id, "up");
-                                                    }}
-                                                    aria-label="Move up"
-                                                    className="flex h-4 w-4 items-center justify-center hover:text-ink disabled:opacity-25"
-                                                >
-                                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                                                        <path d="M18 15l-6-6-6 6" />
-                                                    </svg>
-                                                </button>
-                                                <button
-                                                    disabled={i === faqs.length - 1}
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        onMove(f.id, "down");
-                                                    }}
-                                                    aria-label="Move down"
-                                                    className="flex h-4 w-4 items-center justify-center hover:text-ink disabled:opacity-25"
-                                                >
-                                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                                                        <path d="M6 9l6 6 6-6" />
-                                                    </svg>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="border-b border-ink/10 px-5 py-3 text-[13.5px] font-medium text-ink">{f.q}</td>
-                                    <td className="border-b border-ink/10 px-5 py-3">
-                                        <div className="flex items-center justify-end gap-2">
+            <div>
+                <Toolbar
+                    actions={
+                        <button
+                            onClick={() => {
+                                setEditing(null);
+                                setModalOpen(true);
+                            }}
+                            className={BTN_ADD}
+                        >
+                            + Add FAQ
+                        </button>
+                    }
+                    filters={
+                        <ToolbarFilters>
+                            <FilterField label="Search" className="min-w-[220px] flex-1">
+                                <SearchField value={search} onChange={setSearch} placeholder="Search questions" className="w-full" />
+                            </FilterField>
+                        </ToolbarFilters>
+                    }
+                />
+
+                {faqs.length === 0 ? (
+                    <div className="border border-ink/10 bg-white px-5 py-16 text-center text-[13px] text-grey">No FAQs yet.</div>
+                ) : paged.length === 0 ? (
+                    <div className="border border-ink/10 bg-white px-5 py-16 text-center text-[13px] text-grey">No FAQs match this search.</div>
+                ) : (
+                    <div className="border border-ink/10 bg-white">
+                        <div className={`grid ${GRID_COLS} items-center gap-4 border-b border-ink/10 bg-off/50 px-5 py-3`}>
+                            <span className="col-span-2 font-mono text-[11px] font-bold tracking-[.12em] text-grey uppercase">Question</span>
+                            <span aria-hidden="true" />
+                        </div>
+                        <div className="divide-y divide-ink/10">
+                            {paged.map((f) => {
+                                const i = faqs.findIndex((x) => x.id === f.id);
+                                return (
+                                    <div
+                                        key={f.id}
+                                        onClick={() => setViewing(f)}
+                                        role="button"
+                                        tabIndex={0}
+                                        aria-label={`View FAQ: ${f.q}`}
+                                        onKeyDown={(e) => {
+                                            if (e.key === "Enter" || e.key === " ") {
+                                                e.preventDefault();
+                                                setViewing(f);
+                                            }
+                                        }}
+                                        className={`grid ${GRID_COLS} cursor-pointer items-center gap-4 px-5 py-4 transition hover:bg-off/40`}
+                                    >
+                                        <ReorderButtons index={i} count={faqs.length} onMove={(dir) => onMove(f.id, dir)} />
+                                        <div className="min-w-0 truncate text-[14px] font-medium text-ink">{f.q}</div>
+                                        <div className="flex items-center justify-end gap-1.5">
                                             <Tooltip label="Edit">
                                                 <button
                                                     onClick={(e) => {
@@ -142,10 +137,7 @@ export default function FaqEditor({
                                                     aria-label="Edit FAQ"
                                                     className={ICON_BTN}
                                                 >
-                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                                                        <path d="M12 20h9" />
-                                                        <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5Z" />
-                                                    </svg>
+                                                    <EditIcon />
                                                 </button>
                                             </Tooltip>
                                             <Tooltip label="Remove">
@@ -157,24 +149,22 @@ export default function FaqEditor({
                                                     aria-label="Remove FAQ"
                                                     className={ICON_BTN_DANGER}
                                                 >
-                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                                                        <path d="M4 7h16" />
-                                                        <path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
-                                                        <path d="M18 7l-.8 12.1a2 2 0 0 1-2 1.9H8.8a2 2 0 0 1-2-1.9L6 7" />
-                                                        <path d="M10 11v6M14 11v6" />
-                                                    </svg>
+                                                    <TrashIcon />
                                                 </button>
                                             </Tooltip>
                                         </div>
-                                    </td>
-                                </tr>
-                            );
-                        })}
-                    </tbody>
-                </table>
-            </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                        <div className="border-t border-ink/10 bg-off/50 px-5 py-2.5 text-right font-mono text-[11px] text-grey">
+                            Showing {filtered.length} of {faqs.length}
+                        </div>
+                    </div>
+                )}
 
-            <Pagination page={currentPage} totalPages={totalPages} onChange={setPage} />
+                <Pagination page={currentPage} totalPages={totalPages} onChange={setPage} />
+            </div>
 
             <FaqViewModal open={viewing !== null} faq={viewing} onClose={() => setViewing(null)} />
 

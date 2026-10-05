@@ -15,14 +15,9 @@ export default function Modal({
     open: boolean;
     onClose: () => void;
     maxWidth?: string;
-    // Lets a modal render its own close button instead — e.g. LoginModal,
-    // whose content slides side to side, keeps the "×" glued to whichever
-    // side currently holds the form so it never sits on top of the photo.
+    // Lets a modal render its own close button — e.g. LoginModal keeps the "×" glued to whichever side holds the form.
     hideDefaultClose?: boolean;
-    // Accessible name for screen readers — Radix requires every Dialog.Content
-    // to have one. Most call sites already render their own visible heading,
-    // so this stays visually hidden and only needs to be set when that visible
-    // heading is missing or unhelpful out of context.
+    // Accessible name Radix requires on every Dialog.Content; stays visually hidden, set only when there's no visible heading.
     title?: string;
     children: React.ReactNode;
 }) {
@@ -40,9 +35,7 @@ export default function Modal({
                                 transition={{ duration: 0.22, ease: EASE }}
                             />
                         </Dialog.Overlay>
-                        {/* Non-interactive centering layer — pointer-events pass through it
-                            to the Overlay behind, so clicking outside the content still
-                            counts as an outside click and closes the dialog. */}
+                        {/* pointer-events pass through this centering layer to the Overlay, so outside clicks still close the dialog. */}
                         <div className="pointer-events-none fixed inset-0 z-[60] flex items-center justify-center p-5">
                             <Dialog.Content asChild forceMount aria-describedby={undefined}>
                                 <motion.div
@@ -55,16 +48,16 @@ export default function Modal({
                                     <Dialog.Title asChild>
                                         <span className="sr-only">{title}</span>
                                     </Dialog.Title>
-                                    {/* The close button lives here, a sibling of the scrolling body below —
-                                        not inside it — so it stays put at top-right instead of scrolling
-                                        away with long content. */}
+                                    {/* Close button is a sibling of the scrolling body, not inside it, so it stays put with long content. */}
                                     {!hideDefaultClose && (
                                         <Dialog.Close asChild>
                                             <button
                                                 aria-label="Close"
-                                                className="absolute top-4 right-4 z-20 flex h-8 w-8 items-center justify-center text-lg text-ink/50 transition hover:text-ink"
+                                                className="absolute top-4 right-4 z-20 flex h-9 w-9 items-center justify-center rounded-full border border-ink/10 text-ink/50 transition hover:border-ink/25 hover:bg-off hover:text-ink"
                                             >
-                                                ×
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                                                    <path d="M5 5l14 14M19 5L5 19" />
+                                                </svg>
                                             </button>
                                         </Dialog.Close>
                                     )}

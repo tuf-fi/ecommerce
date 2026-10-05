@@ -6,11 +6,7 @@ import FadeIn from "../ui/motion/FadeIn";
 import TypeReveal from "../ui/motion/TypeReveal";
 import { AboutContent, useContent } from "@/library/content";
 
-// `preview` renders inside the admin's live-preview pane — same component as
-// the real homepage section (see Hero.tsx for the pattern), just skipping the
-// scroll-anchor id and letting SectionContainer drop its full-bleed negative
-// margin, which has nothing to bleed against inside the preview pane.
-// `previewData` lets AboutEditor feed in its local unsaved draft — see Hero.tsx.
+// preview mode drops the scroll-anchor id and full-bleed margin; previewData carries the editor's unsaved draft.
 export default function AboutSection({
     preview = false,
     previewData,
@@ -21,7 +17,7 @@ export default function AboutSection({
     if (!preview && !sectionVisibility.about) return null;
 
     return (
-        <SectionContainer tint="pink-soft" id={preview ? undefined : "about"} preview={preview}>
+        <SectionContainer id={preview ? undefined : "about"} preview={preview}>
             <SectionTitle num="01" title="About" />
 
             <div className="flex flex-row gap-x-20">

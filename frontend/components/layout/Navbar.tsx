@@ -11,9 +11,7 @@ import { SECTION_ANCHOR_ID } from "@/library/admin/sections";
 import { EASE } from "../ui/motion/constants";
 import Tooltip from "../ui/Tooltip";
 
-// "Home" isn't part of the CMS-managed list: it duplicates the wordmark's
-// scroll-to-top rather than pointing at a section, so there's nothing for an
-// admin to edit and no section whose visibility it could follow.
+// Not CMS-managed — it duplicates the wordmark's scroll-to-top, not a section, so there's nothing for an admin to edit.
 const HOME_LABEL = "Home";
 
 export default function Navbar(){
@@ -37,9 +35,7 @@ export default function Navbar(){
         return () => window.removeEventListener("scroll", handleScroll);
     }, []);
 
-    // Close the mobile panel on any route change so it never lingers over
-    // the destination page — resetting transient UI state in response to an
-    // external trigger (navigation), not something derivable during render.
+    // Closes the mobile panel on route change so it never lingers over the destination page.
     /* eslint-disable-next-line react-hooks/set-state-in-effect */
     useEffect(() => { setMenuOpen(false); setMoreOpen(false); }, [pathname]);
     useEffect(() => {
@@ -56,17 +52,10 @@ export default function Navbar(){
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    // Only the home page has a dark hero to sit transparently over — every
-    // other route has a light background from the top, so the nav must be
-    // solid immediately or its white text/icons disappear.
+    // Only the home page has a dark hero to sit transparently over — every other route needs the nav solid immediately.
     const solid = scrolled || pathname !== "/";
 
-    // Publishes the nav's real rendered height (which changes with the
-    // py-3.5/py-5 scroll transition) as a CSS var, the same trick PromoBanner
-    // uses for `--promo-h` — pages that reserve space for the fixed navbar
-    // read this instead of hardcoding a height that silently goes stale.
-    // Measures only the top bar (not the mobile dropdown below it), since
-    // that's an overlay and shouldn't push page content down when it opens.
+    // Publishes the nav's real rendered height as a CSS var (`--navbar-h`), same trick as PromoBanner's `--promo-h`.
     useLayoutEffect(() => {
         const el = topBarRef.current;
         if (!el) return;
@@ -75,13 +64,7 @@ export default function Navbar(){
             document.documentElement.style.setProperty("--navbar-h", `${el.offsetHeight + borderBottom}px`);
         };
         update();
-        // The py-5/py-3.5 swap is CSS-transitioned (not instant), so the
-        // measurement right after toggling `solid` can catch the topbar
-        // mid-transition (or even its pre-transition height) — ResizeObserver
-        // doesn't reliably re-fire once the transition settles, which left
-        // `--navbar-h` stuck on a stale value and a gap under the navbar on
-        // routes that mount already-solid. `transitionend` re-measures once
-        // the animation actually finishes.
+        // ResizeObserver alone can catch the topbar mid-transition and leave `--navbar-h` stale; transitionend re-measures once it settles.
         el.addEventListener("transitionend", update);
         const observer = new ResizeObserver(update);
         observer.observe(el);
@@ -91,9 +74,7 @@ export default function Navbar(){
         };
     }, [solid]);
 
-    // A link whose section has been switched off in the CMS would scroll to an
-    // element that no longer renders, so it's dropped from the nav entirely —
-    // that's why there's no separate per-link hide toggle.
+    // A link whose section is switched off in the CMS would scroll to a nonexistent element, so it's dropped from the nav entirely.
     const visibleNavLinks = useMemo(
         () => navLinks.filter((link) => sectionVisibility[link.section]),
         [navLinks, sectionVisibility]
@@ -120,8 +101,7 @@ export default function Navbar(){
 
     function handleNavClick(link: SiteNavLink) {
         setMenuOpen(false);
-        // Empty anchor means the top of the page (Hero has no id) — see
-        // SECTION_ANCHOR_ID.
+        // Empty anchor means the top of the page — Hero has no id.
         goToSection(SECTION_ANCHOR_ID[link.section] || null);
     }
 
@@ -132,7 +112,7 @@ export default function Navbar(){
 
     return(
     <nav className={`fixed top-[var(--promo-h,0px)] left-0 z-50 w-full text-white transition-[background-color,backdrop-filter,padding,border-color] duration-300
-    ${solid ? "border-b border-white/10 bg-navy/90 backdrop-blur-md" : "border-b border-transparent"}`}>
+    ${solid ? "border-b border-white/10 bg-navy" : "border-b border-transparent"}`}>
         <div ref={topBarRef} className={`flex items-center justify-between px-6 transition-[padding] duration-300 md:px-10 xl:px-12 ${solid ? "py-3.5" : "py-5"}`}>
             <div className="flex items-center gap-x-16">
                 <button onClick={handleHomeClick} className="font-display text-[19px] font-medium tracking-tight">
@@ -148,8 +128,7 @@ export default function Navbar(){
                             </button>
                         </li>
                     ))}
-                    {/* Nothing left to reveal once every "more" link's section is
-                        switched off — an empty dropdown would just be a dead button. */}
+                    {/* Hidden once every "more" link's section is switched off — an empty dropdown would be a dead button. */}
                     <li ref={moreRef} className={`relative ${moreNavLinks.length === 0 ? "hidden" : ""}`}>
                         <button
                             onClick={() => setMoreOpen((o) => !o)}
@@ -190,7 +169,7 @@ export default function Navbar(){
                             <button
                                 aria-label="Account"
                                 onClick={handleAccountClick}
-                                className="flex h-9 w-9 items-center justify-center text-white/80 transition hover:bg-white/10 hover:text-white"
+                                className="flex h-10 w-10 items-center justify-center text-white/80 transition hover:bg-white/10 hover:text-white"
                             >
                                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
@@ -227,7 +206,7 @@ export default function Navbar(){
                         <button
                             aria-label="Wishlist"
                             onClick={() => router.push("/wishlist")}
-                            className="relative flex h-9 w-9 items-center justify-center text-white/80 transition hover:bg-white/10 hover:text-white"
+                            className="relative flex h-10 w-10 items-center justify-center text-white/80 transition hover:bg-white/10 hover:text-white"
                         >
                             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                                 <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z" />
@@ -244,7 +223,7 @@ export default function Navbar(){
                         <button
                             aria-label="Cart"
                             onClick={() => router.push("/cart")}
-                            className="relative flex h-9 w-9 items-center justify-center text-white/80 transition hover:bg-white/10 hover:text-white"
+                            className="relative flex h-10 w-10 items-center justify-center text-white/80 transition hover:bg-white/10 hover:text-white"
                         >
                             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                                 <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" />
@@ -263,7 +242,7 @@ export default function Navbar(){
                 <button
                     aria-label={menuOpen ? "Close menu" : "Open menu"}
                     onClick={() => setMenuOpen((o) => !o)}
-                    className="flex h-9 w-9 flex-none items-center justify-center text-white/80 transition hover:bg-white/10 hover:text-white lg:hidden"
+                    className="flex h-10 w-10 flex-none items-center justify-center text-white/80 transition hover:bg-white/10 hover:text-white lg:hidden"
                 >
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                         {menuOpen ? <path d="M6 6l12 12M18 6 6 18" /> : <path d="M3 6h18M3 12h18M3 18h18" />}
@@ -281,8 +260,7 @@ export default function Navbar(){
                     transition={{ duration: 0.26, ease: EASE }}
                     className="overflow-hidden border-t border-white/10 bg-navy lg:hidden"
                 >
-                    {/* The mobile panel ignores the "more" grouping and renders one
-                        flat list — there's no horizontal room to run out of here. */}
+                    {/* Ignores the "more" grouping — renders one flat list; no horizontal room to run out of here. */}
                     <ul className="flex flex-col px-6 py-2">
                         <li className="border-b border-white/5 last:border-none">
                             <button

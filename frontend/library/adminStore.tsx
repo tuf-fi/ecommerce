@@ -12,7 +12,6 @@ import {
     StockLogEntry,
 } from "./admin/types";
 import {
-    ADMIN_PRODUCTS,
     stockStatus,
     productStock,
     productStockStatus,
@@ -21,80 +20,100 @@ import {
     daysUntilExpiry,
     EXPIRY_WARNING_DAYS,
 } from "./admin/products";
-import { ADMIN_ORDERS } from "./admin/orders";
-import { STAFF } from "./admin/staff";
-import { ADMIN_USERS } from "./admin/users";
-import { NOTIFICATIONS } from "./admin/notifications";
+import { importOrderStatuses, listAllOrders, reviewPaymentProof, setOrderStatus, toAdminOrder } from "./api/orders";
+import { adminLoginTwoFactor } from "./api/auth";
+import { createStaff, deleteStaff as deleteStaffById, listCustomers, listNotifications, listStaff, markNotificationsRead, StaffInput, StaffPatch, updateStaff as updateStaffById } from "./api/admin";
+import { adminLogin, adminLogout, adminSession, SessionStaff } from "./api/auth";
+import {
+    adjustStock,
+    createProduct,
+    deleteProductById,
+    listAdminProducts,
+    listStockLog,
+    ProductPayload,
+    StockReason,
+    toAdminProduct,
+    updateProductDetails,
+} from "./api/products";
+import { ApiError } from "./api/client";
+import { useProducts } from "./productsStore";
+import { errorMessage, isServerId, isUnsavedPhoto, persistableImage, sizesPayload, toCreatePayload } from "./adminStoreProducts";
 
-const SESSION_KEY = "cindyrella_admin_session";
-
-// Shared by AdminSidebar, the panel layout, and the settings sub-nav layout —
-// all three position themselves relative to the sidebar's current width, so
-// there's exactly one place that width can be defined.
+// Shared by AdminSidebar, the panel layout, and the settings sub-nav — one place the sidebar width can be defined.
 export const SIDEBAR_WIDTH_EXPANDED = 240;
 export const SIDEBAR_WIDTH_COLLAPSED = 68;
 
-// Mirrors the localStorage session into a cookie of the same name — Proxy
-// (frontend/proxy.ts) gates /admin/* routes on this cookie, since Proxy runs
-// on the server and has no access to localStorage. A 7-day expiry so a
-// long-idle browser tab naturally falls back to requiring login again;
-// re-set on every load (see the hydration effect below) so an active session
-// never silently expires out from under a signed-in admin.
-function setSessionCookie(value: string) {
-    document.cookie = `${SESSION_KEY}=${encodeURIComponent(value)}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
-}
+// ContentEditorShell's own fixed rail width (expanded/collapsed) — reserved locally via CSS margin, not coordinated through this store.
+export const CONTENT_PANEL_WIDTH_EXPANDED = 360;
+export const CONTENT_PANEL_WIDTH_COLLAPSED = 56;
 
-function clearSessionCookie() {
-    document.cookie = `${SESSION_KEY}=; path=/; max-age=0`;
-}
+// Kept alongside the sidebar/panel widths so every fixed-position admin layout measurement lives in one place; Settings' sub-nav uses this too.
+export const SETTINGS_NAV_WIDTH = 264;
+// Clears AdminTopbar's rendered height so a layout below it (Settings' fixed sub-nav) starts flush with no gap.
+export const ADMIN_TOPBAR_HEIGHT = 86;
+
+export type LoginOutcome = { status: "ok" } | { status: "twoFactor"; challenge: string } | { status: "error"; message: string };
 
 type AdminStoreValue = {
-    // Auth (placeholder only)
-    // TODO: replace with real admin auth (JWT + httpOnly session, role check) once the backend exists.
     isAdminLoggedIn: boolean;
     authChecked: boolean;
     adminName: string;
-    login: (email: string, password: string) => boolean;
+    // The signed-in staff member's id.
+    currentStaffId: number | null;
+    // Recomputed every render so it never goes stale; COSMETIC ONLY — hides/disables actions, not a real security boundary (see auth TODO).
+    currentStaffMember: StaffMember | null;
+    // "twoFactor" means the password was right but a code is still needed: pass the challenge to completeTwoFactor.
+    login: (email: string, password: string) => Promise<LoginOutcome>;
+    completeTwoFactor: (challenge: string, code: string) => Promise<string | null>;
+    twoFactorEnabled: boolean;
+    // Re-reads the signed-in staff member from the server (e.g. after turning 2FA on or off).
+    reloadSession: () => Promise<void>;
     logout: () => void;
 
     // Products / inventory
     products: AdminProduct[];
     stockLog: StockLogEntry[];
-    addProduct: (input: Omit<AdminProduct, "id">) => void;
-    updateProduct: (id: number, patch: Partial<Omit<AdminProduct, "id">>) => void;
-    deleteProduct: (id: number) => void;
-    bulkDeleteProducts: (ids: number[]) => void;
+    // Resolve to true when saved, so a form can stay open on failure. Stock only changes via an explicit reason (see updateProduct).
+    addProduct: (input: Omit<AdminProduct, "id">) => Promise<boolean>;
+    bulkAddProducts: (inputs: Omit<AdminProduct, "id">[]) => Promise<void>;
+    updateProduct: (id: number, patch: Partial<Omit<AdminProduct, "id">>, stockReason?: StockReason) => Promise<boolean>;
+    deleteProduct: (id: number) => Promise<void>;
+    bulkDeleteProducts: (ids: number[]) => Promise<void>;
+    bulkAdjustProducts: (ids: number[], adjust: { stockDelta?: number; setPrice?: number }) => Promise<void>;
+    // Bumps when the storefront catalogue changes so useAdminStore() consumers re-render with fresh PRODUCTS data.
+    catalogVersion: number;
 
     // Orders
     orders: AdminOrder[];
-    updateOrderStatus: (orderNo: string, status: AdminOrderStatus) => void;
-    bulkUpdateOrderStatus: (orderNos: string[], status: AdminOrderStatus) => void;
+    // The server enforces the allowed status moves and puts units back in stock on cancellation.
+    updateOrderStatus: (orderNo: string, status: AdminOrderStatus) => Promise<void>;
+    bulkUpdateOrderStatus: (orderNos: string[], status: AdminOrderStatus) => Promise<void>;
+    // Applies a CSV of Order,Status rows; resolves to how many changed and why the others were skipped.
+    importOrders: (file: File) => Promise<{ updated: number; skipped: string[] } | null>;
+    // Approving marks the order Paid; rejecting needs a reason the customer will see. Resolves true when saved.
+    reviewPayment: (orderNo: string, proofId: number, input: { decision: "approve" } | { decision: "reject"; reason: string }) => Promise<boolean>;
 
     // Staff
     staff: StaffMember[];
-    addStaff: (input: Omit<StaffMember, "id">) => void;
-    updateStaff: (id: number, patch: Partial<Omit<StaffMember, "id">>) => void;
-    deleteStaff: (id: number) => void;
-    // Returns how many were actually removed vs. blocked (last-Administrator
-    // guard), so the caller can report a specific outcome instead of the
-    // single toast this function already fires for the common case.
-    bulkDeleteStaff: (ids: number[]) => { removed: number; blocked: number };
+    // Real accounts. The server refuses the unsafe cases (your own account, the last administrator) and these resolve false/blocked then.
+    addStaff: (input: StaffInput) => Promise<boolean>;
+    updateStaff: (id: number, patch: StaffPatch) => Promise<boolean>;
+    deleteStaff: (id: number) => Promise<void>;
+    bulkDeleteStaff: (ids: number[]) => Promise<{ removed: number; blocked: number }>;
 
     // Registered storefront customers
     users: AdminUser[];
 
     // Notifications
     notifications: AdminNotification[];
-    markNotificationRead: (id: number) => void;
+    markNotificationRead: (id: string) => void;
     markAllNotificationsRead: () => void;
 
     // Sidebar UI state — a per-session preference, not persisted content.
     sidebarCollapsed: boolean;
     toggleSidebar: () => void;
 
-    // Off-canvas sidebar drawer on narrow viewports — always starts closed,
-    // independent of `sidebarCollapsed` (which only applies to the desktop
-    // fixed-width sidebar).
+    // Off-canvas sidebar drawer on narrow viewports — always starts closed, independent of `sidebarCollapsed` (desktop-only).
     mobileSidebarOpen: boolean;
     openMobileSidebar: () => void;
     closeMobileSidebar: () => void;
@@ -102,203 +121,422 @@ type AdminStoreValue = {
 
 const AdminStoreContext = createContext<AdminStoreValue | null>(null);
 
-function nextId<T extends { id: number }>(list: T[]): number {
-    return list.reduce((max, item) => Math.max(max, item.id), 0) + 1;
-}
-
 export function AdminProvider({ children }: { children: React.ReactNode }) {
+    const { version: catalogVersion, refresh: refreshCatalog } = useProducts();
     const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
     const [authChecked, setAuthChecked] = useState(false);
     const [adminName, setAdminName] = useState("");
+    const [currentStaffId, setCurrentStaffId] = useState<number | null>(null);
+    const [sessionStaff, setSessionStaff] = useState<SessionStaff | null>(null);
+    const [staff, setStaff] = useState<StaffMember[]>([]);
 
-    // One-time read of a browser-only API at mount to hydrate the session —
-    // there's no way to know this before the client mounts, so this can't be
-    // expressed as a derived/lazy-initial value the way most effects here are.
-    /* eslint-disable react-hooks/set-state-in-effect */
-    useEffect(() => {
-        const saved = window.localStorage.getItem(SESSION_KEY);
-        if (saved) {
-            setSessionCookie(saved);
-            setAdminName(saved);
+    const applySession = useCallback(
+        (member: SessionStaff) => {
+            setSessionStaff(member);
+            setAdminName(member.name);
             setIsAdminLoggedIn(true);
-        }
-        setAuthChecked(true);
-    }, []);
-    /* eslint-enable react-hooks/set-state-in-effect */
+            setCurrentStaffId(member.id);
+        },
+        []
+    );
 
-    const login = useCallback((email: string, password: string) => {
-        if (!email.trim() || !password.trim()) return false;
-        const name = email.split("@")[0].replace(/[._]/g, " ");
-        const display = name.charAt(0).toUpperCase() + name.slice(1);
-        window.localStorage.setItem(SESSION_KEY, display);
-        setSessionCookie(display);
-        setAdminName(display);
-        setIsAdminLoggedIn(true);
-        return true;
-    }, []);
+    // The httpOnly cookie is the source of truth; ask the server who (if anyone) is signed in.
+    useEffect(() => {
+        adminSession()
+            .then(({ staff: member }) => applySession(member))
+            .catch(() => {
+                // Not signed in (401) or API unreachable — stay signed out.
+            })
+            .finally(() => setAuthChecked(true));
+    }, [applySession]);
+
+    const login = useCallback(
+        async (email: string, password: string) => {
+            try {
+                const result = await adminLogin({ email, password });
+                if ("twoFactorRequired" in result) return { status: "twoFactor", challenge: result.challenge } as const;
+                applySession(result.staff);
+                return { status: "ok" } as const;
+            } catch (err) {
+                return { status: "error", message: err instanceof ApiError ? err.message : "Could not reach the server. Please try again." } as const;
+            }
+        },
+        [applySession]
+    );
+
+    const completeTwoFactor = useCallback(
+        async (challenge: string, code: string) => {
+            try {
+                const { staff: member } = await adminLoginTwoFactor({ challenge, code });
+                applySession(member);
+                return null;
+            } catch (err) {
+                return err instanceof ApiError ? err.message : "Could not reach the server. Please try again.";
+            }
+        },
+        [applySession]
+    );
+
+    const reloadSession = useCallback(async () => {
+        try {
+            const { staff: member } = await adminSession();
+            applySession(member);
+        } catch {
+            // Session gone — the auth gate will bounce to the login page.
+        }
+    }, [applySession]);
 
     const logout = useCallback(() => {
-        window.localStorage.removeItem(SESSION_KEY);
-        clearSessionCookie();
+        adminLogout().catch(() => {});
+        setCurrentStaffId(null);
+        setSessionStaff(null);
         setIsAdminLoggedIn(false);
         setAdminName("");
         toast.success("Logged out.");
     }, []);
 
-    const [products, setProducts] = useState<AdminProduct[]>(ADMIN_PRODUCTS);
+    const [products, setProducts] = useState<AdminProduct[]>([]);
     const [stockLog, setStockLog] = useState<StockLogEntry[]>([]);
 
-    const logStock = useCallback(
-        (entry: Omit<StockLogEntry, "id" | "time" | "actor">) => {
-            setStockLog((log) => [
-                {
-                    id: nextId(log),
-                    time: new Date().toLocaleString([], { dateStyle: "medium", timeStyle: "short" }),
-                    actor: adminName || "System",
-                    ...entry,
-                },
-                ...log,
-            ]);
-        },
-        [adminName]
-    );
+    // Pulls the authoritative product list and stock log from the API, and refreshes the storefront's catalogue too.
+    const reloadInventory = useCallback(async () => {
+        try {
+            const [{ products: list }, log] = await Promise.all([listAdminProducts(), listStockLog()]);
+            setProducts(list.map(toAdminProduct));
+            setStockLog(log);
+        } catch (err) {
+            toast.error(errorMessage(err));
+        }
+        await refreshCatalog();
+    }, [refreshCatalog]);
+
+    useEffect(() => {
+        // Loads server data once signed in; the state updates happen after the awaited fetch, not synchronously.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        if (isAdminLoggedIn) void reloadInventory();
+    }, [isAdminLoggedIn, reloadInventory]);
 
     const addProduct = useCallback(
-        (input: Omit<AdminProduct, "id">) => {
-            const product: AdminProduct = { ...input, id: nextId(products) };
-            setProducts((p) => [product, ...p]);
-            logStock({ type: "in", text: `${product.name} — added to catalogue (+${product.stock} units)` });
-            toast.success(`"${product.name}" added to inventory.`);
+        async (input: Omit<AdminProduct, "id">) => {
+            try {
+                const { product } = await createProduct(toCreatePayload(input));
+                await reloadInventory();
+                toast.success(`"${product.name}" added to inventory.`);
+                if (isUnsavedPhoto(input.image)) toast.message("Photo not saved — image upload arrives with Cloudinary.");
+                return true;
+            } catch (err) {
+                toast.error(errorMessage(err));
+                return false;
+            }
         },
-        [products, logStock]
+        [reloadInventory]
     );
 
-    const updateProduct = useCallback(
-        (id: number, patch: Partial<Omit<AdminProduct, "id">>) => {
-            const old = products.find((p) => p.id === id);
-            if (!old) return;
-            const updated: AdminProduct = { ...old, ...patch };
-            setProducts((prev) => prev.map((p) => (p.id === id ? updated : p)));
-            if (updated.stock > old.stock) {
-                logStock({ type: "in", text: `${updated.name} — received new batch (+${updated.stock - old.stock} units)` });
-            } else if (updated.stock < old.stock) {
-                logStock({ type: "out", text: `${updated.name} — stock reduced (-${old.stock - updated.stock} units)` });
-            } else {
-                logStock({ type: "adj", text: `${updated.name} — details updated` });
+    // One toast for the whole batch (used by CSV import), instead of one per row.
+    const bulkAddProducts = useCallback(
+        async (inputs: Omit<AdminProduct, "id">[]) => {
+            if (inputs.length === 0) return;
+            let added = 0;
+            let lastError = "";
+            for (const input of inputs) {
+                try {
+                    await createProduct(toCreatePayload(input));
+                    added++;
+                } catch (err) {
+                    lastError = errorMessage(err);
+                }
             }
-            toast.success("Product updated.");
+            await reloadInventory();
+            if (added > 0) toast.success(`${added} product${added === 1 ? "" : "s"} imported.`);
+            if (added < inputs.length) toast.error(`${inputs.length - added} failed to import: ${lastError}`);
         },
-        [products, logStock]
+        [reloadInventory]
+    );
+
+    // Details and stock are saved separately: stock only ever changes through an explicit, reasoned adjustment.
+    const updateProduct = useCallback(
+        async (id: number, patch: Partial<Omit<AdminProduct, "id">>, stockReason?: StockReason) => {
+            const old = products.find((p) => p.id === id);
+            if (!old) return false;
+            const next: AdminProduct = { ...old, ...patch };
+            const sizes = next.sizes ?? [];
+            try {
+                const payload: ProductPayload = {
+                    name: next.name,
+                    category: next.category,
+                    expiry: next.expiry,
+                    reorderThreshold: next.reorderThreshold ?? null,
+                    version: old.version,
+                    ...(sizes.length ? { sizes: sizesPayload(sizes) } : { price: next.price, sizes: [] }),
+                };
+                const image = persistableImage(next.image);
+                if (image && image !== old.image) payload.image = image;
+                await updateProductDetails(id, payload);
+
+                const reasonFor = (delta: number): StockReason => stockReason ?? (delta > 0 ? "RESTOCK" : "CORRECTION");
+                if (sizes.length) {
+                    for (const s of sizes) {
+                        if (!isServerId(s.id)) continue;
+                        const before = old.sizes?.find((o) => o.id === s.id);
+                        const delta = s.stock - (before?.stock ?? s.stock);
+                        if (delta !== 0) await adjustStock(id, { sizeId: Number(s.id), delta, reason: reasonFor(delta) });
+                    }
+                } else if (!old.sizes?.length) {
+                    const delta = next.stock - old.stock;
+                    if (delta !== 0) await adjustStock(id, { delta, reason: reasonFor(delta) });
+                }
+                await reloadInventory();
+                toast.success("Product updated.");
+                if (isUnsavedPhoto(next.image)) toast.message("Photo not saved — image upload arrives with Cloudinary.");
+                return true;
+            } catch (err) {
+                toast.error(errorMessage(err));
+                await reloadInventory();
+                return false;
+            }
+        },
+        [products, reloadInventory]
     );
 
     const deleteProduct = useCallback(
-        (id: number) => {
-            const target = products.find((p) => p.id === id);
-            setProducts((prev) => prev.filter((p) => p.id !== id));
-            if (target) logStock({ type: "out", text: `${target.name} — removed from catalogue` });
-            toast.success("Product removed.");
+        async (id: number) => {
+            try {
+                await deleteProductById(id);
+                await reloadInventory();
+                toast.success("Product removed.");
+            } catch (err) {
+                toast.error(errorMessage(err));
+            }
         },
-        [products, logStock]
+        [reloadInventory]
     );
 
     const bulkDeleteProducts = useCallback(
-        (ids: number[]) => {
+        async (ids: number[]) => {
+            if (ids.length === 0) return;
+            const results = await Promise.allSettled(ids.map((id) => deleteProductById(id)));
+            const removed = results.filter((r) => r.status === "fulfilled").length;
+            const failed = results.length - removed;
+            await reloadInventory();
+            if (removed > 0) toast.success(`${removed} product${removed === 1 ? "" : "s"} removed.`);
+            if (failed > 0) toast.error(`${failed} couldn't be removed (they have orders).`);
+        },
+        [reloadInventory]
+    );
+
+    // Size-variant products are skipped, not guessed at — their price/stock are a derived starting-from/total, so a bulk delta would desync from real per-size values.
+    const bulkAdjustProducts = useCallback(
+        async (ids: number[], adjust: { stockDelta?: number; setPrice?: number }) => {
             const idSet = new Set(ids);
             const targets = products.filter((p) => idSet.has(p.id));
-            if (targets.length === 0) return;
-            setProducts((prev) => prev.filter((p) => !idSet.has(p.id)));
-            for (const t of targets) logStock({ type: "out", text: `${t.name} — removed from catalogue` });
-            toast.success(`${targets.length} product${targets.length === 1 ? "" : "s"} removed.`);
-        },
-        [products, logStock]
-    );
-
-    const [orders, setOrders] = useState<AdminOrder[]>(ADMIN_ORDERS);
-
-    const updateOrderStatus = useCallback((orderNo: string, status: AdminOrderStatus) => {
-        setOrders((prev) => prev.map((o) => (o.no === orderNo ? { ...o, status } : o)));
-        toast.success(`Order ${orderNo} marked as ${status}.`);
-    }, []);
-
-    const bulkUpdateOrderStatus = useCallback((orderNos: string[], status: AdminOrderStatus) => {
-        if (orderNos.length === 0) return;
-        const noSet = new Set(orderNos);
-        setOrders((prev) => prev.map((o) => (noSet.has(o.no) ? { ...o, status } : o)));
-        toast.success(`${orderNos.length} order${orderNos.length === 1 ? "" : "s"} marked as ${status}.`);
-    }, []);
-
-    const [staff, setStaff] = useState<StaffMember[]>(STAFF);
-
-    const addStaff = useCallback(
-        (input: Omit<StaffMember, "id">) => {
-            setStaff((s) => [...s, { ...input, id: nextId(s) }]);
-            toast.success(`"${input.name}" added to staff.`);
-        },
-        []
-    );
-
-    const updateStaff = useCallback((id: number, patch: Partial<Omit<StaffMember, "id">>) => {
-        setStaff((prev) => prev.map((s) => (s.id === id ? { ...s, ...patch } : s)));
-        toast.success("Staff account updated.");
-    }, []);
-
-    const deleteStaff = useCallback(
-        (id: number) => {
-            const target = staff.find((s) => s.id === id);
-            if (!target) return;
-            // Guard the last remaining Administrator — losing every admin
-            // account would lock the whole panel out with no one left who
-            // can grant access back. Mirrors StaffPage's own pre-check (which
-            // is what actually stops the ConfirmModal from opening); this is
-            // a second line of defense in case deleteStaff is ever called
-            // from somewhere else.
-            const remainingAdmins = staff.filter((s) => s.role === "Administrator").length;
-            if (target.role === "Administrator" && remainingAdmins <= 1) {
-                toast.error(`"${target.name}" is the last Administrator and can't be removed.`);
+            const applied = targets.filter((p) => !p.sizes || p.sizes.length === 0);
+            const skipped = targets.length - applied.length;
+            if (applied.length === 0) {
+                if (skipped > 0) toast.error(`Skipped all ${skipped} — products with size variants must be edited individually.`);
                 return;
             }
-            setStaff((prev) => prev.filter((s) => s.id !== id));
-            toast.success("Staff account removed.");
-        },
-        [staff]
-    );
-
-    const bulkDeleteStaff = useCallback(
-        (ids: number[]) => {
-            const idSet = new Set(ids);
-            const targets = staff.filter((s) => idSet.has(s.id));
-            // Same last-Administrator guard as deleteStaff, applied in order so a
-            // batch that includes every Administrator still leaves exactly one.
-            let remainingAdmins = staff.filter((s) => s.role === "Administrator").length;
-            const removed: StaffMember[] = [];
-            const blocked: StaffMember[] = [];
-            for (const target of targets) {
-                if (target.role === "Administrator" && remainingAdmins <= 1) {
-                    blocked.push(target);
-                    continue;
+            let failed = 0;
+            for (const p of applied) {
+                try {
+                    if (adjust.setPrice !== undefined) await updateProductDetails(p.id, { price: Math.max(0, adjust.setPrice), version: p.version });
+                    if (adjust.stockDelta !== undefined) {
+                        // Floored at zero, matching the old behaviour of clamping instead of erroring.
+                        const delta = Math.max(adjust.stockDelta, -p.stock);
+                        if (delta !== 0) await adjustStock(p.id, { delta, reason: delta > 0 ? "RESTOCK" : "CORRECTION", note: "Bulk edit" });
+                    }
+                } catch {
+                    failed++;
                 }
-                if (target.role === "Administrator") remainingAdmins -= 1;
-                removed.push(target);
             }
-            if (removed.length > 0) {
-                const removedIds = new Set(removed.map((r) => r.id));
-                setStaff((prev) => prev.filter((s) => !removedIds.has(s.id)));
+            await reloadInventory();
+            const done = applied.length - failed;
+            if (failed > 0) toast.error(`${failed} product${failed === 1 ? "" : "s"} failed to update.`);
+            if (done > 0) {
+                toast.success(
+                    skipped > 0
+                        ? `${done} updated; ${skipped} skipped (size variants — edit individually).`
+                        : `${done} product${done === 1 ? "" : "s"} updated.`
+                );
             }
-            if (removed.length > 0 && blocked.length === 0) {
-                toast.success(`${removed.length} staff account${removed.length === 1 ? "" : "s"} removed.`);
-            } else if (removed.length > 0 && blocked.length > 0) {
-                toast.success(`${removed.length} removed; ${blocked.length} kept (last Administrator can't be removed).`);
-            } else if (blocked.length > 0) {
-                toast.error(`Can't remove the last Administrator${blocked.length > 1 ? "s" : ""}.`);
-            }
-            return { removed: removed.length, blocked: blocked.length };
         },
-        [staff]
+        [products, reloadInventory]
     );
 
-    // Read-only for now — the panel only reports on signups; account CRUD
-    // belongs to the customer-facing auth system, not the admin store.
-    const [users] = useState<AdminUser[]>(ADMIN_USERS);
+    const [orders, setOrders] = useState<AdminOrder[]>([]);
+
+    const reloadOrders = useCallback(async () => {
+        try {
+            const { orders: list } = await listAllOrders();
+            setOrders(list.map(toAdminOrder));
+        } catch (err) {
+            toast.error(errorMessage(err));
+        }
+    }, []);
+
+    useEffect(() => {
+        // Loads server data once signed in; the state updates happen after the awaited fetch, not synchronously.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        if (isAdminLoggedIn) void reloadOrders();
+    }, [isAdminLoggedIn, reloadOrders]);
+
+    const updateOrderStatus = useCallback(
+        async (orderNo: string, status: AdminOrderStatus) => {
+            try {
+                await setOrderStatus(orderNo, status);
+                toast.success(`Order ${orderNo} marked as ${status}.`);
+            } catch (err) {
+                toast.error(errorMessage(err));
+            }
+            // A cancellation returns units to stock, so inventory is reloaded too.
+            await Promise.all([reloadOrders(), reloadInventory()]);
+        },
+        [reloadOrders, reloadInventory]
+    );
+
+    const importOrders = useCallback(
+        async (file: File) => {
+            try {
+                const result = await importOrderStatuses(file);
+                // Cancelling returns stock, so inventory is reloaded along with the orders.
+                await Promise.all([reloadOrders(), reloadInventory()]);
+                return result;
+            } catch (err) {
+                toast.error(errorMessage(err));
+                return null;
+            }
+        },
+        [reloadOrders, reloadInventory]
+    );
+
+    const reviewPayment = useCallback(
+        async (orderNo: string, proofId: number, input: { decision: "approve" } | { decision: "reject"; reason: string }) => {
+            try {
+                await reviewPaymentProof(orderNo, proofId, input);
+                toast.success(input.decision === "approve" ? `Payment verified — ${orderNo} is now Paid.` : "Screenshot rejected. The customer has been told why.");
+                await reloadOrders();
+                return true;
+            } catch (err) {
+                toast.error(errorMessage(err));
+                await reloadOrders();
+                return false;
+            }
+        },
+        [reloadOrders]
+    );
+
+    const bulkUpdateOrderStatus = useCallback(
+        async (orderNos: string[], status: AdminOrderStatus) => {
+            if (orderNos.length === 0) return;
+            let done = 0;
+            let lastError = "";
+            for (const no of orderNos) {
+                try {
+                    await setOrderStatus(no, status);
+                    done++;
+                } catch (err) {
+                    lastError = errorMessage(err);
+                }
+            }
+            await Promise.all([reloadOrders(), reloadInventory()]);
+            if (done > 0) toast.success(`${done} order${done === 1 ? "" : "s"} marked as ${status}.`);
+            if (done < orderNos.length) toast.error(`${orderNos.length - done} couldn't be updated: ${lastError}`);
+        },
+        [reloadOrders, reloadInventory]
+    );
+
+    // Only administrators may list accounts (everyone else gets 403 and simply sees no list).
+    const reloadStaff = useCallback(async () => {
+        try {
+            setStaff(await listStaff());
+        } catch {
+            setStaff([]);
+        }
+    }, []);
+
+    useEffect(() => {
+        // Loads once signed in; state is set after the awaited request, not synchronously.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        if (isAdminLoggedIn) void reloadStaff();
+    }, [isAdminLoggedIn, reloadStaff]);
+
+    const addStaff = useCallback(
+        async (input: StaffInput) => {
+            try {
+                await createStaff(input);
+                await reloadStaff();
+                toast.success(`"${input.name}" added to staff.`);
+                return true;
+            } catch (err) {
+                toast.error(errorMessage(err));
+                return false;
+            }
+        },
+        [reloadStaff]
+    );
+
+    const updateStaff = useCallback(
+        async (id: number, patch: StaffPatch) => {
+            try {
+                await updateStaffById(id, patch);
+                await reloadStaff();
+                toast.success("Staff account updated.");
+                return true;
+            } catch (err) {
+                toast.error(errorMessage(err));
+                return false;
+            }
+        },
+        [reloadStaff]
+    );
+
+    const deleteStaff = useCallback(
+        async (id: number) => {
+            try {
+                await deleteStaffById(id);
+                await reloadStaff();
+                toast.success("Staff account removed.");
+            } catch (err) {
+                toast.error(errorMessage(err));
+            }
+        },
+        [reloadStaff]
+    );
+
+    // The server enforces "not yourself" and "not the last administrator"; each refusal is counted, not fatal to the rest.
+    const bulkDeleteStaff = useCallback(
+        async (ids: number[]) => {
+            let removed = 0;
+            let lastError = "";
+            for (const id of ids) {
+                try {
+                    await deleteStaffById(id);
+                    removed++;
+                } catch (err) {
+                    lastError = errorMessage(err);
+                }
+            }
+            const blocked = ids.length - removed;
+            await reloadStaff();
+            if (removed > 0 && blocked === 0) toast.success(`${removed} staff account${removed === 1 ? "" : "s"} removed.`);
+            else if (removed > 0) toast.success(`${removed} removed; ${blocked} kept (${lastError.toLowerCase()}).`);
+            else if (blocked > 0) toast.error(lastError);
+            return { removed, blocked };
+        },
+        [reloadStaff]
+    );
+
+    // Read-only — real registered customers. Accounts without access to the customer list just see none.
+    const [users, setUsers] = useState<AdminUser[]>([]);
+    useEffect(() => {
+        if (!isAdminLoggedIn) return;
+        let alive = true;
+        listCustomers()
+            .then((list) => alive && setUsers(list))
+            .catch(() => alive && setUsers([]));
+        return () => {
+            alive = false;
+        };
+    }, [isAdminLoggedIn]);
 
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const toggleSidebar = useCallback(() => setSidebarCollapsed((c) => !c), []);
@@ -307,31 +545,73 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     const openMobileSidebar = useCallback(() => setMobileSidebarOpen(true), []);
     const closeMobileSidebar = useCallback(() => setMobileSidebarOpen(false), []);
 
-    const [notifications, setNotifications] = useState<AdminNotification[]>(NOTIFICATIONS);
+    // Worked out by the server from live orders, payment screenshots and stock; refreshed every minute while signed in.
+    const [notifications, setNotifications] = useState<AdminNotification[]>([]);
+    useEffect(() => {
+        if (!isAdminLoggedIn) return;
+        let alive = true;
+        const load = () =>
+            listNotifications()
+                .then((list) => alive && setNotifications(list))
+                .catch(() => {
+                    // Keep showing the last list; the next tick retries.
+                });
+        void load();
+        const timer = setInterval(load, 60_000);
+        return () => {
+            alive = false;
+            clearInterval(timer);
+        };
+    }, [isAdminLoggedIn]);
 
-    const markNotificationRead = useCallback((id: number) => {
+    const markNotificationRead = useCallback((id: string) => {
         setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
+        markNotificationsRead({ keys: [id] }).catch(() => {});
     }, []);
 
     const markAllNotificationsRead = useCallback(() => {
         setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+        markNotificationsRead({ all: true }).catch(() => {});
     }, []);
+
+    // The signed-in account itself (from the session), so non-administrators — who can't list staff — still know their own role and access.
+    const currentStaffMember: StaffMember | null =
+        (currentStaffId !== null ? staff.find((m) => m.id === currentStaffId) : undefined) ??
+        (sessionStaff
+            ? {
+                  id: sessionStaff.id,
+                  name: sessionStaff.name,
+                  email: sessionStaff.email,
+                  role: sessionStaff.role === "ADMINISTRATOR" ? "Administrator" : "Staff",
+                  access: sessionStaff.access ?? "Full access",
+              }
+            : null);
 
     const value: AdminStoreValue = {
         isAdminLoggedIn,
         authChecked,
         adminName,
+        currentStaffId,
+        currentStaffMember,
         login,
+        completeTwoFactor,
+        twoFactorEnabled: sessionStaff?.twoFactorEnabled ?? false,
+        reloadSession,
         logout,
         products,
         stockLog,
+        catalogVersion,
         addProduct,
+        bulkAddProducts,
         updateProduct,
         deleteProduct,
         bulkDeleteProducts,
+        bulkAdjustProducts,
         orders,
         updateOrderStatus,
         bulkUpdateOrderStatus,
+        importOrders,
+        reviewPayment,
         staff,
         addStaff,
         updateStaff,

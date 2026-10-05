@@ -1,6 +1,7 @@
 import { StaticImageData } from "next/image";
 import { ProductSize } from "../products";
 import { SectionKey } from "./sections";
+import type { PaymentState, ProofInfo } from "../orders";
 
 export type AdminProduct = {
     id: number;
@@ -11,14 +12,12 @@ export type AdminProduct = {
     stock: number;
     expiry: string | null;
     image: StaticImageData | string;
-    // Optional size choices (e.g. 30ml/50ml), each with its own price and
-    // stock. When present, `price`/`stock` above are kept as the
-    // starting-from price and the total stock across all sizes.
+    // Optional size choices; when present, `price`/`stock` above become the starting-from price and total across sizes.
     sizes?: ProductSize[];
-    // Units-remaining cutoff for "low stock" on this product (and each of its
-    // sizes, if any). Falls back to LOW_STOCK_THRESHOLD when unset — fast
-    // movers and niche items don't share one sensible reorder point.
+    // Units-remaining "low stock" cutoff per product/size; falls back to LOW_STOCK_THRESHOLD when unset.
     reorderThreshold?: number;
+    // The product version this copy was loaded at; an edit is rejected if someone else has saved since.
+    version?: number;
 };
 
 export type StockLogEntry = {
@@ -31,7 +30,8 @@ export type StockLogEntry = {
 
 export type AdminOrderStatus = "Pending" | "Paid" | "Shipped" | "Delivered" | "Cancelled";
 
-export type AdminOrderLine = { productId: number; qty: number };
+// `name`/`unitPrice` are snapshotted on real orders so later catalogue edits don't rewrite history.
+export type AdminOrderLine = { productId: number; qty: number; name?: string; unitPrice?: number };
 
 export type AdminOrder = {
     no: string;
@@ -41,10 +41,13 @@ export type AdminOrder = {
     date: string;
     status: AdminOrderStatus;
     items: AdminOrderLine[];
+    total?: number;
+    // When the order was placed (ISO); `date` above is only for display.
+    createdAt?: string;
+    payment?: { state: PaymentState; proofs: ProofInfo[] };
 };
 
-// A registered storefront customer account, as opposed to a StaffMember (an
-// admin-panel login). `createdAt` is an ISO `YYYY-MM-DD` signup date.
+// A registered storefront customer, not a StaffMember (admin login); `createdAt` is an ISO `YYYY-MM-DD` signup date.
 export type AdminUser = {
     id: number;
     name: string;
@@ -61,12 +64,16 @@ export type StaffMember = {
     role: StaffRole;
     access: string;
     photo?: string;
+    // Deactivated accounts can't sign in. Both are reported by the server.
+    active?: boolean;
+    twoFactorEnabled?: boolean;
 };
 
 export type NotificationType = "order" | "inventory" | "staff";
 
 export type AdminNotification = {
-    id: number;
+    // Stable key from the server (e.g. "order:LM-1001"), which is also what "mark as read" sends back.
+    id: string;
     text: string;
     time: string;
     read: boolean;
@@ -91,22 +98,16 @@ export type StaticPage = {
     content: string;
 };
 
-// A link in the site's primary navigation. Points at a homepage section by
-// key rather than at a raw href so the anchor can never go stale (the real id
-// lives in one place, SECTION_ANCHOR_ID) and so a link to a section that's
-// been switched off can be filtered out automatically — see Navbar.
+// Points at a homepage section by key, not a raw href, so the anchor can't go stale and a disabled section can be filtered — see Navbar.
 export type SiteNavLink = {
     id: number;
     label: string;
     section: SectionKey;
-    // Desktop only: "more" links are tucked under the nav's "More" dropdown to
-    // keep the inline row short. The mobile menu ignores this and always
-    // renders the full flat list.
+    // Desktop only — tucks the link under the nav's "More" dropdown; the mobile menu ignores this and shows the full flat list.
     group?: "more";
 };
 
-// A footer link — a plain label/href pair, since the footer legitimately
-// points at other routes and static pages, not just homepage anchors.
+// A plain label/href pair, since the footer also points at routes and static pages, not just homepage anchors.
 export type FooterLinkItem = {
     id: number;
     label: string;
@@ -119,18 +120,13 @@ export type Ritual = {
     title: string;
     copy: string;
     image: StaticImageData | string | null;
-    // The specific products (by Product.id, see library/products.ts) that make
-    // up this routine — what actually makes a ritual a shoppable bundle
-    // instead of just a decorative card, and what "Shop Now" adds to the bag.
+    // The Product.id's that make this ritual a shoppable bundle, not just a card — what "Shop Now" adds to the bag.
     productIds: number[];
 };
 
 export type Concern = {
     id: number;
-    // Stable identifier used to tag products (Product.concerns in
-    // library/products.ts) and to build the /shop?concern= filter link.
-    // Kept separate from `title` so renaming a concern in the CMS can't
-    // silently break every product already tagged with it.
+    // Stable id (see Product.concerns), kept separate from `title` so renaming a concern in the CMS can't break tagged products.
     key: string;
     title: string;
     image: StaticImageData | string | null;

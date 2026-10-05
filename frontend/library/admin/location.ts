@@ -1,7 +1,4 @@
-// Reduces a shipping address ("<street>, <City>, <Province>") to the label a
-// sales breakdown should group by. A chartered city ("Quezon City") is
-// nationally unambiguous on its own; a municipality ("Bacoor") needs its
-// province to be placeable, since several provinces share town names.
+// A chartered city is unambiguous alone; a municipality needs its province since names repeat across provinces.
 export function extractLocation(address: string): string {
     const parts = address
         .split(",")

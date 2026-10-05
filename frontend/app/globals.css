@@ -4,26 +4,40 @@
 
 :root {
   /* Single, fixed light palette — no dark mode.
-     Brand identity runs on three colors: a deep saturated blue (ink), a
-     rose/berry pink, and a warm gold accent (echoes the golden-hour tones
-     already in the product photography). */
+     Brand identity runs on four colors: a deep saturated blue (ink, for
+     text/dark-surfaces), a vivid cobalt blue-accent, a rose/berry pink, and
+     a warm gold accent (echoes the golden-hour tones already in the product
+     photography). Pink and blue-accent were both refreshed together —
+     brighter/more saturated at the same lightness as before, so button-text
+     contrast is unchanged — after user feedback that the previous pink
+     family read as a muted wine tone and blue only ever appeared as
+     near-black (ink) or near-white (blue-soft), with nothing in between. */
   --color-ink: #12233A;
   --color-white: #FFFFFF;
   --color-grey: #5B6169;
   --color-grey-light: #C3D3DC;
   --color-off: #F3F8FB;
-  --color-alert: #962F52;
-  --color-pink: #DA6E93;
-  --color-pink-dark: #A81753;
+  --color-alert: #A6342B;
+  --color-pink: #E56C94;
+  --color-pink-dark: #9C0D48;
   --color-pink-soft: #F8D9E8;
-  --color-pink-btn: #BA2556;
-  --color-pink-btn-hover: #A61146;
+  --color-pink-btn: #CC195B;
+  --color-pink-btn-hover: #AD154D;
   --color-blue-soft: #E3F1F8;
+  --color-blue-accent: #2866BD;
+  --color-blue-accent-hover: #205298;
 
   --color-gold: #B07C2E;
 
   --color-success: #227A4C;
   --color-success-dark: #1B5F3B;
+
+  /* Admin-only "warning" status color — previously borrowed pink-dark, which
+     conflated "needs attention" with the CTA color. Reuses the hex HeroTrendChart
+     already used ad hoc for its "down" trend line, so there's one amber, not two;
+     kept clearly apart from --color-gold (ratings only) and --color-alert (errors/red). */
+  --color-amber: #F2994A;
+  --color-amber-dark: #8A4F15;
 
   /* Base page color — a soft "white smoke" instead of stark pure white. */
   --color-smoke: #F2F1EE;
@@ -171,4 +185,17 @@ body::before {
   display: none;
   width: 0;
   height: 0;
+}
+
+/* Admin toolbar selects share one flat, chrome-free chevron instead of each
+   browser's own default arrow (which vary in size/inset and read as
+   dated/generic) — appearance-none removes the native one, this SVG
+   background-image replaces it so every filter select in the admin panel
+   looks identical across browsers and matches SearchField's own icon weight. */
+.admin-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2312233A' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.8rem center;
+  background-size: 11px 11px;
 }

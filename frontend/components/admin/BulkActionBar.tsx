@@ -1,9 +1,5 @@
 "use client";
 
-// Shared sticky action bar for table multi-select — appears once at least one
-// row is checked, on Orders/Inventory/Staff. Kept as one component so all
-// three tables get the exact same look and the same Escape-to-clear behavior,
-// rather than three bespoke bars drifting apart over time.
 import { useEffect } from "react";
 
 export default function BulkActionBar({

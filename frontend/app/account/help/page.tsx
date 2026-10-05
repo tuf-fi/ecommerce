@@ -12,10 +12,10 @@ export default function HelpSupportPage() {
             <div className="mb-10 grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <a
                     href="mailto:hello@cindyrella.ph"
-                    className="flex items-center justify-between gap-3 border border-ink/10 px-5 py-4 transition hover:border-ink/20"
+                    className="group flex items-center justify-between gap-3 border border-ink/10 px-5 py-4 transition hover:border-pink-btn/40"
                 >
                     <div className="flex items-center gap-3">
-                        <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full border border-ink/10 text-ink">
+                        <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full border border-ink/10 text-ink transition group-hover:border-pink-btn/40 group-hover:text-pink-dark">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                                 <rect x="3" y="5" width="18" height="14" rx="2" />
                                 <path d="m3 7 9 6 9-6" />
@@ -26,14 +26,14 @@ export default function HelpSupportPage() {
                             <div className="text-[12px] text-grey">hello@cindyrella.ph</div>
                         </div>
                     </div>
-                    <span className="flex-none text-grey">↗</span>
+                    <span className="flex-none text-grey transition group-hover:text-pink-dark">↗</span>
                 </a>
                 <a
                     href="tel:+639170000000"
-                    className="flex items-center justify-between gap-3 border border-ink/10 px-5 py-4 transition hover:border-ink/20"
+                    className="group flex items-center justify-between gap-3 border border-ink/10 px-5 py-4 transition hover:border-pink-btn/40"
                 >
                     <div className="flex items-center gap-3">
-                        <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full border border-ink/10 text-ink">
+                        <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full border border-ink/10 text-ink transition group-hover:border-pink-btn/40 group-hover:text-pink-dark">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                                 <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.7A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .3 2 .7 3a2 2 0 0 1-.4 2.1L8 10.2a16 16 0 0 0 6 6l1.4-1.4a2 2 0 0 1 2-.5c1 .4 2 .6 3 .7a2 2 0 0 1 1.6 2Z" />
                             </svg>
@@ -43,7 +43,7 @@ export default function HelpSupportPage() {
                             <div className="text-[12px] text-grey">+63 917 000 0000</div>
                         </div>
                     </div>
-                    <span className="flex-none text-grey">↗</span>
+                    <span className="flex-none text-grey transition group-hover:text-pink-dark">↗</span>
                 </a>
             </div>
 
@@ -52,9 +52,9 @@ export default function HelpSupportPage() {
                 {faqs.map((item) => (
                     <Accordion.Item key={item.q} value={item.q} className="py-4">
                         <Accordion.Header>
-                            <Accordion.Trigger className="group flex w-full cursor-pointer list-none items-center justify-between gap-6 text-left text-[13.5px] font-medium text-ink">
+                            <Accordion.Trigger className="group flex w-full cursor-pointer list-none items-center justify-between gap-6 text-left text-[13.5px] font-medium text-ink transition hover:text-pink-dark">
                                 {item.q}
-                                <span className="flex-none text-grey transition-transform group-data-[state=open]:rotate-90">›</span>
+                                <span className="flex-none text-grey transition-[transform,color] group-hover:text-pink-dark group-data-[state=open]:rotate-90">›</span>
                             </Accordion.Trigger>
                         </Accordion.Header>
                         <Accordion.Content className="overflow-hidden data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">

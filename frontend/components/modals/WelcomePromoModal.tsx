@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ApiError } from "@/library/api/client";
+import { requestWelcomeCode } from "@/library/api/marketing";
 import Image from "next/image";
 import Modal from "../ui/Modal";
 import { useStore } from "@/library/store";
 import { philosophyImage } from "../ui/images";
-import { useAsyncAction, wait } from "@/library/useAsyncAction";
+import { useAsyncAction } from "@/library/useAsyncAction";
 
 export default function WelcomePromoModal() {
     const { activeModal, closeModal, openModal, showToast } = useStore();
@@ -15,20 +17,29 @@ export default function WelcomePromoModal() {
 
     useEffect(() => {
         if (sessionStorage.getItem("welcomePromoShown")) return;
-        const timer = setTimeout(() => {
+
+        // Gated on scroll depth, not a flat timer, so it doesn't interrupt a visitor before they've read the Hero headline.
+        function handleScroll() {
+            if (window.scrollY < window.innerHeight * 0.9) return;
             openModal("welcome");
             sessionStorage.setItem("welcomePromoShown", "1");
-        }, 1400);
-        return () => clearTimeout(timer);
+            window.removeEventListener("scroll", handleScroll);
+        }
+
+        window.addEventListener("scroll", handleScroll, { passive: true });
+        return () => window.removeEventListener("scroll", handleScroll);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const [submitting, submit] = useAsyncAction(async (e: React.FormEvent) => {
         e.preventDefault();
-        // TODO: send to a real email list (Mailchimp/Klaviyo) and generate a real one-time code.
-        await wait();
-        setClaimed(true);
-        showToast("success", "Code emailed — check your inbox.");
+        try {
+            await requestWelcomeCode(email);
+            setClaimed(true);
+            showToast("success", "Code emailed — check your inbox.");
+        } catch (err) {
+            showToast("error", err instanceof ApiError ? err.message : "Couldn't send your code. Please try again.");
+        }
     });
 
     return (
@@ -47,18 +58,22 @@ export default function WelcomePromoModal() {
                     </div>
                     {claimed ? (
                         <p className="text-[13px] text-ink">
-                            You&apos;re in! Use code <b>RITUAL10</b> at checkout.
+                            You&apos;re in! Your code is on its way to your inbox.
                         </p>
                     ) : (
                         <div>
                             <form onSubmit={submit} className="flex flex-col gap-2.5">
+                                <label htmlFor="welcome-promo-email" className="sr-only">
+                                    Email address
+                                </label>
                                 <input
+                                    id="welcome-promo-email"
                                     type="email"
                                     required
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     placeholder="Your email address"
-                                    className="w-full border border-ink/15 bg-white px-4 py-3 text-sm text-ink outline-none transition focus:border-pink-dark"
+                                    className="w-full border border-ink/15 bg-white px-4 py-3 text-sm text-ink outline-none transition focus:border-pink-dark focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-1"
                                 />
                                 <button
                                     type="submit"
@@ -69,7 +84,7 @@ export default function WelcomePromoModal() {
                                 </button>
                             </form>
                             <p className="mt-3 text-[11px] text-grey">
-                                Code <b>RITUAL10</b> will be emailed to you instantly.
+                                Your one-time code will be emailed to you.
                             </p>
                         </div>
                     )}

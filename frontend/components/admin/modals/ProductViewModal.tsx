@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Modal from "@/components/ui/Modal";
 import StatusBadge from "@/components/admin/StatusBadge";
-import { ViewHeader, DetailRow, DetailBody } from "@/components/admin/modals/ViewModalLayout";
+import { ViewHeader, DetailRow, DetailBody, FactRow, FactCell, SectionLabel, SizeTable } from "@/components/admin/modals/ViewModalLayout";
 import { AdminProduct } from "@/library/admin/types";
 import { productStock, productStockStatus, productPriceRange, isExpiringSoon } from "@/library/adminStore";
 
@@ -35,23 +35,26 @@ export default function ProductViewModal({
     return (
         <Modal open={open} onClose={onClose} maxWidth="max-w-[420px]">
             <ViewHeader
-                eyebrow="Product"
                 title={product.name}
-                meta={<StatusBadge label={STOCK_LABEL[status]} tone={STOCK_TONE[status]} />}
+                caption={
+                    <span className="inline-flex items-center gap-1.5">
+                        <span className="font-mono">{product.sku}</span>
+                        <span className="text-ink/25">·</span>
+                        <span>{product.category}</span>
+                    </span>
+                }
+                badge={<StatusBadge label={STOCK_LABEL[status]} tone={STOCK_TONE[status]} />}
                 thumbnail={
                     <div className="relative h-12 w-12 flex-none overflow-hidden border border-ink/10 bg-gradient-to-br from-blue-soft to-pink-soft">
                         <Image src={product.image} alt="" fill sizes="48px" unoptimized={typeof product.image === "string"} className="object-cover" />
                     </div>
                 }
             />
+            <FactRow>
+                <FactCell label="Price" size="lg" value={min === max ? `₱${min.toLocaleString()}` : `₱${min.toLocaleString()}–₱${max.toLocaleString()}`} />
+                <FactCell label="Stock" size="lg" tone={status === "out" ? "alert" : status === "low" ? "warning" : "default"} value={`${productStock(product)} units`} />
+            </FactRow>
             <DetailBody>
-                <DetailRow label="SKU" value={<span className="font-mono">{product.sku}</span>} />
-                <DetailRow label="Category" value={product.category} />
-                <DetailRow
-                    label="Price"
-                    value={min === max ? `₱${min.toLocaleString()}` : `₱${min.toLocaleString()}–₱${max.toLocaleString()}`}
-                />
-                <DetailRow label="Stock" value={`${productStock(product)} units`} />
                 <DetailRow
                     label="Expiry"
                     value={
@@ -62,30 +65,21 @@ export default function ProductViewModal({
                     }
                 />
                 {product.sizes && product.sizes.length > 0 && (
-                    <DetailRow
-                        label="Sizes"
-                        value={
-                            <div className="flex flex-wrap justify-end gap-1.5">
-                                {product.sizes.map((s) => {
-                                    const sizeStatus = productStockStatus({ ...product, stock: s.stock, sizes: undefined });
-                                    return (
-                                        <span
-                                            key={s.id}
-                                            className={`border px-2 py-1 font-mono text-[11px] ${
-                                                sizeStatus === "out"
-                                                    ? "border-alert/30 bg-alert/5 text-alert"
-                                                    : sizeStatus === "low"
-                                                      ? "border-pink/30 bg-pink-soft text-pink-dark"
-                                                      : "border-ink/10 bg-white text-ink"
-                                            }`}
-                                        >
-                                            {s.label} · {s.stock}
-                                        </span>
-                                    );
-                                })}
-                            </div>
-                        }
-                    />
+                    <div className="mt-5">
+                        <SectionLabel label="Sizes" />
+                        <SizeTable
+                            sizes={product.sizes.map((s) => {
+                                const sizeStatus = productStockStatus({ ...product, stock: s.stock, sizes: undefined });
+                                return {
+                                    id: s.id,
+                                    label: s.label,
+                                    price: s.price,
+                                    stock: s.stock,
+                                    tone: sizeStatus === "out" ? "alert" : sizeStatus === "low" ? "warning" : "default",
+                                };
+                            })}
+                        />
+                    </div>
                 )}
             </DetailBody>
         </Modal>

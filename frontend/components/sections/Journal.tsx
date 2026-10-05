@@ -18,7 +18,7 @@ export default function Journal(){
     if (!featured) return null;
 
     return(
-        <SectionContainer tint="blue-soft" id="journal">
+        <SectionContainer id="journal">
             <SectionTitle num="06" title="Journal" />
 
             <div className="grid grid-cols-[1.1fr_1fr] gap-14">
@@ -61,7 +61,7 @@ export default function Journal(){
                                     )}
                                 </div>
                                 <div>
-                                    <h4 className="text-[15px] font-medium leading-snug text-ink transition group-hover:text-pink-dark">{post.title}</h4>
+                                    <h4 className="text-[15px] font-medium leading-snug text-ink transition group-hover:text-blue-accent">{post.title}</h4>
                                     <p className="mt-2 line-clamp-2 max-w-[280px] text-[12.5px] leading-relaxed text-grey">{post.excerpt}</p>
                                 </div>
                             </Link>

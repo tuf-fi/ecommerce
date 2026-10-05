@@ -52,21 +52,6 @@ const navGroups = [
         ],
     },
     {
-        label: "Preferences",
-        items: [
-            {
-                label: "Notifications",
-                href: "/account/notifications",
-                icon: (
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                        <path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
-                        <path d="M13.7 21a2 2 0 0 1-3.4 0" />
-                    </svg>
-                ),
-            },
-        ],
-    },
-    {
         label: "Rewards",
         items: [
             {
@@ -97,7 +82,7 @@ const navGroups = [
             },
             {
                 label: "Privacy Policy",
-                href: "/account/privacy",
+                href: "/pages/privacy-policy",
                 icon: (
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                         <path d="M12 2.5 4 6v6c0 5 3.4 8.2 8 9.5 4.6-1.3 8-4.5 8-9.5V6l-8-3.5Z" />
@@ -157,11 +142,16 @@ export default function AccountShell({ children }: { children: React.ReactNode }
                                                 <Link
                                                     key={item.href}
                                                     href={item.href}
-                                                    className={`flex min-w-0 items-center gap-2.5 px-2.5 py-1.5 text-[12.5px] transition ${
-                                                        active ? "bg-off font-semibold text-ink" : "text-grey hover:bg-off/70 hover:text-ink"
+                                                    // Left accent bar + pink tint matches how the rest of the app marks "current".
+                                                    className={`group flex min-w-0 items-center gap-2.5 border-l-2 py-1.5 pr-2.5 pl-3 text-[12.5px] transition ${
+                                                        active
+                                                            ? "border-pink-btn bg-pink-soft/50 font-semibold text-pink-dark"
+                                                            : "border-transparent text-grey hover:border-ink/15 hover:bg-off/70 hover:text-ink"
                                                     }`}
                                                 >
-                                                    <span className={`flex-none ${active ? "text-ink" : "text-grey"}`}>{item.icon}</span>
+                                                    <span className={`flex-none transition ${active ? "text-pink-dark" : "text-grey group-hover:text-ink"}`}>
+                                                        {item.icon}
+                                                    </span>
                                                     <span className="truncate">{item.label}</span>
                                                 </Link>
                                             );
@@ -174,7 +164,7 @@ export default function AccountShell({ children }: { children: React.ReactNode }
                         <div className="mt-4">
                             <button
                                 onClick={handleSignOut}
-                                className="flex w-full min-w-0 items-center gap-2.5 px-2.5 py-1.5 text-[12.5px] text-alert transition hover:bg-off/70"
+                                className="flex w-full min-w-0 items-center gap-2.5 px-2.5 py-1.5 text-[12.5px] text-alert transition hover:bg-alert/5"
                             >
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="flex-none">
                                     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />

@@ -4,19 +4,11 @@ import { useMemo } from "react";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { LocationTrendPoint } from "@/library/admin/dashboard";
 
-// Four lines is the ceiling where a shared crosshair tooltip still reads at a
-// glance; a 5th location and beyond fold into one "Other" line rather than
-// inventing a 5th hue.
+// Four lines is the ceiling where a shared crosshair tooltip still reads at a glance; beyond that, locations fold into one "Other" line.
 const MAX_SERIES = 4;
 const OTHER_LABEL = "Other";
 
-// Chart-only colours, kept beside the chart that uses them instead of in
-// tailwind.config.ts — same convention as StockHealthDonut, since these encode
-// data rather than brand UI. Validated on a light surface for colour-vision
-// separation and >=3:1 contrast. `gold` is absent by design: it belongs to
-// star ratings only.
-// Keyed by location rather than by position, so a location keeps its colour
-// even if the volume ordering behind SALES_LOCATIONS shifts.
+// Keyed by location rather than by position, so a location keeps its colour even if SALES_LOCATIONS' ordering shifts.
 const LOCATION_COLORS: Record<string, string> = {
     "Quezon City": "#A81753",
     "Marikina City": "#1F5FA8",
@@ -57,16 +49,7 @@ function SalesTooltip({ active, payload, label, colorOf }: { active?: boolean; p
     );
 }
 
-// Line keys rather than filled swatches: the legend mirrors the mark it stands
-// for, and the label itself stays in text ink so it never has to survive as
-// coloured type.
-//
-// Rendered as a normal block above the chart rather than through recharts'
-// own <Legend>, which reserves a fixed height for it — a fixed reservation
-// that's too short the moment this wraps to a second line at narrower
-// widths, letting the wrapped row overlap the chart's y-axis ticks below it.
-// A plain flow element just pushes the chart down by however much room the
-// legend actually needs, at any width.
+// Rendered as a plain flow block rather than recharts' own <Legend>, which reserves a fixed height that's too short once this wraps to a second line at narrower widths.
 function LineKeyLegend({ series }: { series: Series[] }) {
     return (
         <div className="mb-3 flex flex-wrap items-center gap-x-5 gap-y-2">
@@ -131,8 +114,7 @@ export default function SalesTrendChart({ data, locations }: { data: LocationTre
                             dot={false}
                             activeDot={{ r: 4, strokeWidth: 2, stroke: "#fff" }}
                             animationDuration={900}
-                            // Each line starts a beat after the one above, so four
-                            // simultaneous reveals don't read as one blur.
+                            // Staggered so four simultaneous reveals don't read as one blur.
                             animationBegin={i * 120}
                         />
                     ))}

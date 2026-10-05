@@ -1,0 +1,341 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Money is stored as whole pesos (Int), matching the frontend's integer prices.
+
+enum StaffRole {
+  ADMINISTRATOR
+  STAFF
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum StockReason {
+  RESTOCK
+  CORRECTION
+  DAMAGED
+  EXPIRED
+  SALE
+  RETURN
+  IMPORT
+}
+
+model Customer {
+  avatarUrl    String?
+  id           Int       @id @default(autoincrement())
+  email        String    @unique
+  passwordHash String
+  name         String
+  createdAt    DateTime  @default(now())
+  addresses    Address[]
+  orders       Order[]
+  reviews      Review[]
+}
+
+model StaffMember {
+  // Deactivated accounts can't sign in; their history is kept.
+  active            Boolean            @default(true)
+  // Which admin sections a STAFF account may use (ADMINISTRATORs always have everything).
+  access            String             @default("Full access")
+  notificationReads NotificationRead[]
+  // TOTP secret, AES-GCM encrypted at rest. totpEnabled stays false until the first code is confirmed.
+  totpSecret        String?
+  totpEnabled       Boolean            @default(false)
+  // Highest TOTP time step already accepted, so a code can't be replayed.
+  totpLastStep      Int?
+  // SHA-256 hashes of unused one-time recovery codes.
+  recoveryHashes    String[]
+  sessions          AdminSession[]
+  id                Int                @id @default(autoincrement())
+  email             String             @unique
+  passwordHash      String
+  name              String
+  role              StaffRole          @default(STAFF)
+  photo             String?
+  createdAt         DateTime           @default(now())
+  movements         StockMovement[]
+}
+
+model Address {
+  id         Int      @id @default(autoincrement())
+  customerId Int
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  label      String
+  text       String
+  isDefault  Boolean  @default(false)
+
+  @@index([customerId])
+}
+
+model Product {
+  id               Int             @id @default(autoincrement())
+  sku              String          @unique
+  name             String
+  category         String
+  description      String          @default("")
+  price            Int
+  // Used only when the product has no sizes; otherwise stock lives on ProductSize.
+  stock            Int             @default(0)
+  // Falls back to the app-wide default when null.
+  reorderThreshold Int?
+  expiry           DateTime?
+  image            String?
+  concerns         String[]
+  // Denormalized from reviews; Phase 7 keeps them in sync when a review is created.
+  rating           Float           @default(0)
+  ratingCount      Int             @default(0)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  // Bumped on every detail edit; an edit made against an older version is rejected instead of overwriting.
+  version          Int             @default(0)
+  sizes            ProductSize[]
+  movements        StockMovement[]
+  orderItems       OrderItem[]
+  reviews          Review[]
+}
+
+model ProductSize {
+  id               Int             @id @default(autoincrement())
+  productId        Int
+  product          Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  label            String
+  price            Int
+  stock            Int             @default(0)
+  reorderThreshold Int?
+  movements        StockMovement[]
+  orderItems       OrderItem[]
+
+  @@unique([productId, label])
+}
+
+// Append-only audit trail; `quantity` is a signed delta.
+model StockMovement {
+  id        Int          @id @default(autoincrement())
+  productId Int
+  product   Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sizeId    Int?
+  size      ProductSize? @relation(fields: [sizeId], references: [id], onDelete: SetNull)
+  quantity  Int
+  reason    StockReason
+  note      String?
+  staffId   Int?
+  staff     StaffMember? @relation(fields: [staffId], references: [id], onDelete: SetNull)
+  orderId   Int?
+  order     Order?       @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  createdAt DateTime     @default(now())
+
+  @@index([productId, createdAt])
+}
+
+model Order {
+  id            Int                  @id @default(autoincrement())
+  // Human-facing number, e.g. "LM-2296".
+  number        String               @unique
+  customerId    Int
+  customer      Customer             @relation(fields: [customerId], references: [id])
+  status        OrderStatus          @default(PENDING)
+  // Snapshot at checkout so later address edits don't rewrite history.
+  shipName      String
+  shipEmail     String
+  shipAddress   String
+  // Set by the PayMongo webhook when payment is confirmed.
+  paidAt        DateTime?
+  paymentMethod String?
+  total         Int
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  items         OrderItem[]
+  statusHistory OrderStatusHistory[]
+  paymentProofs PaymentProof[]
+  movements     StockMovement[]
+
+  @@index([customerId])
+  @@index([status, createdAt])
+}
+
+model OrderItem {
+  id          Int          @id @default(autoincrement())
+  orderId     Int
+  order       Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId   Int
+  product     Product      @relation(fields: [productId], references: [id])
+  sizeId      Int?
+  size        ProductSize? @relation(fields: [sizeId], references: [id])
+  // Name and price snapshotted so catalog edits don't change past orders.
+  productName String
+  unitPrice   Int
+  quantity    Int
+
+  @@index([orderId])
+}
+
+model Review {
+  id         Int      @id @default(autoincrement())
+  productId  Int
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  customerId Int
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  rating     Int
+  text       String
+  createdAt  DateTime @default(now())
+
+  @@unique([productId, customerId])
+}
+
+model Voucher {
+  id          Int       @id @default(autoincrement())
+  code        String    @unique
+  description String
+  percentOff  Int?
+  expiresAt   DateTime?
+  active      Boolean   @default(true)
+  // Set for one-time codes issued to a specific subscriber.
+  forEmail    String?
+  usedAt      DateTime?
+}
+
+// One JSON blob per homepage/CMS section (hero, about, promos, blog, faqs, ...).
+model ContentSection {
+  key       String   @id
+  data      Json
+  updatedAt DateTime @updatedAt
+}
+
+// One-time password-reset codes; only a hash of the code is stored.
+model OtpCode {
+  id        Int       @id @default(autoincrement())
+  email     String
+  codeHash  String
+  expiresAt DateTime
+  attempts  Int       @default(0)
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([email])
+}
+
+enum ActorType {
+  CUSTOMER
+  STAFF
+  SYSTEM
+}
+
+// Append-only (enforced by a database trigger): every order status change is a new row, never an edit.
+// The actor is stored as an id plus a name snapshot, with no foreign key, so history survives account deletion.
+model OrderStatusHistory {
+  id         Int          @id @default(autoincrement())
+  orderId    Int
+  order      Order        @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  fromStatus OrderStatus?
+  toStatus   OrderStatus
+  actorType  ActorType
+  actorId    Int?
+  actorName  String
+  note       String?
+  createdAt  DateTime     @default(now())
+
+  @@index([orderId, createdAt])
+}
+
+// Append-only record of changes to anything else (products now; staff accounts and CMS content as they gain backends).
+model AuditLog {
+  id         Int       @id @default(autoincrement())
+  entityType String
+  entityId   String
+  action     String
+  actorType  ActorType
+  actorId    Int?
+  actorName  String
+  details    Json?
+  createdAt  DateTime  @default(now())
+
+  @@index([entityType, entityId, createdAt])
+  @@index([createdAt])
+}
+
+// Everyone who gave us an email for marketing (newsletter form or welcome-promo popup).
+model Subscriber {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  source    String
+  createdAt DateTime @default(now())
+}
+
+model ContactMessage {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String
+  message   String
+  createdAt DateTime @default(now())
+}
+
+// One row per admin sign-in. The JWT carries this id (`jti`), so a session can be listed and revoked server-side.
+model AdminSession {
+  id         String      @id
+  staffId    Int
+  staff      StaffMember @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  userAgent  String?
+  ip         String?
+  createdAt  DateTime    @default(now())
+  lastSeenAt DateTime    @default(now())
+  expiresAt  DateTime
+  revokedAt  DateTime?
+
+  @@index([staffId])
+}
+
+enum ProofStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// A customer's screenshot of their transfer, waiting for staff to check it. The image bytes live in ProofFile so listing
+// proofs never drags image data along.
+model PaymentProof {
+  id           Int         @id @default(autoincrement())
+  orderId      Int
+  order        Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  method       String
+  reference    String?
+  note         String?
+  mimeType     String
+  sizeBytes    Int
+  status       ProofStatus @default(PENDING)
+  rejectReason String?
+  reviewedById Int?
+  reviewedBy   String?
+  reviewedAt   DateTime?
+  createdAt    DateTime    @default(now())
+  file         ProofFile?
+
+  @@index([orderId, createdAt])
+}
+
+model ProofFile {
+  proofId Int          @id
+  proof   PaymentProof @relation(fields: [proofId], references: [id], onDelete: Cascade)
+  data    Bytes
+}
+
+// Which feed items (new order, payment to review, low stock …) a staff member has already seen.
+model NotificationRead {
+  staffId   Int
+  staff     StaffMember @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  key       String
+  createdAt DateTime    @default(now())
+
+  @@id([staffId, key])
+}

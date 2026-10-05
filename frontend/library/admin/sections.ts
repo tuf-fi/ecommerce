@@ -1,10 +1,4 @@
-// The twelve homepage regions that can be shown/hidden from the CMS, plus the
-// two lookups every consumer of that list needs. Lives here rather than in
-// content.tsx so the anchor/label maps and the key union they're keyed by
-// can't drift apart, and so admin UI (PagesTab, LinksTab) and customer chrome
-// (Navbar) can import them without pulling in the provider.
-// `SectionKey` is re-exported from library/content.tsx for call sites that
-// already read everything else from there.
+// Homepage regions the CMS can show/hide, plus their lookups — kept out of content.tsx so admin UI and customer chrome can import without pulling in the provider.
 
 export type SectionKey =
     | "hero"
@@ -20,8 +14,7 @@ export type SectionKey =
     | "contact"
     | "newsletter";
 
-// Homepage render order (see app/page.tsx) — every list built off this reads
-// top-to-bottom the way the page itself does.
+// Homepage render order (see app/page.tsx) — everything built off this reads top-to-bottom like the page.
 export const SECTION_KEYS: SectionKey[] = [
     "hero",
     "about",
@@ -37,12 +30,7 @@ export const SECTION_KEYS: SectionKey[] = [
     "newsletter",
 ];
 
-// The real DOM id each section renders (`<SectionContainer id="…">`), which is
-// what Navbar's smooth-scroll and every `/#…` link actually target. Several
-// don't match their key: the sections were named for what they contain
-// ("Moments" of a routine) while the anchors were named for what the customer
-// sees ("Rituals"). Hero has no id at all — it's the top of the page, so an
-// empty string here means "scroll to top" rather than "look up an element".
+// The real DOM id each section renders; several differ from their key, and Hero's empty string means "scroll to top", not an element lookup.
 export const SECTION_ANCHOR_ID: Record<SectionKey, string> = {
     hero: "",
     about: "about",
@@ -58,10 +46,7 @@ export const SECTION_ANCHOR_ID: Record<SectionKey, string> = {
     newsletter: "newsletter",
 };
 
-// Admin-facing names — what an editor sees in the Pages list and the nav-link
-// Section dropdown. Deliberately the customer-visible section heading where
-// there is one ("Shop by Concern", not "Glossary") so the two lists are
-// recognizably the same thing.
+// Admin-facing names — mirrors the customer-visible heading where one exists, so the two lists read as the same thing.
 export const SECTION_LABELS: Record<SectionKey, string> = {
     hero: "Hero",
     about: "About",

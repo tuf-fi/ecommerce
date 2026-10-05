@@ -4,9 +4,10 @@ import Link from "next/link";
 import Image from "next/image";
 import Modal from "@/components/ui/Modal";
 import StatusBadge from "@/components/admin/StatusBadge";
-import { ViewHeader, DetailRow, DetailBody } from "@/components/admin/modals/ViewModalLayout";
+import { ViewHeader, DetailBody, FactRow, FactCell, SectionLabel, SizeTable } from "@/components/admin/modals/ViewModalLayout";
 import { AdminProduct } from "@/library/admin/types";
-import { productStock, productStockStatus, productPriceRange } from "@/library/adminStore";
+import { productStock, productStockStatus, productPriceRange, useAdminStore } from "@/library/adminStore";
+import { canAccessSection } from "@/library/admin/permissions";
 
 export default function LowStockViewModal({
     open,
@@ -17,19 +18,28 @@ export default function LowStockViewModal({
     product: AdminProduct | null;
     onClose: () => void;
 }) {
+    const { currentStaffMember } = useAdminStore();
+    const canInventory = canAccessSection(currentStaffMember, "inventory");
     if (!product) return null;
 
     const { min, max } = productPriceRange(product);
+    const status = productStockStatus(product);
 
     return (
         <Modal open={open} onClose={onClose} maxWidth="max-w-[380px]">
             <ViewHeader
-                eyebrow="Low Stock Alert"
                 title={product.name}
-                meta={
+                caption={
+                    <span className="inline-flex items-center gap-1.5">
+                        <span className="font-mono">{product.sku}</span>
+                        <span className="text-ink/25">·</span>
+                        <span>{product.category}</span>
+                    </span>
+                }
+                badge={
                     <StatusBadge
-                        label={productStockStatus(product) === "out" ? "Out of stock" : `${productStock(product)} left`}
-                        tone={productStockStatus(product) === "out" ? "alert" : "warning"}
+                        label={status === "out" ? "Out of stock" : `${productStock(product)} left`}
+                        tone={status === "out" ? "alert" : "warning"}
                     />
                 }
                 thumbnail={
@@ -38,45 +48,40 @@ export default function LowStockViewModal({
                     </div>
                 }
             />
-            <DetailBody>
-                <DetailRow label="SKU" value={<span className="font-mono">{product.sku}</span>} />
-                <DetailRow label="Category" value={product.category} />
-                <DetailRow label="Price" value={min === max ? `₱${min.toLocaleString()}` : `₱${min.toLocaleString()}–₱${max.toLocaleString()}`} />
-                {product.sizes && product.sizes.length > 0 && (
-                    <DetailRow
-                        label="Sizes"
-                        value={
-                            <div className="flex flex-wrap justify-end gap-1.5">
-                                {product.sizes.map((s) => {
-                                    const sizeStatus = productStockStatus({ ...product, stock: s.stock, sizes: undefined });
-                                    return (
-                                        <span
-                                            key={s.id}
-                                            className={`border px-2 py-1 font-mono text-[11px] ${
-                                                sizeStatus === "out"
-                                                    ? "border-alert/30 bg-alert/5 text-alert"
-                                                    : sizeStatus === "low"
-                                                      ? "border-pink/30 bg-pink-soft text-pink-dark"
-                                                      : "border-ink/10 bg-white text-ink"
-                                            }`}
-                                        >
-                                            {s.label} · {s.stock}
-                                        </span>
-                                    );
-                                })}
-                            </div>
-                        }
+            <FactRow>
+                <FactCell label="Stock left" size="lg" tone={status === "out" ? "alert" : "warning"} value={`${productStock(product)} units`} />
+                <FactCell label="Price" size="lg" value={min === max ? `₱${min.toLocaleString()}` : `₱${min.toLocaleString()}–₱${max.toLocaleString()}`} />
+            </FactRow>
+            {product.sizes && product.sizes.length > 0 && (
+                <DetailBody>
+                    <SectionLabel label="Sizes" />
+                    <SizeTable
+                        sizes={product.sizes.map((s) => {
+                            const sizeStatus = productStockStatus({ ...product, stock: s.stock, sizes: undefined });
+                            return {
+                                id: s.id,
+                                label: s.label,
+                                price: s.price,
+                                stock: s.stock,
+                                tone: sizeStatus === "out" ? "alert" : sizeStatus === "low" ? "warning" : "default",
+                            };
+                        })}
                     />
-                )}
-            </DetailBody>
-            <div className="sticky bottom-0 border-t border-ink/10 bg-white px-8 py-5">
-                <Link
-                    href="/admin/inventory"
-                    className="block w-full border border-ink/15 py-3 text-center text-[12.5px] font-semibold uppercase tracking-wide text-ink transition hover:bg-off/60"
-                >
-                    Go to Inventory
-                </Link>
-            </div>
+                </DetailBody>
+            )}
+            {canInventory && (
+                <div className="sticky bottom-0 border-t border-ink/10 bg-white px-8 py-5">
+                    <Link
+                        href="/admin/inventory"
+                        className="flex w-full items-center justify-center gap-2 border border-ink/15 py-3 text-center text-[12.5px] font-semibold uppercase tracking-wide text-ink transition hover:bg-off/60"
+                    >
+                        Go to Inventory
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M5 12h14M13 6l6 6-6 6" />
+                        </svg>
+                    </Link>
+                </div>
+            )}
         </Modal>
     );
 }

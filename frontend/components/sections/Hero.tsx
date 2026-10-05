@@ -6,13 +6,7 @@ import { useStore } from "@/library/store";
 import { HeroContent, useContent } from "@/library/content";
 import FadeIn from "../ui/motion/FadeIn";
 
-// `preview` renders inside the admin's live-preview pane, which now stacks
-// full-width above the form (see ContentEditorShell) rather than sharing a
-// column with it, so it can use a fixed height sized for that real width
-// instead of guessing at a cramped, shared column's dimensions.
-// `previewData` lets HeroEditor feed in its local unsaved draft instead of
-// the live site's hero content — the admin needs to see keystrokes reflected
-// here without those keystrokes going live before Save is clicked.
+// preview mode uses a fixed height sized for the full-width preview pane; previewData carries the editor's unsaved draft.
 export default function Hero({
     preview = false,
     previewData,

@@ -7,6 +7,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useAdminStore } from "@/library/adminStore";
 import { EASE } from "@/components/ui/motion/constants";
 import Tooltip from "@/components/ui/Tooltip";
+import { AdminSection, canAccessSection } from "@/library/admin/permissions";
 
 function CollapseIcon({ collapsed }: { collapsed: boolean }) {
     return (
@@ -24,13 +25,14 @@ function CollapseIcon({ collapsed }: { collapsed: boolean }) {
     );
 }
 
-const NAV_GROUPS = [
+const NAV_GROUPS: { label: string; items: { href: string; label: string; section: AdminSection; icon: React.ReactNode }[] }[] = [
     {
         label: "Overview",
         items: [
             {
                 href: "/admin/dashboard",
                 label: "Dashboard",
+                section: "dashboard",
                 icon: (
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                         <rect x="3" y="3" width="7" height="7" />
@@ -48,6 +50,7 @@ const NAV_GROUPS = [
             {
                 href: "/admin/inventory",
                 label: "Inventory",
+                section: "inventory",
                 icon: (
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                         <path d="M21 8V21H3V8" />
@@ -59,6 +62,7 @@ const NAV_GROUPS = [
             {
                 href: "/admin/inventory/movements",
                 label: "Stock Movements",
+                section: "inventory",
                 icon: (
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                         <rect x="5" y="3" width="14" height="18" rx="1.5" />
@@ -77,6 +81,7 @@ const NAV_GROUPS = [
             {
                 href: "/admin/orders",
                 label: "Orders",
+                section: "orders",
                 icon: (
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                         <path d="M6 2l1.5 4h9L18 2" />
@@ -92,6 +97,7 @@ const NAV_GROUPS = [
             {
                 href: "/admin/staff",
                 label: "Staff & Roles",
+                section: "staff",
                 icon: (
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
@@ -104,6 +110,7 @@ const NAV_GROUPS = [
             {
                 href: "/admin/content",
                 label: "Content",
+                section: "content",
                 icon: (
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                         <rect x="3" y="4" width="18" height="16" rx="2" />
@@ -121,6 +128,7 @@ const NAV_GROUPS = [
             {
                 href: "/admin/settings",
                 label: "Settings",
+                section: "settings",
                 icon: (
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                         <circle cx="12" cy="12" r="3" />
@@ -134,11 +142,14 @@ const NAV_GROUPS = [
 
 export default function AdminSidebar() {
     const pathname = usePathname();
-    const { adminName, sidebarCollapsed, toggleSidebar, mobileSidebarOpen, closeMobileSidebar } = useAdminStore();
+    const { adminName, currentStaffMember, sidebarCollapsed, toggleSidebar, mobileSidebarOpen, closeMobileSidebar } = useAdminStore();
 
-    // Close the mobile drawer on any route change, lock body scroll while
-    // it's open, and let Escape close it — same conventions as Navbar's
-    // mobile panel.
+    // Cosmetic-only filtering (see library/admin/permissions.ts); a group with nothing visible is dropped entirely.
+    const visibleGroups = NAV_GROUPS.map((group) => ({
+        ...group,
+        items: group.items.filter((item) => canAccessSection(currentStaffMember, item.section)),
+    })).filter((group) => group.items.length > 0);
+
     useEffect(() => { closeMobileSidebar(); }, [pathname, closeMobileSidebar]);
     useEffect(() => {
         document.body.style.overflow = mobileSidebarOpen ? "hidden" : "";
@@ -175,8 +186,15 @@ export default function AdminSidebar() {
                 )}
             </AnimatePresence>
 
+            {/* The collapse animates `width` (not transform): collapsing genuinely
+                changes the sidebar's own content layout (labels hide, icons
+                center) and, via the content wrapper's matching margin transition
+                in (panel)/layout.tsx, resizes the main content area to use the
+                freed space — an effect transform alone can't produce since it
+                only repositions a layer without changing anything's box size.
+                `will-change` hints the browser to isolate the repaint cost. */}
             <aside
-                className={`fixed top-0 bottom-0 left-0 z-50 flex w-64 flex-col overflow-hidden bg-navy px-4.5 py-6.5 text-white transition-transform duration-300 ease-in-out lg:z-30 lg:w-60 lg:transition-[width,transform] lg:duration-200 ${
+                className={`fixed top-0 bottom-0 left-0 z-50 flex w-64 flex-col overflow-hidden bg-navy px-4.5 py-6.5 text-white transition-transform duration-300 ease-in-out will-change-[width] lg:z-30 lg:w-60 lg:transition-[width,transform] lg:duration-200 ${
                     mobileSidebarOpen ? "translate-x-0" : "-translate-x-full"
                 } lg:translate-x-0 ${sidebarCollapsed ? "lg:w-[68px]" : "lg:w-60"}`}
             >
@@ -191,35 +209,47 @@ export default function AdminSidebar() {
                     </svg>
                 </button>
 
-                {/* Desktop-only collapse toggle */}
-                <button
-                    onClick={toggleSidebar}
-                    aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-                    className="absolute top-6.5 right-3 hidden h-6 w-6 items-center justify-center rounded-full text-white/60 transition hover:bg-white/10 hover:text-white lg:flex"
-                >
-                    <CollapseIcon collapsed={sidebarCollapsed} />
-                </button>
+                {/* Logo + desktop collapse toggle share one flex header: a row when
+                    expanded (toggle at the trailing edge), a centered column when
+                    collapsed (toggle beneath the mark) — no absolute offsets to
+                    fall out of sync with the rail width. */}
+                <div className={`mb-8 flex gap-3 ${sidebarCollapsed ? "lg:flex-col lg:items-center" : "items-start justify-between"}`}>
+                    <div className="min-w-0">
+                        <div className={`font-display text-[19px] font-medium tracking-wide whitespace-nowrap ${sidebarCollapsed ? "lg:text-center" : ""}`}>
+                            <span className={sidebarCollapsed ? "hidden lg:inline" : "hidden"}>C</span>
+                            <span className={sidebarCollapsed ? "lg:hidden" : ""}>Cindyrella</span>
+                        </div>
+                        <div className={`mt-1 font-mono text-[10px] tracking-[.08em] text-grey-light uppercase ${sidebarCollapsed ? "lg:hidden" : ""}`}>
+                            Admin Panel
+                        </div>
+                    </div>
 
-                <div className={`mb-1 font-display text-[19px] font-medium tracking-wide whitespace-nowrap ${sidebarCollapsed ? "lg:text-center" : ""}`}>
-                    <span className={sidebarCollapsed ? "hidden lg:inline" : "hidden"}>C</span>
-                    <span className={sidebarCollapsed ? "lg:hidden" : ""}>Cindyrella</span>
-                </div>
-                <div className="mb-8 font-mono text-[10px] tracking-[.08em] text-grey-light uppercase">
-                    <span className={sidebarCollapsed ? "lg:hidden" : ""}>Admin Panel</span>
+                    {/* Desktop-only collapse toggle */}
+                    <button
+                        onClick={toggleSidebar}
+                        aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+                        className="hidden h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/15 text-white/60 transition hover:border-white/30 hover:bg-white/10 hover:text-white lg:flex"
+                    >
+                        <CollapseIcon collapsed={sidebarCollapsed} />
+                    </button>
                 </div>
 
                 <nav className="flex min-h-0 flex-1 flex-col overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                    {NAV_GROUPS.map((group) => (
-                        <div key={group.label} className="mt-5 first:mt-0">
-                            <div className={`mb-1 px-3 font-mono text-[10px] tracking-[.14em] text-white/35 uppercase ${sidebarCollapsed ? "lg:hidden" : ""}`}>
+                    {visibleGroups.map((group, i) => (
+                        <div key={group.label} className={`mt-5 first:mt-0 ${sidebarCollapsed ? "lg:mt-3 lg:first:mt-0" : ""}`}>
+                            <div className={`mb-1 px-3 font-mono text-[11px] tracking-[.14em] text-white/35 uppercase ${sidebarCollapsed ? "lg:hidden" : ""}`}>
                                 {group.label}
                             </div>
-                            <div className="flex flex-col gap-0.5">
+                            {sidebarCollapsed && i > 0 && (
+                                <div className="mx-3 mb-3 hidden border-t border-white/10 lg:block" aria-hidden="true" />
+                            )}
+                            <div className={`flex flex-col gap-0.5 ${sidebarCollapsed ? "lg:gap-1" : ""}`}>
                                 {group.items.map((item) => {
                                     const active = item.href === activeHref;
                                     const link = (
                                         <Link
                                             href={item.href}
+                                            aria-label={item.label}
                                             className={`flex w-full items-center gap-2.5 px-3 py-2.5 text-[13px] whitespace-nowrap transition ${
                                                 sidebarCollapsed ? "lg:justify-center lg:px-0" : ""
                                             } ${
@@ -231,7 +261,7 @@ export default function AdminSidebar() {
                                         </Link>
                                     );
                                     return sidebarCollapsed ? (
-                                        <Tooltip key={item.href} label={item.label}>
+                                        <Tooltip key={item.href} label={item.label} side="right">
                                             {link}
                                         </Tooltip>
                                     ) : (
@@ -245,7 +275,7 @@ export default function AdminSidebar() {
 
                 <div className={`mt-4 border-t border-white/15 pt-4 text-[12px] whitespace-nowrap text-grey-light ${sidebarCollapsed ? "lg:hidden" : ""}`}>
                     <b className="block text-[13px] font-medium text-white">{adminName || "Admin"}</b>
-                    Administrator
+                    {currentStaffMember?.role ?? "Administrator"}
                 </div>
             </aside>
         </>

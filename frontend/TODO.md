@@ -67,10 +67,12 @@ Status as of 2026-09-04, from a full customer + admin codebase survey.
 - [ ] Admin settings security stubs (password change, 2FA enrollment) are
       intentionally faked with inline `// TODO`s — fine for now, but flag
       before go-live.
-- [ ] Admin form UX polish: validation is toast-on-submit only (no
-      field-level inline errors), no unsaved-changes guard on modals, Staff
-      table has no sort control (Orders/Inventory do), Import/Export buttons
-      on Inventory are UI-only.
+- [x] Admin form UX polish: field-level inline validation errors, an
+      unsaved-changes guard on modals, and a Staff table sort control were
+      all added — see `IMPECCABLE_TASKS.md`'s "Design/UX-relevant — status"
+      section. Inventory's Import/Export buttons are also no longer UI-only:
+      Export does a real CSV download and Import does real CSV
+      parsing/validation (see `IMPECCABLE_TASKS.md`'s admin-flow "Done" list).
 
 ---
 

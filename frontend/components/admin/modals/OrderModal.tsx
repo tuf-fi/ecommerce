@@ -1,36 +1,37 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Modal from "@/components/ui/Modal";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import { ORDER_STATUSES } from "@/components/admin/orderStatus";
-import { DetailRow, DetailBody } from "@/components/admin/modals/ViewModalLayout";
+import { DetailRow, DetailBody, FactRow, FactCell } from "@/components/admin/modals/ViewModalLayout";
 import { AdminOrder, AdminOrderStatus } from "@/library/admin/types";
 import { getProduct } from "@/library/products";
 import { orderTotal } from "@/library/admin/orders";
+import { listOrderHistory, OrderHistoryEntry } from "@/library/api/orders";
+import ProofImage from "@/components/ui/ProofImage";
+import { PAYMENT_METHOD_LABEL, PaymentMethodId } from "@/library/api/payments";
+import { BTN_PRIMARY, FIELD_INPUT } from "@/components/admin/formClasses";
 
 const CANCELLED_STATUS: AdminOrderStatus = "Cancelled";
+
+const statusLabel = (s: string) => s.charAt(0) + s.slice(1).toLowerCase();
 
 export default function OrderModal({
     open,
     order,
     onClose,
     onStatusChange,
+    onReviewPayment,
 }: {
     open: boolean;
     order: AdminOrder | null;
     onClose: () => void;
     onStatusChange: (orderNo: string, status: AdminOrderStatus) => void;
+    onReviewPayment: (orderNo: string, proofId: number, input: { decision: "approve" } | { decision: "reject"; reason: string }) => Promise<boolean>;
 }) {
-    // Gates the one irreversible, customer-visible transition (-> Cancelled)
-    // behind ConfirmModal, per CLAUDE.md's destructive-action rule. This
-    // component stays mounted across order switches (OrdersPage always
-    // renders it), so any leftover pending confirmation needs clearing
-    // whenever the order it applies to changes — done as a render-time state
-    // adjustment (see StaffPage/OrdersPage for the same pattern) rather than
-    // an effect, since it only needs to run during the render that changed
-    // `order`, not as a separate post-commit step.
+    // Stays mounted across order switches, so pending confirmation is cleared via render-time state adjustment when `order` changes.
     const [pendingCancel, setPendingCancel] = useState(false);
     const [prevOrderNo, setPrevOrderNo] = useState(order?.no);
     if (order?.no !== prevOrderNo) {
@@ -38,14 +39,32 @@ export default function OrderModal({
         setPendingCancel(false);
     }
 
+    const [rejecting, setRejecting] = useState<number | null>(null);
+    const [reason, setReason] = useState("");
+    const [reviewing, setReviewing] = useState(false);
+
+    // Keyed by order number so a previous order's history is never shown while the next one loads.
+    const [history, setHistory] = useState<{ no: string; entries: OrderHistoryEntry[] } | null>(null);
+    const orderNo = order?.no;
+    const orderStatus = order?.status;
+    useEffect(() => {
+        if (!open || !orderNo) return;
+        let stale = false;
+        listOrderHistory(orderNo)
+            .then(({ history: entries }) => !stale && setHistory({ no: orderNo, entries }))
+            .catch(() => !stale && setHistory({ no: orderNo, entries: [] }));
+        return () => {
+            stale = true;
+        };
+        // orderStatus: re-fetch after a status change so the new entry appears.
+    }, [open, orderNo, orderStatus]);
+
     if (!order) return null;
 
     function handleStatusChange(next: AdminOrderStatus) {
         if (!order) return;
         if (next === CANCELLED_STATUS && order.status !== CANCELLED_STATUS) {
-            // Don't call the mutation yet — the <select> stays bound to
-            // order.status, so this re-render snaps its displayed value back
-            // instead of visually committing to Cancelled before it's confirmed.
+            // Don't mutate yet — the <select> stays bound to order.status until the cancel is confirmed.
             setPendingCancel(true);
             return;
         }
@@ -55,16 +74,16 @@ export default function OrderModal({
     return (
         <>
             <Modal open={open} onClose={onClose} maxWidth="max-w-[480px]">
-                <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-ink/10 bg-white px-8 py-5">
+                <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-ink/10 bg-white py-5 pl-8 pr-16">
                     <div className="min-w-0">
-                        <span className="block font-mono text-[10px] uppercase tracking-[.14em] text-grey">Order</span>
-                        <h3 className="mt-0.5 text-lg font-medium text-ink">{order.no}</h3>
+                        <h3 className="text-lg font-medium text-ink">{order.no}</h3>
                         <p className="mt-1 font-mono text-[11px] text-grey">{order.date}</p>
                     </div>
                     <select
                         value={order.status}
                         onChange={(e) => handleStatusChange(e.target.value as AdminOrderStatus)}
-                        className="rounded-none border border-ink/10 px-3.5 py-2 text-[12.5px] text-ink outline-none transition focus:border-navy/30"
+                        aria-label="Order status"
+                        className="h-11 flex-none rounded-none border border-ink/10 px-3.5 text-[12.5px] text-ink outline-none transition focus:border-navy/30 focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-1"
                     >
                         {ORDER_STATUSES.map((s) => (
                             <option key={s} value={s}>
@@ -74,9 +93,11 @@ export default function OrderModal({
                     </select>
                 </div>
 
+                <FactRow>
+                    <FactCell label="Customer" value={order.customer} />
+                    <FactCell label="Email" value={<span className="font-mono">{order.email}</span>} />
+                </FactRow>
                 <DetailBody>
-                    <DetailRow label="Customer" value={order.customer} />
-                    <DetailRow label="Email" value={order.email} />
                     <DetailRow label="Address" value={order.address} />
                 </DetailBody>
 
@@ -85,21 +106,137 @@ export default function OrderModal({
                     <div className="flex flex-col gap-3">
                         {order.items.map((line) => {
                             const product = getProduct(line.productId);
-                            if (!product) return null;
+                            // Orders carry a name/price snapshot; the live catalogue is only a fallback and for the thumbnail.
+                            const name = line.name ?? product?.title;
+                            if (!name) return null;
+                            const unitPrice = line.unitPrice ?? product?.price ?? 0;
                             return (
-                                <div key={line.productId} className="flex items-center gap-3">
+                                <div key={`${line.productId}-${name}`} className="flex items-center gap-3">
                                     <div className="relative h-11 w-11 flex-none overflow-hidden border border-ink/10">
-                                        <Image src={product.image} alt="" fill sizes="44px" className="object-cover" />
+                                        {product && <Image src={product.image} alt="" fill sizes="44px" className="object-cover" />}
                                     </div>
                                     <div className="min-w-0 flex-1">
-                                        <div className="truncate text-[13.5px] text-ink">{product.title}</div>
+                                        <div className="truncate text-[13.5px] text-ink">{name}</div>
                                         <div className="font-mono text-[10px] tracking-[.1em] text-grey uppercase">Qty {line.qty}</div>
                                     </div>
-                                    <div className="flex-none font-mono text-[13px] text-ink">₱{(product.price * line.qty).toLocaleString()}</div>
+                                    <div className="flex-none font-mono text-[13px] text-ink">₱{(unitPrice * line.qty).toLocaleString()}</div>
                                 </div>
                             );
                         })}
                     </div>
+                </div>
+
+                <div className="border-t border-ink/10 px-8 py-6">
+                    <span className="mb-3 block font-mono text-[10px] tracking-[.14em] text-grey uppercase">Payment</span>
+                    {!order.payment || order.payment.proofs.length === 0 ? (
+                        <p className="text-[12.5px] text-grey">
+                            {order.status === "Pending" ? "No payment screenshot yet. The customer sees the payment details and can upload one." : "No screenshot was uploaded for this order."}
+                        </p>
+                    ) : (
+                        <div className="flex flex-col gap-4">
+                            {order.payment.proofs.map((p) => {
+                                const method = PAYMENT_METHOD_LABEL[p.method as PaymentMethodId] ?? p.method;
+                                return (
+                                    <div key={p.id} className="border border-ink/10 p-3.5">
+                                        <div className="mb-2 flex items-center justify-between gap-3">
+                                            <span className="text-[13px] text-ink">
+                                                {method}
+                                                {p.reference ? <span className="font-mono text-[11.5px] text-grey"> · ref {p.reference}</span> : null}
+                                            </span>
+                                            <span className={`font-mono text-[10.5px] tracking-[.1em] uppercase ${p.status === "APPROVED" ? "text-success-dark" : p.status === "REJECTED" ? "text-alert" : "text-pink-dark"}`}>
+                                                {p.status === "PENDING" ? "Needs review" : p.status.toLowerCase()}
+                                            </span>
+                                        </div>
+                                        <ProofImage orderNo={order.no} proofId={p.id} className="mb-2 max-h-72 w-full border border-ink/10 object-contain" />
+                                        <div className="text-[11.5px] text-grey">
+                                            Sent {new Date(p.createdAt).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}
+                                            {p.reviewedBy ? ` · ${p.status === "APPROVED" ? "approved" : "rejected"} by ${p.reviewedBy}` : ""}
+                                            {p.rejectReason ? ` — ${p.rejectReason}` : ""}
+                                        </div>
+                                        {p.status === "PENDING" && (
+                                            rejecting === p.id ? (
+                                                <div className="mt-3">
+                                                    <textarea
+                                                        value={reason}
+                                                        onChange={(e) => setReason(e.target.value)}
+                                                        rows={2}
+                                                        maxLength={300}
+                                                        placeholder="Why? The customer will see this (e.g. amount is lower than the total)"
+                                                        aria-label="Reason for rejecting"
+                                                        className={`${FIELD_INPUT} mb-2`}
+                                                    />
+                                                    <div className="flex gap-2">
+                                                        <button
+                                                            disabled={reviewing || reason.trim().length < 3}
+                                                            onClick={async () => {
+                                                                setReviewing(true);
+                                                                if (await onReviewPayment(order.no, p.id, { decision: "reject", reason: reason.trim() })) {
+                                                                    setRejecting(null);
+                                                                    setReason("");
+                                                                }
+                                                                setReviewing(false);
+                                                            }}
+                                                            className={`flex-1 ${BTN_PRIMARY}`}
+                                                        >
+                                                            {reviewing ? "Rejecting…" : "Reject screenshot"}
+                                                        </button>
+                                                        <button onClick={() => setRejecting(null)} disabled={reviewing} className="border border-ink/15 px-4 text-[12.5px] text-ink hover:bg-off">
+                                                            Cancel
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="mt-3 flex gap-2">
+                                                    <button
+                                                        disabled={reviewing}
+                                                        onClick={async () => {
+                                                            setReviewing(true);
+                                                            await onReviewPayment(order.no, p.id, { decision: "approve" });
+                                                            setReviewing(false);
+                                                        }}
+                                                        className={`flex-1 ${BTN_PRIMARY}`}
+                                                    >
+                                                        {reviewing ? "Saving…" : `Approve — mark Paid (₱${orderTotal(order).toLocaleString()})`}
+                                                    </button>
+                                                    <button onClick={() => setRejecting(p.id)} disabled={reviewing} className="border border-ink/15 px-4 text-[12.5px] text-ink hover:bg-off">
+                                                        Reject
+                                                    </button>
+                                                </div>
+                                            )
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+
+                <div className="border-t border-ink/10 px-8 py-6">
+                    <span className="mb-3 block font-mono text-[10px] tracking-[.14em] text-grey uppercase">History</span>
+                    {history?.no !== order.no ? (
+                        <p className="text-[12.5px] text-grey">Loading…</p>
+                    ) : history.entries.length === 0 ? (
+                        <p className="text-[12.5px] text-grey">No history recorded for this order.</p>
+                    ) : (
+                        <ol className="flex flex-col gap-3">
+                            {history.entries.map((h) => (
+                                <li key={h.id} className="flex items-start justify-between gap-4">
+                                    <div className="min-w-0">
+                                        <div className="text-[13px] text-ink">
+                                            {h.from ? `${statusLabel(h.from)} → ${statusLabel(h.to)}` : "Order placed"}
+                                        </div>
+                                        <div className="text-[11.5px] text-grey">
+                                            {h.actor.name}
+                                            {h.note ? ` · ${h.note}` : ""}
+                                        </div>
+                                    </div>
+                                    <time dateTime={h.createdAt} className="flex-none font-mono text-[11px] text-grey">
+                                        {new Date(h.createdAt).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}
+                                    </time>
+                                </li>
+                            ))}
+                        </ol>
+                    )}
                 </div>
 
                 <div className="sticky bottom-0 flex justify-between border-t border-ink/10 bg-white px-8 py-5 text-[15px] font-semibold text-ink">

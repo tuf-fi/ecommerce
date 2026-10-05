@@ -19,9 +19,9 @@ export default function StaffViewModal({
     return (
         <Modal open={open} onClose={onClose} maxWidth="max-w-[380px]">
             <ViewHeader
-                eyebrow="Staff"
                 title={staff.name}
-                meta={<StatusBadge label={staff.role} tone={staff.role === "Administrator" ? "neutral" : "success"} />}
+                caption={staff.access}
+                badge={<StatusBadge label={staff.role} tone={staff.role === "Administrator" ? "neutral" : "success"} />}
                 thumbnail={
                     <div className="relative h-12 w-12 flex-none overflow-hidden rounded-full bg-blue-soft">
                         {staff.photo ? (
@@ -36,8 +36,7 @@ export default function StaffViewModal({
                 }
             />
             <DetailBody>
-                <DetailRow label="Email" value={staff.email} />
-                <DetailRow label="Access" value={staff.access} />
+                <DetailRow label="Email" value={<span className="font-mono">{staff.email}</span>} />
             </DetailBody>
         </Modal>
     );

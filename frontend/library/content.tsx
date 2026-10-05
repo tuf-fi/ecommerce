@@ -1,14 +1,11 @@
 "use client";
 
-// Site content — hero, FAQ, blog posts, static pages, promotions — read by
-// both the customer-facing pages and the admin CMS. Kept separate from
-// adminStore.tsx (which holds admin-only operational data: auth, staff,
-// orders, products, notifications) so customer pages can read this without
-// pulling in an admin-only provider. Everything here is in-memory client
-// state, same as adminStore — there's no backend yet.
+// Site content read by customer pages and the admin CMS; kept separate from adminStore.tsx (admin-only ops data) so customer pages don't pull in that provider.
 
-import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { ApiError } from "./api/client";
+import { saveContentSection, SavedSections } from "./api/content";
 import { BlogPost, Concern, Faq, FooterLinkItem, Promo, Ritual, SiteNavLink, StaticPage, Testimonial } from "./admin/types";
 import { SectionKey } from "./admin/sections";
 import {
@@ -36,21 +33,9 @@ import {
     slugify,
 } from "./admin/content";
 
-// Re-exported so the many call sites that already read their content types
-// from this file don't need to know the key union is declared next to the
-// anchor/label maps it keys (see library/admin/sections.ts).
+// Re-exported so call sites reading content types from here don't need to know SectionKey is declared in library/admin/sections.ts.
 export type { SectionKey };
 
-// Persisted to localStorage so an edit made in the admin CMS survives a full
-// page reload — there's no backend yet, so this is the only persistence.
-// Versioned because the seed shape changes over time and an unversioned key
-// would let an old cached blob silently shadow new defaults. Bumping the
-// version does NOT migrate data by itself — it points reads at a key that
-// doesn't exist yet — so LEGACY_STORAGE_KEYS below is required on every bump
-// or every field saved under the old key is lost, not just the ones that
-// motivated the bump.
-const STORAGE_KEY = "cindyrella_site_content_v4";
-const LEGACY_STORAGE_KEYS = ["cindyrella_site_content_v3", "cindyrella_site_content_v2", "cindyrella_site_content_v1"];
 
 export type HeroContent = {
     headline: string;
@@ -74,8 +59,7 @@ export type AboutContent = {
     body: string;
 };
 
-// Same headline/accent split as PageIntroContent — the Contact section's
-// "Let's / talk skin." is the identical two-line treatment.
+// Same headline/accent split as PageIntroContent — Contact's "Let's / talk skin." is the identical two-line treatment.
 export type ContactContent = PageIntroContent;
 
 export type PhilosophyContent = {
@@ -95,10 +79,7 @@ export type NewsletterContent = {
     socialProof: string;
 };
 
-// The one set of contact details, read by both the Contact section and the
-// Footer. Address and hours are stored as two lines each because both render
-// them with a hard <br/> between — a single free-text field would have to
-// guess where that break belongs.
+// Read by both Contact and Footer; address/hours are two lines each since both render a hard <br/> between them.
 export type ContactInfo = {
     email: string;
     phone: string;
@@ -108,9 +89,7 @@ export type ContactInfo = {
     hoursLine2: string;
 };
 
-// Fixed to these five platforms: the icons are hand-drawn inline SVGs in
-// Contact.tsx/Footer.tsx, so there's nothing to render for an arbitrary
-// sixth network. Adding one is a code change, not a content change.
+// Fixed to these five platforms — their icons are hand-drawn inline SVGs in Contact.tsx/Footer.tsx, so adding a sixth is a code change, not content.
 export type SocialLinks = {
     instagramUrl: string;
     instagramEnabled: boolean;
@@ -124,17 +103,11 @@ export type SocialLinks = {
     xEnabled: boolean;
 };
 
-// The footer's two editable link columns. Keyed rather than split into two
-// near-identical sets of callbacks, since the CRUD is byte-for-byte the same
-// for both — the Links tab just passes the column it's rendering.
+// The footer's two editable link columns, keyed rather than duplicated since the CRUD is byte-for-byte identical for both.
 export type FooterLinkGroup = "shop" | "company";
 
 type ContentStoreValue = {
-    // Which homepage sections render at all. One shared map rather than an
-    // `enabled` flag on each content type, because three of the twelve
-    // sections (testimonials/faq/journal) are backed by lists with no
-    // singleton object to hang a boolean on, and because PagesTab's "Visible"
-    // column can then read every row the same way.
+    // One shared map (not a per-type `enabled` flag) since some sections are list-backed with no singleton to hang a boolean on, and so PagesTab reads every row the same way.
     sectionVisibility: Record<SectionKey, boolean>;
     updateSectionVisibility: (key: SectionKey, enabled: boolean) => void;
 
@@ -151,7 +124,6 @@ type ContentStoreValue = {
     updatePhilosophy: (patch: Partial<PhilosophyContent>) => void;
 
     catalogue: CatalogueContent;
-    updateCatalogue: (patch: Partial<CatalogueContent>) => void;
 
     newsletter: NewsletterContent;
     updateNewsletter: (patch: Partial<NewsletterContent>) => void;
@@ -212,8 +184,7 @@ type ContentStoreValue = {
     moveRitual: (id: number, direction: "up" | "down") => void;
 
     concerns: Concern[];
-    // `key` is derived from `title` at creation (see slugify) and never
-    // patched afterward — see the Concern type for why.
+    // `key` is derived from `title` at creation (see slugify) and never patched afterward — see the Concern type for why.
     addConcern: (input: Omit<Concern, "id" | "key">) => Concern;
     updateConcern: (id: number, patch: Partial<Omit<Concern, "id" | "key">>) => void;
     deleteConcern: (id: number) => void;
@@ -226,9 +197,7 @@ function nextId<T extends { id: number }>(list: T[]): number {
     return list.reduce((max, item) => Math.max(max, item.id), 0) + 1;
 }
 
-// Appends -2, -3, … until the slug no longer collides with an existing key —
-// two titles that normalize to the same slug would otherwise share one key
-// and become indistinguishable as a /shop?concern= filter target.
+// Appends -2, -3, … until unique — two titles normalizing to the same slug would otherwise collide as a /shop?concern= filter target.
 function uniqueSlug(base: string, existing: { key: string }[]): string {
     if (!existing.some((item) => item.key === base)) return base;
     let n = 2;
@@ -236,53 +205,64 @@ function uniqueSlug(base: string, existing: { key: string }[]): string {
     return `${base}-${n}`;
 }
 
-export function ContentProvider({ children }: { children: React.ReactNode }) {
-    const [sectionVisibility, setSectionVisibility] = useState<Record<SectionKey, boolean>>(SECTION_VISIBILITY_DEFAULT);
+// Embedded base64 images (an upload that couldn't be hosted) are never saved to the server; they are dropped to null.
+function withoutEmbeddedImages(value: unknown): unknown {
+    if (typeof value === "string") return value.startsWith("data:") ? null : value;
+    if (Array.isArray(value)) return value.map(withoutEmbeddedImages);
+    if (value && typeof value === "object") return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, withoutEmbeddedImages(v)]));
+    return value;
+}
+
+const SAVE_DELAY_MS = 700;
+
+// `initial` is whatever an admin has saved on the server (fetched during render of the root layout). Anything not saved
+// there starts from the built-in defaults, and edits are written back to the server automatically.
+export function ContentProvider({ children, initial = {} }: { children: React.ReactNode; initial?: SavedSections }) {
+    const seed = <T,>(key: string, fallback: T): T => (initial[key] as T | undefined) ?? fallback;
+    const [sectionVisibility, setSectionVisibility] = useState<Record<SectionKey, boolean>>({ ...SECTION_VISIBILITY_DEFAULT, ...seed<Partial<Record<SectionKey, boolean>>>("visibility", {}) });
     const updateSectionVisibility = useCallback((key: SectionKey, enabled: boolean) => {
         setSectionVisibility((prev) => ({ ...prev, [key]: enabled }));
     }, []);
 
-    const [hero, setHero] = useState<HeroContent>(HOMEPAGE_HERO_DEFAULT);
+    const [hero, setHero] = useState<HeroContent>(seed("hero", HOMEPAGE_HERO_DEFAULT));
     const updateHero = useCallback((patch: Partial<HeroContent>) => {
         setHero((h) => ({ ...h, ...patch }));
     }, []);
 
-    const [about, setAbout] = useState<AboutContent>(ABOUT_DEFAULT);
+    const [about, setAbout] = useState<AboutContent>(seed("about", ABOUT_DEFAULT));
     const updateAbout = useCallback((patch: Partial<AboutContent>) => {
         setAbout((a) => ({ ...a, ...patch }));
     }, []);
 
-    const [contact, setContact] = useState<ContactContent>(CONTACT_DEFAULT);
+    const [contact, setContact] = useState<ContactContent>(seed("contact", CONTACT_DEFAULT));
     const updateContact = useCallback((patch: Partial<ContactContent>) => {
         setContact((c) => ({ ...c, ...patch }));
     }, []);
 
-    const [philosophy, setPhilosophy] = useState<PhilosophyContent>(PHILOSOPHY_DEFAULT);
+    const [philosophy, setPhilosophy] = useState<PhilosophyContent>(seed("philosophy", PHILOSOPHY_DEFAULT));
     const updatePhilosophy = useCallback((patch: Partial<PhilosophyContent>) => {
         setPhilosophy((p) => ({ ...p, ...patch }));
     }, []);
 
-    const [catalogue, setCatalogue] = useState<CatalogueContent>(CATALOGUE_DEFAULT);
-    const updateCatalogue = useCallback((patch: Partial<CatalogueContent>) => {
-        setCatalogue((c) => ({ ...c, ...patch }));
-    }, []);
+    // No admin editor writes to this anymore (Shop All is toggle-only, see PagesTab) — kept read-only for Catalogue.tsx's ctaLabel.
+    const [catalogue] = useState<CatalogueContent>(CATALOGUE_DEFAULT);
 
-    const [newsletter, setNewsletter] = useState<NewsletterContent>(NEWSLETTER_DEFAULT);
+    const [newsletter, setNewsletter] = useState<NewsletterContent>(seed("newsletter", NEWSLETTER_DEFAULT));
     const updateNewsletter = useCallback((patch: Partial<NewsletterContent>) => {
         setNewsletter((n) => ({ ...n, ...patch }));
     }, []);
 
-    const [contactInfo, setContactInfo] = useState<ContactInfo>(CONTACT_INFO_DEFAULT);
+    const [contactInfo, setContactInfo] = useState<ContactInfo>(seed("contactInfo", CONTACT_INFO_DEFAULT));
     const updateContactInfo = useCallback((patch: Partial<ContactInfo>) => {
         setContactInfo((c) => ({ ...c, ...patch }));
     }, []);
 
-    const [socialLinks, setSocialLinks] = useState<SocialLinks>(SOCIAL_LINKS_DEFAULT);
+    const [socialLinks, setSocialLinks] = useState<SocialLinks>({ ...SOCIAL_LINKS_DEFAULT, ...seed<Partial<SocialLinks>>("socialLinks", {}) });
     const updateSocialLinks = useCallback((patch: Partial<SocialLinks>) => {
         setSocialLinks((s) => ({ ...s, ...patch }));
     }, []);
 
-    const [navLinks, setNavLinks] = useState<SiteNavLink[]>(NAV_LINKS_DEFAULT);
+    const [navLinks, setNavLinks] = useState<SiteNavLink[]>(seed("navLinks", NAV_LINKS_DEFAULT));
 
     const addNavLink = useCallback((input: Omit<SiteNavLink, "id">) => {
         let created!: SiteNavLink;
@@ -313,11 +293,10 @@ export function ContentProvider({ children }: { children: React.ReactNode }) {
         });
     }, []);
 
-    const [footerShopLinks, setFooterShopLinks] = useState<FooterLinkItem[]>(FOOTER_SHOP_LINKS_DEFAULT);
-    const [footerCompanyLinks, setFooterCompanyLinks] = useState<FooterLinkItem[]>(FOOTER_COMPANY_LINKS_DEFAULT);
+    const [footerShopLinks, setFooterShopLinks] = useState<FooterLinkItem[]>(seed("footerShopLinks", FOOTER_SHOP_LINKS_DEFAULT));
+    const [footerCompanyLinks, setFooterCompanyLinks] = useState<FooterLinkItem[]>(seed("footerCompanyLinks", FOOTER_COMPANY_LINKS_DEFAULT));
 
-    // One setter per group, picked by key — the three callbacks below are
-    // otherwise identical for Shop and Company.
+    // One setter per group, picked by key, since the three callbacks below are otherwise identical for Shop and Company.
     const footerSetter = useCallback(
         (group: FooterLinkGroup) => (group === "shop" ? setFooterShopLinks : setFooterCompanyLinks),
         []
@@ -345,11 +324,10 @@ export function ContentProvider({ children }: { children: React.ReactNode }) {
         [footerSetter]
     );
 
-    // Display-only badges with no editor — see FOOTER_PAYMENT_METHODS_DEFAULT
-    // for why they aren't content an admin can change yet.
+    // Display-only, no editor yet — see FOOTER_PAYMENT_METHODS_DEFAULT.
     const footerPaymentMethods = FOOTER_PAYMENT_METHODS_DEFAULT;
 
-    const [faqs, setFaqs] = useState<Faq[]>(FAQS);
+    const [faqs, setFaqs] = useState<Faq[]>(seed("faqs", FAQS));
 
     const addFaq = useCallback((input: Omit<Faq, "id">) => {
         let created!: Faq;
@@ -380,7 +358,7 @@ export function ContentProvider({ children }: { children: React.ReactNode }) {
         });
     }, []);
 
-    const [blogPosts, setBlogPosts] = useState<BlogPost[]>(BLOG_POSTS);
+    const [blogPosts, setBlogPosts] = useState<BlogPost[]>(seed("blogPosts", BLOG_POSTS));
 
     const addBlogPost = useCallback((input: Omit<BlogPost, "id">) => {
         let created!: BlogPost;
@@ -400,7 +378,7 @@ export function ContentProvider({ children }: { children: React.ReactNode }) {
         toast.success("Post removed.");
     }, []);
 
-    const [pages, setPages] = useState<StaticPage[]>(STATIC_PAGES);
+    const [pages, setPages] = useState<StaticPage[]>(seed("pages", STATIC_PAGES));
 
     const updatePageContent = useCallback((id: number, content: string) => {
         const today = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
@@ -408,13 +386,13 @@ export function ContentProvider({ children }: { children: React.ReactNode }) {
         toast.success("Page saved.");
     }, []);
 
-    const [pageIntros, setPageIntros] = useState<Record<PageIntroKey, PageIntroContent>>(PAGE_INTRO_DEFAULTS);
+    const [pageIntros, setPageIntros] = useState<Record<PageIntroKey, PageIntroContent>>({ ...PAGE_INTRO_DEFAULTS, ...seed<Partial<Record<PageIntroKey, PageIntroContent>>>("pageIntros", {}) });
 
     const updatePageIntro = useCallback((key: PageIntroKey, patch: Partial<PageIntroContent>) => {
         setPageIntros((prev) => ({ ...prev, [key]: { ...prev[key], ...patch } }));
     }, []);
 
-    const [promos, setPromos] = useState<Promo[]>(PROMOS);
+    const [promos, setPromos] = useState<Promo[]>(seed("promos", PROMOS));
 
     const addPromo = useCallback((input: Omit<Promo, "id">) => {
         let created!: Promo;
@@ -438,7 +416,7 @@ export function ContentProvider({ children }: { children: React.ReactNode }) {
         setPromos((prev) => prev.map((p) => (p.id === id ? { ...p, active: !p.active } : p)));
     }, []);
 
-    const [testimonials, setTestimonials] = useState<Testimonial[]>(TESTIMONIALS);
+    const [testimonials, setTestimonials] = useState<Testimonial[]>(seed("testimonials", TESTIMONIALS));
 
     const addTestimonial = useCallback((input: Omit<Testimonial, "id">) => {
         let created!: Testimonial;
@@ -469,7 +447,7 @@ export function ContentProvider({ children }: { children: React.ReactNode }) {
         });
     }, []);
 
-    const [rituals, setRituals] = useState<Ritual[]>(RITUALS_DEFAULT);
+    const [rituals, setRituals] = useState<Ritual[]>(seed("rituals", RITUALS_DEFAULT));
 
     const addRitual = useCallback((input: Omit<Ritual, "id">) => {
         let created!: Ritual;
@@ -500,7 +478,7 @@ export function ContentProvider({ children }: { children: React.ReactNode }) {
         });
     }, []);
 
-    const [concerns, setConcerns] = useState<Concern[]>(CONCERNS_DEFAULT);
+    const [concerns, setConcerns] = useState<Concern[]>(seed("concerns", CONCERNS_DEFAULT));
 
     const addConcern = useCallback((input: Omit<Concern, "id" | "key">) => {
         let created!: Concern;
@@ -531,121 +509,53 @@ export function ContentProvider({ children }: { children: React.ReactNode }) {
         });
     }, []);
 
-    // One-time read of a browser-only API at mount to hydrate from a prior
-    // session — there's no way to know this before the client mounts, so
-    // this can't be expressed as a derived/lazy-initial value.
-    const [hydrated, setHydrated] = useState(false);
-    /* eslint-disable react-hooks/set-state-in-effect */
+    // Writes edits back to the server. `synced` remembers what the server is known to hold for each section (the first run
+    // records the starting state, so merely loading never saves). A section that then drifts from it is saved after a short
+    // pause. Only signed-in staff ever change this state; if a save is rejected the next edit retries it.
+    const synced = useRef<Record<string, string>>({});
+    const timers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
     useEffect(() => {
-        try {
-            // Falls back to the newest legacy key so a version bump carries
-            // existing edits forward instead of silently reverting them to
-            // seed defaults — see LEGACY_STORAGE_KEYS above.
-            const raw =
-                window.localStorage.getItem(STORAGE_KEY) ??
-                LEGACY_STORAGE_KEYS.map((key) => window.localStorage.getItem(key)).find((value) => value != null) ??
-                null;
-            if (raw) {
-                const saved = JSON.parse(raw);
-                // Merged into the full defaults rather than replacing them, so
-                // a thirteenth section added later can never come back
-                // `undefined` from a blob saved before it existed — an
-                // undefined flag would read as "hidden" at every render guard.
-                if (saved.sectionVisibility) {
-                    setSectionVisibility({ ...SECTION_VISIBILITY_DEFAULT, ...saved.sectionVisibility });
-                }
-                if (saved.hero) setHero(saved.hero);
-                if (saved.about) setAbout(saved.about);
-                if (saved.contact) setContact(saved.contact);
-                if (saved.philosophy) setPhilosophy(saved.philosophy);
-                if (saved.catalogue) setCatalogue(saved.catalogue);
-                if (saved.newsletter) setNewsletter(saved.newsletter);
-                if (saved.contactInfo) setContactInfo(saved.contactInfo);
-                // Merged for the same reason as sectionVisibility above — a
-                // blob saved before the enabled flags existed would otherwise
-                // come back with them `undefined`, which reads as falsy and
-                // hides every icon that used to show.
-                if (saved.socialLinks) setSocialLinks({ ...SOCIAL_LINKS_DEFAULT, ...saved.socialLinks });
-                if (saved.navLinks) setNavLinks(saved.navLinks);
-                if (saved.footerShopLinks) setFooterShopLinks(saved.footerShopLinks);
-                if (saved.footerCompanyLinks) setFooterCompanyLinks(saved.footerCompanyLinks);
-                if (saved.faqs) setFaqs(saved.faqs);
-                if (saved.blogPosts) setBlogPosts(saved.blogPosts);
-                if (saved.pages) setPages(saved.pages);
-                // Merged for the same reason as sectionVisibility above — a
-                // cache saved before "journal" existed would otherwise come
-                // back missing that key entirely, and PageIntro reads
-                // pageIntros[pageKey] with no fallback.
-                if (saved.pageIntros) setPageIntros({ ...PAGE_INTRO_DEFAULTS, ...saved.pageIntros });
-                if (saved.promos) setPromos(saved.promos);
-                if (saved.testimonials) setTestimonials(saved.testimonials);
-                if (saved.rituals) setRituals(saved.rituals);
-                if (saved.concerns) setConcerns(saved.concerns);
+        const sections: Record<string, unknown> = {
+            visibility: sectionVisibility,
+            hero,
+            about,
+            contact,
+            philosophy,
+            newsletter,
+            contactInfo,
+            socialLinks,
+            navLinks,
+            footerShopLinks,
+            footerCompanyLinks,
+            faqs,
+            blogPosts,
+            pages,
+            pageIntros,
+            promos,
+            testimonials,
+            rituals,
+            concerns,
+        };
+        for (const [key, value] of Object.entries(sections)) {
+            const payload = withoutEmbeddedImages(value);
+            const json = JSON.stringify(payload);
+            if (synced.current[key] === undefined) {
+                synced.current[key] = json;
+                continue;
             }
-        } catch {
-            // Corrupt or inaccessible storage — fall back to the seed defaults.
+            if (synced.current[key] === json) continue;
+            clearTimeout(timers.current[key]);
+            timers.current[key] = setTimeout(() => {
+                saveContentSection(key, payload)
+                    .then(() => {
+                        synced.current[key] = json;
+                    })
+                    .catch((err) => {
+                        toast.error(err instanceof ApiError && err.status === 401 ? "Your session expired — sign in again to save changes." : "Couldn't save your changes. They'll be retried on your next edit.");
+                    });
+            }, SAVE_DELAY_MS);
         }
-        setHydrated(true);
-    }, []);
-    /* eslint-enable react-hooks/set-state-in-effect */
-
-    // Gated on `hydrated` so this never fires before the load above has had
-    // a chance to run — otherwise the very first render's seed defaults
-    // would overwrite whatever was actually saved.
-    useEffect(() => {
-        if (!hydrated) return;
-        try {
-            window.localStorage.setItem(
-                STORAGE_KEY,
-                JSON.stringify({
-                    sectionVisibility,
-                    hero,
-                    about,
-                    contact,
-                    philosophy,
-                    catalogue,
-                    newsletter,
-                    contactInfo,
-                    socialLinks,
-                    navLinks,
-                    footerShopLinks,
-                    footerCompanyLinks,
-                    faqs,
-                    blogPosts,
-                    pages,
-                    pageIntros,
-                    promos,
-                    testimonials,
-                    rituals,
-                    concerns,
-                })
-            );
-        } catch {
-            // Storage full or inaccessible — edits still work for this session, just won't persist.
-        }
-    }, [
-        hydrated,
-        sectionVisibility,
-        hero,
-        about,
-        contact,
-        philosophy,
-        catalogue,
-        newsletter,
-        contactInfo,
-        socialLinks,
-        navLinks,
-        footerShopLinks,
-        footerCompanyLinks,
-        faqs,
-        blogPosts,
-        pages,
-        pageIntros,
-        promos,
-        testimonials,
-        rituals,
-        concerns,
-    ]);
+    }, [sectionVisibility, hero, about, contact, philosophy, newsletter, contactInfo, socialLinks, navLinks, footerShopLinks, footerCompanyLinks, faqs, blogPosts, pages, pageIntros, promos, testimonials, rituals, concerns]);
 
     const value: ContentStoreValue = {
         sectionVisibility,
@@ -659,7 +569,6 @@ export function ContentProvider({ children }: { children: React.ReactNode }) {
         philosophy,
         updatePhilosophy,
         catalogue,
-        updateCatalogue,
         newsletter,
         updateNewsletter,
         contactInfo,

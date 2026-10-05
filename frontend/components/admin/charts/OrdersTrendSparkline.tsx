@@ -6,9 +6,7 @@ import { TrendPoint } from "@/library/admin/dashboard";
 
 const HEIGHT = 64;
 
-// Chart-blue, from the same validated categorical palette as SalesTrendChart —
-// deliberately not the Sales Trend pink, so this doesn't read as a shrunken
-// copy of the chart above it.
+// Deliberately not Sales Trend's pink, so this doesn't read as a shrunken copy of the chart above it.
 const LINE_COLOR = "#1F5FA8";
 
 type TooltipEntry = { value?: number | string };
@@ -37,7 +35,7 @@ export default function OrdersTrendSparkline({ data }: { data: TrendPoint[] }) {
             <AreaChart data={data} margin={{ top: 6, right: 4, bottom: 0, left: 4 }}>
                 <defs>
                     <linearGradient id={fillId} x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor={LINE_COLOR} stopOpacity={0.2} />
+                        <stop offset="0%" stopColor={LINE_COLOR} stopOpacity={0.12} />
                         <stop offset="100%" stopColor={LINE_COLOR} stopOpacity={0} />
                     </linearGradient>
                 </defs>

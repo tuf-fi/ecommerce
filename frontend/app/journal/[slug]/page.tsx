@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import JournalArticle from "@/components/sections/JournalArticle";
 import JournalCard from "@/components/sections/JournalCard";
+import SectionTitle from "@/components/ui/SectionTitle";
 import { useContent } from "@/library/content";
 import { slugify } from "@/library/admin/content";
 import { useMounted } from "@/library/useMounted";
@@ -51,7 +52,7 @@ export default function JournalPostPage() {
 
             {morePosts.length > 0 && (
                 <div className="mx-auto mt-24 max-w-[1100px] border-t border-ink/10 pt-14">
-                    <span className="font-mono text-[10.5px] uppercase tracking-[.16em] text-grey">More from the Journal</span>
+                    <SectionTitle num="—" title="More from the Journal" />
 
                     <div className="mt-8 grid grid-cols-1 gap-x-8 gap-y-12 sm:grid-cols-3">
                         {morePosts.map((p) => (
@@ -77,7 +78,7 @@ function PostNavLink({
 
     if (!post) {
         return (
-            <div className={`flex flex-col items-start gap-1.5 px-1 py-6 text-left opacity-30 ${align}`}>
+            <div className={`flex flex-col items-start gap-1.5 px-4 py-6 text-left opacity-30 ${align}`}>
                 <span className="font-mono text-[10.5px] uppercase tracking-[.16em] text-grey">
                     {direction === "prev" ? `${arrow} ${label}` : `${label} ${arrow}`}
                 </span>
@@ -89,7 +90,7 @@ function PostNavLink({
     return (
         <Link
             href={`/journal/${slugify(post.title)}`}
-            className={`group flex flex-col items-start gap-1.5 px-1 py-6 text-left transition ${align}`}
+            className={`group flex flex-col items-start gap-1.5 px-4 py-6 text-left transition-colors hover:bg-pink-soft/30 ${align}`}
         >
             <span className="font-mono text-[10.5px] uppercase tracking-[.16em] text-grey transition group-hover:text-pink-dark">
                 {direction === "prev" ? `${arrow} ${label}` : `${label} ${arrow}`}
@@ -99,9 +100,6 @@ function PostNavLink({
     );
 }
 
-// Mirrors the found-article state: JournalArticle's full-bleed hero image
-// with date/title overlay, the pull-quote excerpt, a few body paragraphs, the
-// prev/next nav row, and the "More from the Journal" grid.
 function JournalPostSkeleton() {
     return (
         <div className="-mx-8 w-[calc(100%+4rem)] min-h-screen bg-white px-8 pt-[calc(var(--navbar-h,67px))] pb-20">
@@ -114,20 +112,32 @@ function JournalPostSkeleton() {
                     </div>
                 </div>
 
-                <div className="pt-12 mx-auto max-w-[680px]">
-                    <Skeleton tone="outline" className="mb-9 h-[52px] w-full" />
-                    <div className="mt-9 space-y-4 border-t border-ink/10 pt-9">
-                        <Skeleton tone="soft" className="h-4 w-full" />
-                        <Skeleton tone="soft" className="h-4 w-full" />
-                        <Skeleton tone="soft" className="h-4 w-5/6" />
-                        <Skeleton tone="soft" className="h-4 w-full" />
-                        <Skeleton tone="soft" className="h-4 w-2/3" />
+                <div className="pt-12 mx-auto max-w-[900px]">
+                    <div className="mb-8 flex items-center justify-between">
+                        <Skeleton className="h-[12.5px] w-16" />
+                    </div>
+                    <div className="grid grid-cols-1 gap-x-14 lg:grid-cols-[minmax(0,680px)_1fr]">
+                        <div>
+                            <Skeleton tone="outline" className="mb-9 h-[52px] w-full" />
+                            <div className="mt-9 space-y-4 border-t border-ink/10 pt-9">
+                                <Skeleton tone="soft" className="h-4 w-full" />
+                                <Skeleton tone="soft" className="h-4 w-full" />
+                                <Skeleton tone="soft" className="h-4 w-5/6" />
+                                <Skeleton tone="soft" className="h-4 w-full" />
+                                <Skeleton tone="soft" className="h-4 w-2/3" />
+                            </div>
+                        </div>
+                        <div className="hidden flex-col gap-7 border-l border-ink/10 pl-10 lg:flex">
+                            <Skeleton className="h-[13px] w-20" />
+                            <Skeleton className="h-[13px] w-24" />
+                            <Skeleton className="h-[13px] w-16" />
+                        </div>
                     </div>
                 </div>
 
                 <div className="mx-auto mt-16 grid max-w-[1100px] grid-cols-1 divide-y divide-ink/10 border-y border-ink/10 sm:grid-cols-2 sm:divide-x sm:divide-y-0">
                     {Array.from({ length: 2 }).map((_, i) => (
-                        <div key={i} className="flex flex-col items-start gap-1.5 px-1 py-6">
+                        <div key={i} className="flex flex-col items-start gap-1.5 px-4 py-6">
                             <Skeleton className="h-[10.5px] w-16" />
                             <Skeleton className="h-[14px] w-40" />
                         </div>
@@ -135,7 +145,11 @@ function JournalPostSkeleton() {
                 </div>
 
                 <div className="mx-auto mt-24 max-w-[1100px] border-t border-ink/10 pt-14">
-                    <Skeleton className="h-[10.5px] w-40" />
+                    <div className="mb-11 flex items-center gap-x-5">
+                        <Skeleton className="h-[10.5px] w-3" />
+                        <Skeleton className="h-[10.5px] w-40" />
+                        <span className="h-px flex-1 bg-grey-light/40" />
+                    </div>
                     <div className="mt-8 grid grid-cols-1 gap-x-8 gap-y-12 sm:grid-cols-3">
                         {Array.from({ length: 3 }).map((_, i) => (
                             <div key={i} className="flex flex-col">

@@ -4,8 +4,7 @@ import { usePathname } from "next/navigation";
 import Footer from "./Footer";
 
 const FOOTER_PATHS = ["/", "/shop", "/wishlist"];
-// Prefixes cover a section's dynamic detail route (e.g. /shop/[id]) so a new
-// one doesn't need its own hand-added check — just a prefix entry here.
+// Prefixes cover a section's dynamic detail route (e.g. /shop/[id]) via a single prefix entry.
 const FOOTER_PREFIXES = ["/journal/", "/shop/", "/rituals/"];
 
 export default function ConditionalFooter() {

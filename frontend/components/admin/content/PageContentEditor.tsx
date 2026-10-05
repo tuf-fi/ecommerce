@@ -9,11 +9,7 @@ import TermsPage from "@/components/pages/TermsPage";
 import { FIELD_INPUT, FIELD_LABEL } from "@/components/admin/formClasses";
 import { useAsyncAction, wait } from "@/library/useAsyncAction";
 
-// Each static page has its own dedicated component (not one generic
-// renderer) so Shipping & Returns/Privacy Policy/Terms can diverge in layout
-// independently later — this just picks the right one by slug. (About has
-// its own dedicated AboutEditor/AboutSection pair, same as Hero — it never
-// reaches this generic single-textarea editor.)
+// Each static page has its own dedicated component so layouts can diverge later; this just picks the right one by slug.
 function StaticPagePreview({ slug, page }: { slug: string; page: StaticPage }) {
     switch (slug) {
         case "shipping-returns":
@@ -27,8 +23,7 @@ function StaticPagePreview({ slug, page }: { slug: string; page: StaticPage }) {
     }
 }
 
-// Keyed by page.id from the parent, so navigating between two different
-// pages remounts this fresh instead of needing an effect to reset `content`.
+// Keyed by page.id from the parent, so switching pages remounts this fresh instead of needing an effect to reset `content`.
 export default function PageContentEditor({ page, onSave }: { page: StaticPage; onSave: (id: number, content: string) => void }) {
     const [content, setContent] = useState(page.content);
     const dirty = content !== page.content;
@@ -48,7 +43,6 @@ export default function PageContentEditor({ page, onSave }: { page: StaticPage; 
             onSave={handleSave}
             saveLabel="Save Page"
             dirty={dirty}
-            previewLabel={`cindyrella.ph/pages/${page.slug}`}
             preview={<StaticPagePreview slug={page.slug} page={{ ...page, content }} />}
         >
             <div>
