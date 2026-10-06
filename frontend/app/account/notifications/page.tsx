@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import PageHeading from "@/components/ui/PageHeading";
 import Toggle from "@/components/ui/Toggle";
 import Pagination from "@/components/ui/Pagination";
+import Skeleton, { SkeletonGroup } from "@/components/ui/Skeleton";
 import { useStore } from "@/library/store";
 import { CustomerNotification, listMyNotifications } from "@/library/api/customer";
 import { NotificationIcon, notificationTime } from "@/components/account/notificationUi";
@@ -72,7 +73,20 @@ export default function NotificationsPage() {
                 <Toggle id="notif-sound" checked={soundEnabled} onChange={setSoundEnabled} ariaLabel="Notification sound" />
             </div>
 
-            {items === null ? null : items.length === 0 ? (
+            {items === null ? (
+                <SkeletonGroup className="border border-ink/10 bg-white">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                        <div key={i} className="flex items-start gap-4 border-b border-ink/10 px-5 py-4 last:border-b-0">
+                            <Skeleton tone="soft" className="mt-0.5 h-9 w-9 flex-none rounded-full" />
+                            <div className="min-w-0 flex-1">
+                                <Skeleton className="h-[13.5px] w-2/5" />
+                                <Skeleton tone="soft" className="mt-2 h-3 w-4/5" />
+                            </div>
+                            <Skeleton tone="soft" className="h-[11px] w-12 flex-none" />
+                        </div>
+                    ))}
+                </SkeletonGroup>
+            ) : items.length === 0 ? (
                 <p className="py-10 text-[13px] text-grey">Nothing yet. Order updates, account changes and new discount codes will show up here.</p>
             ) : (
                 <>

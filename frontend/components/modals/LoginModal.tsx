@@ -110,7 +110,7 @@ function LoginContent({ onClose }: { onClose: () => void }) {
     );
 
     const loginOrSignupForm = (
-        <div className="p-8 sm:p-10">
+        <div className="p-6 sm:p-10">
             <h3 className="mb-1 text-xl font-medium text-ink">
                 {mode === "login" ? "Welcome back" : "Create an account"}
             </h3>
@@ -320,7 +320,7 @@ function ForgotPasswordForm({
     }
 
     return (
-        <div className="p-8 sm:p-10">
+        <div className="p-6 sm:p-10">
             <h3 className="mb-1 text-xl font-medium text-ink">Reset your password</h3>
             <p className="mb-6 text-[12px] text-grey">
                 {sent ? `Enter the 6-digit code we sent to ${email}.` : "Enter your email and we'll send you a verification code."}

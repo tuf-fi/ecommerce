@@ -16,7 +16,7 @@ export default function SectionTitle({ num, section, title, action }: { num?: st
         : num;
 
     return (
-        <div className="flex flex-row items-center gap-x-5 uppercase mb-11">
+        <div className="flex flex-row items-center gap-x-4 uppercase mb-8 sm:gap-x-5 md:mb-11">
             <span className="font-mono text-[10.5px] text-grey">{label}</span>
             <span className="font-mono text-[10.5px] tracking-[.16em] text-ink">{title}</span>
             <motion.span

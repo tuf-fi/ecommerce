@@ -411,7 +411,7 @@ export default function PurchasesPage() {
 
                     return (
                         <>
-                            <div className="border-b border-ink/10 px-8 pb-5 pt-7">
+                            <div className="border-b border-ink/10 px-5 pb-5 pt-7 sm:px-8">
                                 <p className="font-mono text-[10px] uppercase tracking-[.14em] text-grey">Order {selectedOrderNo}</p>
                                 <div className="mt-1.5 flex items-center justify-between gap-4">
                                     <StatusTag status={o.status} />
@@ -419,7 +419,7 @@ export default function PurchasesPage() {
                                 </div>
                             </div>
 
-                            <div className="px-8 py-6">
+                            <div className="px-5 py-6 sm:px-8">
                                 <div className="flex flex-col gap-4">
                                     {(o.items ?? []).map((line) => {
                                         const lp = getProduct(line.productId);
@@ -450,12 +450,12 @@ export default function PurchasesPage() {
                             </div>
 
                             {primary && (
-                                <div className="sticky bottom-0 z-10 flex items-center justify-between gap-4 border-t border-ink/10 bg-off px-8 py-5">
+                                <div className="sticky bottom-0 z-10 flex flex-wrap items-center justify-between gap-x-4 gap-y-3 border-t border-ink/10 bg-off px-5 py-5 sm:px-8">
                                     <div>
                                         <p className="font-mono text-[10px] uppercase tracking-[.14em] text-grey">Order Total</p>
                                         <p className="font-mono text-[15px] font-semibold text-ink">₱{o.total.toLocaleString()}</p>
                                     </div>
-                                    <div className="flex items-center gap-5">
+                                    <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
                                         {o.status === "To Pay" && (
                                             <button
                                                 onClick={() => setCancelNo(selectedOrderNo)}

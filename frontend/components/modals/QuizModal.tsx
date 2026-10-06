@@ -63,7 +63,7 @@ export default function QuizModal() {
 
     return (
         <Modal open={open} onClose={closeModal} maxWidth="max-w-[460px]">
-            <div className="p-8">{open && <QuizContent key={String(open)} onOpenProduct={goToProduct} onDone={closeModal} />}</div>
+            <div className="p-5 sm:p-8">{open && <QuizContent key={String(open)} onOpenProduct={goToProduct} onDone={closeModal} />}</div>
         </Modal>
     );
 }

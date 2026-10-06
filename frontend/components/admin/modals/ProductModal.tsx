@@ -146,10 +146,10 @@ export default function ProductModal({
     return (
         <>
         <Modal open onClose={submitting ? () => {} : requestClose} maxWidth="max-w-[520px]">
-            <div className="sticky top-0 z-10 border-b border-ink/10 bg-white px-8 py-5">
+            <div className="sticky top-0 z-10 border-b border-ink/10 bg-white px-5 sm:px-8 py-5">
                 <h3 className="text-xl font-medium text-ink">{product ? "Edit Product" : "Add Product"}</h3>
             </div>
-            <div className="px-8 pt-6 pb-4">
+            <div className="px-5 sm:px-8 pt-6 pb-4">
                 <div className="mb-5 flex items-center gap-4">
                     <label className="relative h-16 w-16 flex-none cursor-pointer overflow-hidden border border-ink/10 bg-gradient-to-br from-blue-soft to-pink-soft">
                         {previewSrc ? (
@@ -186,7 +186,7 @@ export default function ProductModal({
                     {errors.name && <p className={FIELD_ERROR}>{errors.name}</p>}
                 </div>
 
-                <div className="mb-4 grid grid-cols-2 gap-3">
+                <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div>
                         <label htmlFor="product-category" className={FIELD_LABEL}>Category</label>
                         <select id="product-category" value={category} onChange={(e) => setCategory(e.target.value)} className={FIELD_INPUT}>
@@ -216,7 +216,7 @@ export default function ProductModal({
 
                 <FormSection label="Pricing & Stock" />
 
-                <div className="mb-2 grid grid-cols-2 gap-3">
+                <div className="mb-2 grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div>
                         <label htmlFor="product-price" className={FIELD_LABEL}>Price (₱)</label>
                         <input
@@ -336,7 +336,7 @@ export default function ProductModal({
                     <input id="product-expiry" type="date" value={expiry} onChange={(e) => setExpiry(e.target.value)} className={FIELD_INPUT} />
                 </div>
             </div>
-            <div className="sticky bottom-0 border-t border-ink/10 bg-white px-8 py-5">
+            <div className="sticky bottom-0 border-t border-ink/10 bg-white px-5 sm:px-8 py-5">
                 <button onClick={handleSubmit} disabled={submitting} className={`w-full ${BTN_PRIMARY}`}>
                     {submitting ? "Saving…" : "Save Product"}
                 </button>

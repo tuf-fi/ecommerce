@@ -57,7 +57,7 @@ export default function WishlistPage({ preview = false, introPreviewData }: { pr
     if (!mounted) return <WishlistSkeleton preview={preview} />;
 
     return (
-        <div className={preview ? "bg-white px-8 pt-8 pb-16" : "shadow-glow -mx-8 w-[calc(100%+4rem)] min-h-screen bg-white px-8 pt-25 pb-20"}>
+        <div className={preview ? "bg-white px-8 pt-8 pb-16" : "shadow-glow -mx-[var(--gutter)] w-[calc(100%+var(--gutter)*2)] min-h-screen bg-white px-[var(--gutter)] pt-25 pb-20"}>
             <PageIntro pageKey="wishlist" previewData={introPreviewData} />
 
             <SectionTitle num="—" title={`${saved.length} Saved`} />
@@ -83,9 +83,9 @@ export default function WishlistPage({ preview = false, introPreviewData }: { pr
                 </div>
             ) : (
                 <>
-                    <div className="mb-8 flex flex-wrap items-center gap-3">
-                        <SearchField value={search} onChange={setSearch} placeholder="Search by product name" />
-                        <select value={category} onChange={(e) => setCategory(e.target.value as (typeof CATEGORIES)[number])} className={FILTER_SELECT}>
+                    <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+                        <SearchField value={search} onChange={setSearch} placeholder="Search by product name" className="sm:max-w-[360px]" />
+                        <select value={category} onChange={(e) => setCategory(e.target.value as (typeof CATEGORIES)[number])} className={`${FILTER_SELECT} sm:w-auto`}>
                             {CATEGORIES.map((c) => (
                                 <option key={c} value={c}>
                                     Category: {c}
@@ -100,7 +100,7 @@ export default function WishlistPage({ preview = false, introPreviewData }: { pr
                         </div>
                     ) : (
                         <>
-                            <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
+                            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                                 {paged.map((product) => (
                                     <Card key={product.id} product={product} />
                                 ))}
@@ -117,7 +117,7 @@ export default function WishlistPage({ preview = false, introPreviewData }: { pr
 
 function WishlistSkeleton({ preview = false }: { preview?: boolean } = {}) {
     return (
-        <div className={preview ? "bg-white px-8 pt-8 pb-16" : "shadow-glow -mx-8 w-[calc(100%+4rem)] min-h-screen bg-white px-8 pt-25 pb-20"}>
+        <div className={preview ? "bg-white px-8 pt-8 pb-16" : "shadow-glow -mx-[var(--gutter)] w-[calc(100%+var(--gutter)*2)] min-h-screen bg-white px-[var(--gutter)] pt-25 pb-20"}>
             <SkeletonGroup>
                 <Skeleton className="mt-3 h-[34px] w-[70%] max-w-[520px] sm:h-[42px]" />
                 <Skeleton className="mt-3 mb-11 h-[34px] w-[45%] max-w-[340px] sm:h-[42px]" />
@@ -133,7 +133,7 @@ function WishlistSkeleton({ preview = false }: { preview?: boolean } = {}) {
                     <Skeleton tone="outline" className="h-10 w-40" />
                 </div>
 
-                <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                     {Array.from({ length: 8 }).map((_, i) => (
                         <div key={i} className="flex flex-col border border-ink/10">
                             <Skeleton tone="faint" className="aspect-[4/5] w-full" />

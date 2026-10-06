@@ -10,12 +10,12 @@ import { useContent } from "@/library/content";
 function FaqAccordion({ compact }: { compact: boolean }) {
     const { faqs } = useContent();
     return (
-        <Accordion.Root type="single" collapsible className={`mt-2 flex flex-col divide-y divide-ink/10 border-t border-ink/10 ${compact ? "" : "-ml-32"}`}>
+        <Accordion.Root type="single" collapsible className={`mt-2 flex flex-col divide-y divide-ink/10 border-t border-ink/10 ${compact ? "" : "lg:-ml-32"}`}>
             {faqs.map((item, index) => (
                 <RevealIn key={item.id} direction="bottom" delay={index * 0.1} distance={20}>
-                    <Accordion.Item value={String(item.id)} className="py-5">
+                    <Accordion.Item value={String(item.id)} className="py-4 sm:py-5">
                         <Accordion.Header>
-                            <Accordion.Trigger className="group flex w-full cursor-pointer items-center justify-between gap-6 text-left text-[15px] font-medium text-ink transition-colors hover:text-pink-dark">
+                            <Accordion.Trigger className="group flex w-full cursor-pointer items-center justify-between gap-4 text-left text-[15px] sm:gap-6 font-medium text-ink transition-colors hover:text-pink-dark">
                                 {item.q}
                                 <span className="flex-none font-mono text-lg text-grey transition-all duration-300 ease-in-out group-hover:text-pink-dark group-data-[state=open]:rotate-45 group-data-[state=open]:text-pink-dark">+</span>
                             </Accordion.Trigger>
@@ -44,7 +44,7 @@ export default function Faqs({ preview = false }: { preview?: boolean } = {}) {
         <SectionContainer id="faq">
             <SectionTitle section="faq" title="FAQ" />
 
-            <div className="grid grid-cols-[.9fr_1.1fr] gap-14">
+            <div className="grid grid-cols-1 gap-10 lg:grid-cols-[.9fr_1.1fr] lg:gap-14">
                 <FadeIn>
                     <h2 className="mb-4 text-[clamp(26px,3vw,38px)] font-medium text-ink">
                         <em className="pink-highlight">Answers,</em>

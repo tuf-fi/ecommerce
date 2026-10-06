@@ -116,7 +116,7 @@ export default function SavedAddressesPage() {
                             "text-[12px] font-semibold text-ink underline decoration-ink/25 underline-offset-4 transition hover:text-pink-btn hover:decoration-pink-btn focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-2";
 
                         return (
-                            <div key={a.id} className="flex items-start gap-4 py-6">
+                            <div key={a.id} className="flex flex-wrap items-start gap-x-4 gap-y-2 py-6 sm:flex-nowrap">
                                 <span className={`flex h-11 w-11 flex-none items-center justify-center rounded-full ${a.isDefault ? "bg-navy text-white" : "bg-off text-grey"}`}>
                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
                                         <path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0Z" />
@@ -154,7 +154,7 @@ export default function SavedAddressesPage() {
                                     )}
                                 </div>
 
-                                <div className="flex flex-none items-center gap-1">
+                                <div className="ml-auto flex flex-none items-center gap-1">
                                     <Tooltip label="Edit">
                                         <button
                                             onClick={() => openEditModal(a.id)}
@@ -189,10 +189,10 @@ export default function SavedAddressesPage() {
             )}
 
             <Modal open={modalOpen} onClose={saving ? () => {} : closeModal} maxWidth="max-w-[460px]">
-                <div className="sticky top-0 z-10 border-b border-ink/10 bg-white px-8 py-5">
+                <div className="sticky top-0 z-10 border-b border-ink/10 bg-white px-5 py-5 sm:px-8">
                     <h3 className="text-xl font-medium text-ink">{editingId !== null ? "Edit Address" : "Add New Address"}</h3>
                 </div>
-                <div className="px-8 pt-6 pb-4">
+                <div className="px-5 pt-6 pb-4 sm:px-8">
                     <div className="mb-3">
                         <label htmlFor="address-label" className="mb-1.5 block font-mono text-[11px] uppercase tracking-[.14em] text-grey">Label</label>
                         <input
@@ -215,7 +215,7 @@ export default function SavedAddressesPage() {
                         />
                     </div>
                 </div>
-                <div className="sticky bottom-0 border-t border-ink/10 bg-white px-8 py-5">
+                <div className="sticky bottom-0 border-t border-ink/10 bg-white px-5 py-5 sm:px-8">
                     <button
                         onClick={save}
                         disabled={saving}

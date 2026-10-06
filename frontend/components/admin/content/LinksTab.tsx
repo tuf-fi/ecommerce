@@ -118,23 +118,23 @@ export default function LinksTab() {
     return (
         <>
         <div className="flex flex-col border border-ink/10 bg-white sm:flex-row sm:max-h-[70vh]">
-            <div className="flex flex-none divide-x divide-ink/10 border-b border-ink/10 sm:w-64 sm:flex-col sm:divide-x-0 sm:divide-y sm:border-r sm:border-b-0">
+            <div className="flex flex-none divide-x divide-ink/10 overflow-x-auto border-b border-ink/10 [scrollbar-width:none] sm:w-64 sm:overflow-visible [&::-webkit-scrollbar]:hidden sm:flex-col sm:divide-x-0 sm:divide-y sm:border-r sm:border-b-0">
                 {LINKS_SECTIONS.map((s) => {
                     const active = section === s.key;
                     return (
                         <button
                             key={s.key}
                             onClick={() => setSection(s.key)}
-                            className={`flex-1 px-5 py-4 text-left transition sm:flex-none ${active ? "bg-navy" : "hover:bg-off/60"}`}
+                            className={`flex-none px-4 py-3.5 text-left whitespace-nowrap transition sm:px-5 sm:py-4 sm:whitespace-normal ${active ? "bg-navy" : "hover:bg-off/60"}`}
                         >
                             <div className={`text-[13.5px] font-medium ${active ? "text-white" : "text-ink"}`}>{s.label}</div>
-                            <div className={`mt-0.5 text-[11.5px] ${active ? "text-white/70" : "text-grey"}`}>{s.caption}</div>
+                            <div className={`mt-0.5 hidden text-[11.5px] sm:block ${active ? "text-white/70" : "text-grey"}`}>{s.caption}</div>
                         </button>
                     );
                 })}
             </div>
 
-            <div className="min-h-0 min-w-0 flex-1 overflow-y-auto p-7">
+            <div className="min-h-0 min-w-0 flex-1 overflow-y-auto p-4 sm:p-7">
             {section === "nav" && (
             <section>
                 <BlockHeading

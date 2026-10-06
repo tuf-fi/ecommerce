@@ -23,7 +23,7 @@ const PAGE_SIZE = 16;
 // actually editable here. `preview` just drops the bleed trick (the admin's box has no real body padding to cancel).
 export default function ShopPage({ preview = false, introPreviewData }: { preview?: boolean; introPreviewData?: PageIntroContent } = {}) {
     return (
-        <div className={preview ? "bg-white px-8 pt-8 pb-16" : "shadow-glow -mx-8 w-[calc(100%+4rem)] min-h-screen bg-white px-8 pt-25 pb-20"}>
+        <div className={preview ? "bg-white px-8 pt-8 pb-16" : "shadow-glow -mx-[var(--gutter)] w-[calc(100%+var(--gutter)*2)] min-h-screen bg-white px-[var(--gutter)] pt-25 pb-20"}>
             <PageIntro pageKey="shop" previewData={introPreviewData} />
             <Suspense fallback={<ShopGridSkeleton />}>
                 <ShopContent />
@@ -91,19 +91,19 @@ function ShopContent() {
     // Filters live in a persistent sidebar column, not a row that scrolls away.
     return (
         <div className="grid grid-cols-1 gap-10 lg:grid-cols-[220px_1fr]">
-            <aside className="flex flex-col gap-8 lg:sticky lg:top-[calc(var(--navbar-h,72px)+24px)] lg:self-start">
+            <aside className="flex flex-col gap-6 lg:gap-8 lg:sticky lg:top-[calc(var(--navbar-h,72px)+24px)] lg:self-start">
                 <SearchField value={search} onChange={setSearch} placeholder="Search products" />
 
                 <div>
                     <span className="mb-3 block font-mono text-[10.5px] uppercase tracking-[.16em] text-grey">Category</span>
-                    <ul className="flex flex-col">
+                    <ul className="thin-scrollbar -mx-1 flex flex-row gap-1 overflow-x-auto px-1 pb-1 lg:mx-0 lg:flex-col lg:gap-0 lg:overflow-visible lg:p-0">
                         {CATEGORIES.map((c) => {
                             const active = category === c;
                             return (
-                                <li key={c}>
+                                <li key={c} className="flex-none">
                                     <button
                                         onClick={() => setCategory(c)}
-                                        className={`flex w-full items-center justify-between border-l-2 py-2.5 pl-4 pr-3 text-left text-[13px] transition ${
+                                        className={`flex w-full items-center justify-between gap-3 whitespace-nowrap border-b-2 py-2.5 pl-3 pr-3 text-left text-[13px] transition lg:border-b-0 lg:border-l-2 lg:pl-4 ${
                                             active ? "border-pink-btn bg-pink-soft/40 font-medium text-pink-dark" : "border-transparent text-ink hover:border-ink/15 hover:bg-off/60"
                                         }`}
                                     >
@@ -131,7 +131,7 @@ function ShopContent() {
             </aside>
 
             <div className="min-w-0">
-                <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
+                <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <SectionTitle num="—" title={`${filtered.length} Products`} />
                     <select value={sort} onChange={(e) => setSort(e.target.value as SortKey)} className={`${FILTER_SELECT} flex-none`}>
                         <option value="default">Sort: Featured</option>
@@ -147,7 +147,7 @@ function ShopContent() {
                     </div>
                 ) : (
                     <>
-                        <div className="grid grid-cols-2 gap-5 sm:grid-cols-3">
+                        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
                             {paged.map((product) => (
                                 <Card key={product.id} product={product} />
                             ))}
@@ -184,7 +184,7 @@ function ShopGridSkeleton() {
                         <Skeleton tone="outline" className="h-11 w-40" />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-5 sm:grid-cols-3">
+                    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
                         {Array.from({ length: PAGE_SIZE }).map((_, i) => (
                             <div key={i} className="flex flex-col border border-ink/10">
                                 <Skeleton tone="faint" className="aspect-[4/5] w-full" />

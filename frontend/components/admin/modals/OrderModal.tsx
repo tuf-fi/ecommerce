@@ -115,7 +115,7 @@ export default function OrderModal({
                     <DetailRow label="Address" value={order.address} />
                 </DetailBody>
 
-                <div className="border-t border-ink/10 px-8 py-6">
+                <div className="border-t border-ink/10 px-5 sm:px-8 py-6">
                     <span className="mb-3 block font-mono text-[10px] tracking-[.14em] text-grey uppercase">Items</span>
                     <div className="flex flex-col gap-3">
                         {order.items.map((line) => {
@@ -140,7 +140,7 @@ export default function OrderModal({
                     </div>
                 </div>
 
-                <div className="border-t border-ink/10 px-8 py-6">
+                <div className="border-t border-ink/10 px-5 sm:px-8 py-6">
                     <span className="mb-3 block font-mono text-[10px] tracking-[.14em] text-grey uppercase">Payment</span>
                     {!order.payment || order.payment.proofs.length === 0 ? (
                         <p className="text-[12.5px] text-grey">
@@ -225,7 +225,7 @@ export default function OrderModal({
                     )}
                 </div>
 
-                <div className="border-t border-ink/10 px-8 py-6">
+                <div className="border-t border-ink/10 px-5 sm:px-8 py-6">
                     <span className="mb-3 block font-mono text-[10px] tracking-[.14em] text-grey uppercase">History</span>
                     {history?.no !== order.no ? (
                         <p className="text-[12.5px] text-grey">Loading…</p>
@@ -253,7 +253,7 @@ export default function OrderModal({
                     )}
                 </div>
 
-                <div className="border-t border-ink/10 px-8 py-6">
+                <div className="border-t border-ink/10 px-5 sm:px-8 py-6">
                     <span className="mb-3 block font-mono text-[10px] tracking-[.14em] text-grey uppercase">Money</span>
                     <div className="flex flex-col gap-1.5 text-[13px] text-grey">
                         <div className="flex justify-between"><span>Items</span><span className="font-mono text-ink">₱{(order.subtotal ?? orderTotal(order)).toLocaleString()}</span></div>
@@ -311,7 +311,7 @@ export default function OrderModal({
                     )}
                 </div>
 
-                <div className="sticky bottom-0 flex justify-between border-t border-ink/10 bg-white px-8 py-5 text-[15px] font-semibold text-ink">
+                <div className="sticky bottom-0 flex justify-between border-t border-ink/10 bg-white px-5 sm:px-8 py-5 text-[15px] font-semibold text-ink">
                     <span>Total</span>
                     <span>₱{orderTotal(order).toLocaleString()}</span>
                 </div>

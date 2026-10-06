@@ -35,8 +35,8 @@ function FeaturedTestimonial({ pool }: { pool: Testimonial[] }) {
     if (!featured) return null;
 
     return (
-        <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:gap-10">
-            <span aria-hidden className="flex-none font-display text-[72px] leading-none text-ink/15">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-10">
+            <span aria-hidden className="flex-none font-display h-10 text-[56px] leading-none text-ink/15 sm:h-auto sm:text-[72px]">
                 “
             </span>
             <div className="relative flex-1 overflow-hidden">

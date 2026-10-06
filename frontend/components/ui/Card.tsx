@@ -48,7 +48,7 @@ export default function Card({ product, size = "default" }: { product: Product; 
                 </span>
             </div>
 
-            <div className={`flex flex-1 flex-col gap-2 ${large ? "p-7" : "p-5"}`}>
+            <div className={`flex flex-1 flex-col gap-2 ${large ? "p-6 sm:p-7" : "p-5"}`}>
                 <span className={`font-mono uppercase tracking-[.16em] text-grey ${large ? "text-[11px]" : "text-[10px]"}`}>{product.category}</span>
                 <span
                     className={`text-left font-medium leading-snug text-ink transition-colors group-hover:text-pink-dark ${large ? "text-[22px] sm:text-[26px]" : "text-[16.5px]"}`}
@@ -56,7 +56,7 @@ export default function Card({ product, size = "default" }: { product: Product; 
                     {product.title}
                 </span>
                 <StarRating rating={product.rating} count={product.count} />
-                <div className="mt-auto flex items-center justify-between pt-3">
+                <div className="mt-auto flex flex-wrap items-center justify-between gap-x-3 gap-y-2.5 pt-3">
                     <span className={`font-mono text-ink ${large ? "text-[15px]" : "text-[13px]"}`}>₱{product.price.toLocaleString()}</span>
                     <button
                         onClick={(e) => {

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import PageHeading from "@/components/ui/PageHeading";
+import Skeleton, { SkeletonGroup } from "@/components/ui/Skeleton";
 import { useStore } from "@/library/store";
 import { listMyVouchers, MyVoucher } from "@/library/api/marketing";
 
@@ -32,7 +33,20 @@ export default function VouchersPage() {
             <PageHeading>My Vouchers</PageHeading>
 
             {vouchers === null ? (
-                <p className="text-[13px] text-grey">Loading…</p>
+                <SkeletonGroup className="flex flex-col gap-3">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                        <div key={i} className="flex flex-wrap items-center gap-x-6 gap-y-3 border border-ink/10 p-5">
+                            <div className="min-w-0 flex-1">
+                                <Skeleton className="h-[14px] w-28" />
+                                <Skeleton tone="soft" className="mt-2 h-3 w-48 max-w-full" />
+                            </div>
+                            <div className="flex flex-none items-center gap-4 border-l border-dashed border-ink/15 pl-5">
+                                <Skeleton tone="soft" className="h-[10px] w-24" />
+                                <Skeleton tone="outline" className="h-9 w-24" />
+                            </div>
+                        </div>
+                    ))}
+                </SkeletonGroup>
             ) : vouchers.length === 0 ? (
                 <p className="border border-ink/10 p-8 text-center text-[13px] text-grey">
                     You don&apos;t have any vouchers right now. Claim your welcome code from the pop-up on the home page, and it will appear here.

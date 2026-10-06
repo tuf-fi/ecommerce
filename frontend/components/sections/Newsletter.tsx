@@ -33,14 +33,14 @@ export default function Newsletter({
 
     return (
         // Negative bottom margin pulls this over the footer's top edge; in the admin preview (no footer below) it just clips.
-        <div id={preview ? undefined : "newsletter"} className={preview ? "p-9" : "relative z-10 pt-8 -mb-16"}>
-            <div className="grid grid-cols-[.85fr_1.15fr] items-stretch gap-0 border border-ink/10">
-                <div className="relative overflow-hidden">
+        <div id={preview ? undefined : "newsletter"} className={preview ? "p-9" : "relative z-10 pt-6 -mb-12 md:pt-8 md:-mb-16"}>
+            <div className="grid grid-cols-1 items-stretch gap-0 border border-ink/10 lg:grid-cols-[.85fr_1.15fr]">
+                <div className="relative h-52 overflow-hidden sm:h-72 lg:h-auto">
                     <Image src={newsletterImage} alt="Join the ritual" fill sizes="(min-width: 1024px) 40vw, 100vw" className="object-cover" />
                 </div>
 
-                <div className="flex flex-col justify-center gap-5 border-l border-ink/10 bg-off p-14">
-                    <h2 className="text-[clamp(28px,3.2vw,42px)] leading-[1.05] font-medium text-ink">
+                <div className="flex flex-col justify-center gap-5 border-t border-ink/10 bg-off p-6 sm:p-10 lg:border-t-0 lg:border-l lg:p-14">
+                    <h2 className="text-[clamp(26px,3.2vw,42px)] leading-[1.05] font-medium text-ink">
                         {newsletter.headline} <em className="font-normal text-pink-dark">{newsletter.accent}</em>
                     </h2>
 
@@ -51,7 +51,7 @@ export default function Newsletter({
                             You&apos;re on the list! Check your inbox for your 10% off code.
                         </p>
                     ) : (
-                        <form onSubmit={handleSubmit} className="flex items-center gap-3">
+                        <form onSubmit={handleSubmit} className="flex flex-col gap-3 sm:flex-row sm:items-center">
                             <label htmlFor="newsletter-email" className="sr-only">
                                 Email address
                             </label>
@@ -66,7 +66,7 @@ export default function Newsletter({
                             <button
                                 type="submit"
                                 disabled={submitting}
-                                className="flex-none bg-pink-btn px-6 py-3 text-xs font-semibold tracking-wide text-white transition hover:bg-pink-btn-hover disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-pink-btn"
+                                className="flex-none bg-pink-btn px-6 py-3.5 text-xs font-semibold tracking-wide text-white transition hover:bg-pink-btn-hover disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-pink-btn"
                             >
                                 {submitting ? "Subscribing…" : "Subscribe"}
                             </button>

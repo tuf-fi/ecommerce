@@ -11,6 +11,11 @@ export function useScrollActiveIntoView(containerRef: RefObject<HTMLElement | nu
         if (linkRect.top < boxRect.top || linkRect.bottom > boxRect.bottom) {
             box.scrollTop += linkRect.top - boxRect.top - (boxRect.height - linkRect.height) / 2;
         }
+        const strip = link.closest<HTMLElement>("[data-hscroll]");
+        if (strip && strip.scrollWidth > strip.clientWidth) {
+            const stripRect = strip.getBoundingClientRect();
+            strip.scrollLeft += linkRect.left - stripRect.left - (stripRect.width - linkRect.width) / 2;
+        }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, deps);
 }

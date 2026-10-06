@@ -70,7 +70,7 @@ export default function LowStockViewModal({
                 </DetailBody>
             )}
             {canInventory && (
-                <div className="sticky bottom-0 border-t border-ink/10 bg-white px-8 py-5">
+                <div className="sticky bottom-0 border-t border-ink/10 bg-white px-5 sm:px-8 py-5">
                     <Link
                         href="/admin/inventory"
                         className="flex w-full items-center justify-center gap-2 border border-ink/15 py-3 text-center text-[12.5px] font-semibold uppercase tracking-wide text-ink transition hover:bg-off/60"

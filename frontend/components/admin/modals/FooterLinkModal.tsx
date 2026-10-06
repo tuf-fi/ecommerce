@@ -61,12 +61,12 @@ export default function FooterLinkModal({
     return (
         <>
         <Modal open onClose={submitting ? () => {} : requestClose} maxWidth="max-w-[380px]">
-            <div className="sticky top-0 z-10 border-b border-ink/10 bg-white px-8 py-5">
+            <div className="sticky top-0 z-10 border-b border-ink/10 bg-white px-5 sm:px-8 py-5">
                 <h3 className="text-xl font-medium text-ink">
                     {link ? "Edit" : "Add"} {GROUP_LABEL[group]} Link
                 </h3>
             </div>
-            <div className="px-8 pt-6 pb-4">
+            <div className="px-5 sm:px-8 pt-6 pb-4">
                 <div className="mb-4">
                     <label htmlFor="footer-link-label" className={FIELD_LABEL}>Label</label>
                     <input
@@ -102,7 +102,7 @@ export default function FooterLinkModal({
                     </p>
                 </div>
             </div>
-            <div className="sticky bottom-0 border-t border-ink/10 bg-white px-8 py-5">
+            <div className="sticky bottom-0 border-t border-ink/10 bg-white px-5 sm:px-8 py-5">
                 <button onClick={handleSubmit} disabled={submitting} className={`w-full ${BTN_PRIMARY}`}>
                     {submitting ? "Saving…" : "Save Link"}
                 </button>

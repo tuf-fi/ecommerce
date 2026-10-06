@@ -15,7 +15,7 @@ import { EditIcon, TrashIcon, BackLink } from "@/components/admin/icons";
 import ReorderButtons from "@/components/admin/ReorderButtons";
 
 // Shared between the header and every row so their columns always line up exactly.
-const GRID_COLS = "grid-cols-[24px_1fr_100px]";
+const GRID_COLS = "grid-cols-[24px_1fr_100px] min-w-[480px]";
 
 const PAGE_SIZE = 10;
 const BACK_HREF = "/admin/content?tab=pages";
@@ -101,7 +101,7 @@ export default function FaqEditor({
                 ) : paged.length === 0 ? (
                     <div className="border border-ink/10 bg-white px-5 py-16 text-center text-[13px] text-grey">No FAQs match this search.</div>
                 ) : (
-                    <div className="border border-ink/10 bg-white">
+                    <div className="overflow-x-auto border border-ink/10 bg-white">
                         <div className={`grid ${GRID_COLS} items-center gap-4 border-b border-ink/10 bg-off/50 px-5 py-3`}>
                             <span className="col-span-2 font-mono text-[11px] font-bold tracking-[.12em] text-grey uppercase">Question</span>
                             <span aria-hidden="true" />

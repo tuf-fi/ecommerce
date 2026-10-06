@@ -19,16 +19,16 @@ export default function Glossary(){
             <SectionTitle section="glossary" title="Shop by Concern" />
 
             {/* Horizontally scrollable so the row holds up whether the CMS list has fewer or more tiles than a fixed grid. */}
-            <div className="thin-scrollbar flex justify-center gap-4 overflow-x-auto pb-2">
+            <div className="thin-scrollbar flex snap-x justify-center-safe gap-3 overflow-x-auto overflow-y-hidden pb-2 sm:gap-4">
                 {concerns.map((concern, index) => {
                     const count = PRODUCTS.filter((p) => p.concerns?.includes(concern.key)).length;
                     return (
-                        <RevealIn key={concern.id} direction="bottom" delay={index * 0.09} distance={28} className="flex-none">
+                        <RevealIn key={concern.id} direction="bottom" delay={index * 0.09} distance={28} className="flex-none snap-start">
                             {/* Overlaid caption matches the site's other photography-led tiles (Moments/Rituals, Journal). */}
                             <Link
                                 href={`/shop?concern=${concern.key}`}
                                 aria-label={`Shop for ${concern.title}`}
-                                className="group relative flex aspect-[3/4] w-[160px] flex-none overflow-hidden border border-ink/10 sm:w-[190px]"
+                                className="group relative flex aspect-[3/4] w-[148px] flex-none overflow-hidden border border-ink/10 sm:w-[190px] lg:w-[200px]"
                             >
                                 {concern.image && (
                                     <Image

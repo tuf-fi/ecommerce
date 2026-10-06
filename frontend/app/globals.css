@@ -42,6 +42,9 @@
   /* Base page color — a soft "white smoke" instead of stark pure white. */
   --color-smoke: #F2F1EE;
 
+  /* Fluid page gutter: 1rem on phones up to 2rem, then grows on very wide screens so content caps at 1480px. */
+  --gutter: max(clamp(1rem, 4.5vw, 2rem), calc((100vw - 1480px) / 2));
+
   --background: var(--color-smoke);
   --foreground: var(--color-ink);
 }
@@ -79,8 +82,8 @@ body {
   font-family: var(--font-inter), sans-serif;
   font-size: 14.5px;
   line-height: 1.65;
-  padding-left: 2rem;
-  padding-right: 2rem;
+  padding-left: var(--gutter);
+  padding-right: var(--gutter);
 }
 
 /* Breathing room above anchor-scrolled sections so their title doesn't land

@@ -61,12 +61,12 @@ export default function LivePreviewPane({
     return (
         <div className={`flex flex-col border-b border-ink/10 bg-white ${scroll ? "lg:min-h-0 lg:flex-1" : ""}`}>
             {/* Fixed h-[52px] (not py-*) to line up exactly with ContentEditorShell's rail header, which uses the same explicit height. */}
-            <div className="flex h-[52px] flex-none items-center justify-between gap-3 border-b border-ink/10 px-5 font-mono text-[10.5px] tracking-[.06em] text-grey uppercase">
-                <div className="flex items-center gap-1.5">
+            <div className="flex h-[52px] flex-none items-center justify-between gap-3 border-b border-ink/10 px-4 font-mono sm:px-5 text-[10.5px] tracking-[.06em] text-grey uppercase">
+                <div className="flex min-w-0 items-center gap-1.5">
                     <span className="h-1.5 w-1.5 flex-none animate-pulse rounded-full bg-success" />
-                    Live Preview — {label}
+                    <span className="min-w-0 truncate">Live Preview — {label}</span>
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="hidden items-center gap-1 sm:flex">
                     {DEVICES.map(({ key, label: deviceLabel, icon: Icon }) => (
                         <button
                             key={key}

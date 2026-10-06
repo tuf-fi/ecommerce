@@ -21,15 +21,15 @@ export default function Journal(){
         <SectionContainer id="journal">
             <SectionTitle section="journal" title="Journal" />
 
-            <div className="grid grid-cols-[1.1fr_1fr] gap-14">
+            <div className="grid grid-cols-1 gap-10 lg:grid-cols-[1.1fr_1fr] lg:gap-14">
                 <RevealIn direction="bottom">
-                    <Link href={`/journal/${slugify(featured.title)}`} className="group relative isolate flex h-[460px] flex-col justify-end overflow-hidden border border-ink/10 p-9">
+                    <Link href={`/journal/${slugify(featured.title)}`} className="group relative isolate flex h-[360px] flex-col justify-end overflow-hidden border border-ink/10 p-6 sm:h-[460px] sm:p-9">
                         {featured.image && (
                             <Image
                                 src={featured.image}
                                 alt={featured.title}
                                 fill
-                                sizes="(min-width: 1024px) 55vw, 100vw"
+                                sizes="(min-width: 1024px) 52vw, 100vw"
                                 className="absolute inset-0 -z-10 object-cover transition duration-500 group-hover:scale-[1.03]"
                                 unoptimized={typeof featured.image === "string"}
                             />
@@ -46,21 +46,21 @@ export default function Journal(){
 
                 <div className="flex flex-col divide-y divide-ink/10">
                     {posts.map((post, index) => (
-                        <RevealIn key={post.id} direction="bottom" delay={0.14 + index * 0.14} distance={28}>
-                            <Link href={`/journal/${slugify(post.title)}`} className="group flex items-center gap-6 py-8 first:pt-0 last:pb-0">
-                                <div className="relative h-[96px] w-[124px] flex-shrink-0 overflow-hidden border border-ink/10">
+                        <RevealIn key={post.id} direction="bottom" delay={0.14 + index * 0.14} distance={28} className="py-6 first:pt-0 last:pb-0 sm:py-8">
+                            <Link href={`/journal/${slugify(post.title)}`} className="group flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
+                                <div className="relative aspect-[16/10] w-full flex-shrink-0 sm:aspect-auto sm:h-[96px] sm:w-[124px] overflow-hidden border border-ink/10">
                                     {post.image && (
                                         <Image
                                             src={post.image}
                                             alt={post.title}
                                             fill
-                                            sizes="124px"
+                                            sizes="(min-width: 640px) 124px, 100vw"
                                             className="object-cover transition duration-500 group-hover:scale-110"
                                             unoptimized={typeof post.image === "string"}
                                         />
                                     )}
                                 </div>
-                                <div>
+                                <div className="min-w-0">
                                     <h4 className="text-[15px] font-medium leading-snug text-ink transition group-hover:text-blue-accent">{post.title}</h4>
                                     <p className="mt-2 line-clamp-2 max-w-[280px] text-[12.5px] leading-relaxed text-grey">{post.excerpt}</p>
                                 </div>
@@ -71,10 +71,10 @@ export default function Journal(){
             </div>
 
             <RevealIn direction="bottom" delay={0.14 + posts.length * 0.14}>
-                <div className="mt-14 flex justify-center">
+                <div className="mt-10 flex justify-center md:mt-14">
                     <Link
                         href="/journal"
-                        className="group/cta inline-flex items-center gap-2.5 bg-navy px-8 py-4 text-[13px] font-semibold uppercase tracking-wide text-white transition hover:bg-pink-dark"
+                        className="group/cta inline-flex w-full items-center justify-center gap-2.5 bg-navy px-8 py-4 sm:w-auto text-[13px] font-semibold uppercase tracking-wide text-white transition hover:bg-pink-dark"
                     >
                         View All Journal Entries
                         <span className="transition-transform duration-200 group-hover/cta:translate-x-1">→</span>

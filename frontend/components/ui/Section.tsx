@@ -42,10 +42,10 @@ export default function SectionContainer({
     if (tint) {
         return (
             <div
-                className={preview ? "" : "-mx-8 w-[calc(100%+4rem)] px-8"}
+                className={preview ? "" : "-mx-[var(--gutter)] w-[calc(100%+var(--gutter)*2)] px-(--gutter)"}
                 style={{ backgroundImage: fadeGradient(tintVar[tint]) }}
             >
-                <div id={id} className={`py-16 ${preview ? "px-9" : ""}`}>
+                <div id={id} className={`py-14 md:py-20 ${preview ? "px-9" : ""}`}>
                     {children}
                 </div>
             </div>
@@ -53,7 +53,7 @@ export default function SectionContainer({
     }
 
     return (
-        <div id={id} className={`py-16 ${preview ? "px-9" : ""}`}>
+        <div id={id} className={`py-14 md:py-20 ${preview ? "px-9" : ""}`}>
             {children}
         </div>
     )

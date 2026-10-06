@@ -41,7 +41,7 @@ export default function PromoBanner({ promo: previewPromo }: { promo?: Promo } =
 
     return (
         <div
-            className={`flex h-10 items-center justify-center gap-2 bg-pink-btn px-8 text-center text-[12.5px] text-white ${
+            className={`flex h-10 items-center justify-center gap-2 bg-pink-btn px-10 text-center text-[11.5px] leading-tight text-white sm:px-12 sm:text-[12.5px] ${
                 isPreview ? "relative" : "fixed top-0 inset-x-0 z-[51]"
             }`}
         >
@@ -61,7 +61,7 @@ export default function PromoBanner({ promo: previewPromo }: { promo?: Promo } =
                         sessionStorage.setItem(DISMISS_KEY_PREFIX + promo.id, "1");
                         setDismissed(true);
                     }}
-                    className="absolute right-5 text-white/60 transition hover:text-white"
+                    className="absolute right-2 flex h-10 w-10 items-center justify-center text-white/60 sm:right-4 transition hover:text-white"
                 >
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                         <path d="M6 6l12 12M18 6 6 18" />

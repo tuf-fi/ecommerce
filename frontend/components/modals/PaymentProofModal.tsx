@@ -82,7 +82,7 @@ export default function PaymentProofModal({
 
     return (
         <Modal open onClose={busy ? () => {} : onClose} maxWidth="max-w-[480px]" title={`Pay for order ${orderNo}`}>
-            <form onSubmit={submit} className="p-8">
+            <form onSubmit={submit} className="p-5 sm:p-8">
                 <div className="mb-1 font-mono text-[10px] uppercase tracking-[.16em] text-grey">Order {orderNo}</div>
                 <h3 className="mb-1 text-xl font-medium text-ink">Send ₱{total.toLocaleString()}</h3>
                 <p className="mb-5 text-[12.5px] leading-relaxed text-grey">{(instructions ?? EMPTY_PAYMENT_INSTRUCTIONS).intro}</p>

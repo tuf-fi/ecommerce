@@ -114,8 +114,8 @@ export default function Navbar(){
     return(
     <nav className={`fixed top-[var(--promo-h,0px)] left-0 z-50 w-full text-white transition-[background-color,backdrop-filter,padding,border-color] duration-300
     ${solid ? "border-b border-white/10 bg-navy" : "border-b border-transparent"}`}>
-        <div ref={topBarRef} className={`flex items-center justify-between px-6 transition-[padding] duration-300 md:px-10 xl:px-12 ${solid ? "py-3.5" : "py-5"}`}>
-            <div className="flex items-center gap-x-16">
+        <div ref={topBarRef} className={`flex items-center justify-between px-(--gutter) transition-[padding] duration-300 ${solid ? "py-3.5" : "py-5"}`}>
+            <div className="flex items-center gap-x-8 xl:gap-x-16">
                 <button onClick={handleHomeClick} className="font-display text-[19px] font-medium tracking-tight">
                     Cindyrella
                 </button>
@@ -264,7 +264,7 @@ export default function Navbar(){
                     className="overflow-hidden border-t border-white/10 bg-navy lg:hidden"
                 >
                     {/* Ignores the "more" grouping — renders one flat list; no horizontal room to run out of here. */}
-                    <ul className="flex flex-col px-6 py-2">
+                    <ul className="flex flex-col px-(--gutter) py-2">
                         <li className="border-b border-white/5 last:border-none">
                             <button
                                 onClick={handleHomeClick}
@@ -284,7 +284,7 @@ export default function Navbar(){
                             </li>
                         ))}
                     </ul>
-                    <div className="px-6 pb-6 pt-2">
+                    <div className="px-(--gutter) pb-6 pt-2">
                         <Link
                             href="/shop"
                             onClick={() => setMenuOpen(false)}

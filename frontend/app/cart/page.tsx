@@ -114,7 +114,7 @@ export default function CartPage({ preview = false, introPreviewData }: { previe
     if (!mounted) return <CartSkeleton preview={preview} />;
 
     return (
-        <div className={preview ? "bg-white px-8 pt-8 pb-16" : "-mx-8 w-[calc(100%+4rem)] min-h-screen bg-white px-8 pt-25 pb-20"}>
+        <div className={preview ? "bg-white px-8 pt-8 pb-16" : "-mx-[var(--gutter)] w-[calc(100%+var(--gutter)*2)] min-h-screen bg-white px-[var(--gutter)] pt-25 pb-20"}>
             <PageIntro pageKey="cart" previewData={introPreviewData} />
 
             <SectionTitle num="—" title={`${cartCount} Item${cartCount === 1 ? "" : "s"}`} />
@@ -327,7 +327,7 @@ export default function CartPage({ preview = false, introPreviewData }: { previe
 
 function CartSkeleton({ preview = false }: { preview?: boolean } = {}) {
     return (
-        <div className={preview ? "bg-white px-8 pt-8 pb-16" : "-mx-8 w-[calc(100%+4rem)] min-h-screen bg-white px-8 pt-25 pb-20"}>
+        <div className={preview ? "bg-white px-8 pt-8 pb-16" : "-mx-[var(--gutter)] w-[calc(100%+var(--gutter)*2)] min-h-screen bg-white px-[var(--gutter)] pt-25 pb-20"}>
             <SkeletonGroup>
                 <Skeleton className="mt-3 h-[34px] w-[70%] max-w-[520px] sm:h-[42px]" />
                 <Skeleton className="mt-3 mb-11 h-[34px] w-[45%] max-w-[340px] sm:h-[42px]" />
