@@ -3,10 +3,12 @@ import Skeleton, { SkeletonGroup } from "@/components/ui/Skeleton";
 // Route-transition fallback: a neutral page shape (heading, section rule, grid) that fits most customer pages.
 export default function Loading() {
     return (
-        <div role="status" aria-live="polite" aria-label="Loading" className="-mx-[var(--gutter)] min-h-screen w-[calc(100%+var(--gutter)*2)] bg-white px-[var(--gutter)] pt-25 pb-20">
+        <div role="status" aria-live="polite" aria-label="Loading" className="-mx-[var(--gutter)] min-h-screen w-[calc(100%+var(--gutter)*2)] bg-white px-[var(--gutter)] pt-[calc(var(--navbar-h,68px)+1.2rem)] pb-20">
             <SkeletonGroup>
-                <Skeleton className="h-[34px] w-[70%] max-w-[520px] sm:h-[42px]" />
-                <Skeleton className="mt-3 mb-11 h-[34px] w-[45%] max-w-[340px] sm:h-[42px]" />
+                <div className="mb-8 border-b border-ink/10 pt-[4.75rem] pb-8 md:mb-12 md:pt-[5.5rem] md:pb-10">
+                    <Skeleton className="h-[34px] w-[70%] max-w-[520px] sm:h-[42px]" />
+                    <Skeleton className="mt-3 h-[34px] w-[45%] max-w-[340px] sm:h-[42px]" />
+                </div>
 
                 <div className="mb-8 flex items-center gap-x-5 md:mb-11">
                     <Skeleton className="h-[10.5px] w-3" />
