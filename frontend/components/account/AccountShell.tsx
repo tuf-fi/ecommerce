@@ -93,6 +93,18 @@ const navGroups = [
                 ),
             },
             {
+                label: "Shipping & Returns",
+                href: "/account/shipping-returns",
+                icon: (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                        <path d="M3 7h11v9H3z" />
+                        <path d="M14 10h4l3 3v3h-7z" />
+                        <circle cx="7" cy="18" r="1.6" />
+                        <circle cx="17" cy="18" r="1.6" />
+                    </svg>
+                ),
+            },
+            {
                 label: "Privacy Policy",
                 href: "/account/privacy-policy",
                 icon: (

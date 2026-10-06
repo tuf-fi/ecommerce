@@ -55,9 +55,11 @@ export default function Tooltip({
         <div
             ref={triggerRef}
             className="relative inline-flex"
-            onMouseEnter={() => !disabled && mouseHasMoved && setOpen(true)}
-            onMouseLeave={() => setOpen(false)}
-            onFocus={() => !disabled && setOpen(true)}
+            // Mouse and keyboard only: a tap focuses the button and fires emulated mouse events, which left the tooltip stuck on touch screens.
+            onPointerEnter={(e) => !disabled && e.pointerType === "mouse" && mouseHasMoved && setOpen(true)}
+            onPointerLeave={() => setOpen(false)}
+            onPointerDown={(e) => e.pointerType !== "mouse" && setOpen(false)}
+            onFocus={(e) => !disabled && e.target.matches(":focus-visible") && setOpen(true)}
             onBlur={() => setOpen(false)}
         >
             {children}

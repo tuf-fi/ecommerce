@@ -27,6 +27,8 @@ export default function Navbar(){
     const topBarRef = useRef<HTMLDivElement>(null);
     const moreRef = useRef<HTMLLIElement>(null);
     const accountRef = useRef<HTMLDivElement>(null);
+    const mobileMenuRef = useRef<HTMLDivElement>(null);
+    const menuButtonRef = useRef<HTMLButtonElement>(null);
 
     useEffect(() => {
         const handleScroll = () => setScrolled(window.scrollY > 10);
@@ -52,6 +54,18 @@ export default function Navbar(){
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
+
+    // Using any other navbar icon (or tapping outside) closes the hamburger panel.
+    useEffect(() => {
+        if (!menuOpen) return;
+        function handleOutside(e: PointerEvent) {
+            const t = e.target as Node;
+            if (mobileMenuRef.current?.contains(t) || menuButtonRef.current?.contains(t)) return;
+            setMenuOpen(false);
+        }
+        document.addEventListener("pointerdown", handleOutside);
+        return () => document.removeEventListener("pointerdown", handleOutside);
+    }, [menuOpen]);
 
     // Only the home page has a dark hero to sit transparently over — every other route needs the nav solid immediately.
     const solid = scrolled || pathname !== "/";
@@ -100,15 +114,27 @@ export default function Navbar(){
         document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
     }
 
-    function handleNavClick(link: SiteNavLink) {
+    // framer-motion jumps to the top while measuring the menu's close animation, which cancels a smooth scroll started at the same moment.
+    function goToSectionAfterMenu(id: string | null) {
+        if (pathname !== "/") return goToSection(id);
+        setTimeout(() => goToSection(id), 320);
+    }
+
+    // The page is scroll-locked while the menu is open; release it first or the smooth scroll below is swallowed.
+    function closeMenuForScroll() {
         setMenuOpen(false);
+        document.body.style.overflow = "";
+    }
+
+    function handleNavClick(link: SiteNavLink) {
+        closeMenuForScroll();
         // Empty anchor means the top of the page — Hero has no id.
-        goToSection(SECTION_ANCHOR_ID[link.section] || null);
+        goToSectionAfterMenu(SECTION_ANCHOR_ID[link.section] || null);
     }
 
     function handleHomeClick() {
-        setMenuOpen(false);
-        goToSection(null);
+        closeMenuForScroll();
+        goToSectionAfterMenu(null);
     }
 
     return(
@@ -243,8 +269,9 @@ export default function Navbar(){
                 </div>
 
                 <button
+                    ref={menuButtonRef}
                     aria-label={menuOpen ? "Close menu" : "Open menu"}
-                    onClick={() => setMenuOpen((o) => !o)}
+                    onClick={() => { setMenuOpen((o) => !o); setAccountOpen(false); }}
                     className="flex h-10 w-10 flex-none items-center justify-center text-white/80 transition hover:bg-white/10 hover:text-white lg:hidden"
                 >
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -257,27 +284,28 @@ export default function Navbar(){
         <AnimatePresence>
             {menuOpen && (
                 <motion.div
+                    ref={mobileMenuRef}
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: "auto" }}
                     exit={{ opacity: 0, height: 0 }}
                     transition={{ duration: 0.26, ease: EASE }}
-                    className="overflow-hidden border-t border-white/10 bg-navy lg:hidden"
+                    className="overflow-hidden border-t border-ink/10 bg-white shadow-modal lg:hidden"
                 >
                     {/* Ignores the "more" grouping — renders one flat list; no horizontal room to run out of here. */}
                     <ul className="flex flex-col px-(--gutter) py-2">
-                        <li className="border-b border-white/5 last:border-none">
+                        <li className="border-b border-ink/10 last:border-none">
                             <button
                                 onClick={handleHomeClick}
-                                className="w-full py-3.5 text-left font-mono text-[11px] uppercase tracking-[.12em] text-white/70 transition-colors hover:text-white"
+                                className="w-full py-3.5 text-left font-mono text-[11px] uppercase tracking-[.12em] text-ink/70 transition-colors hover:text-pink-dark"
                             >
                                 {HOME_LABEL}
                             </button>
                         </li>
                         {visibleNavLinks.map((link) => (
-                            <li key={link.id} className="border-b border-white/5 last:border-none">
+                            <li key={link.id} className="border-b border-ink/10 last:border-none">
                                 <button
                                     onClick={() => handleNavClick(link)}
-                                    className="w-full py-3.5 text-left font-mono text-[11px] uppercase tracking-[.12em] text-white/70 transition-colors hover:text-white"
+                                    className="w-full py-3.5 text-left font-mono text-[11px] uppercase tracking-[.12em] text-ink/70 transition-colors hover:text-pink-dark"
                                 >
                                     {link.label}
                                 </button>
@@ -288,7 +316,7 @@ export default function Navbar(){
                         <Link
                             href="/shop"
                             onClick={() => setMenuOpen(false)}
-                            className="block border border-pink px-4 py-3 text-center font-mono text-[10.5px] font-semibold uppercase tracking-[.14em] text-pink transition-colors duration-200 hover:border-pink-btn hover:bg-pink-btn hover:text-white"
+                            className="block border border-pink-btn px-4 py-3 text-center font-mono text-[10.5px] font-semibold uppercase tracking-[.14em] text-pink-btn transition-colors duration-200 hover:bg-pink-btn hover:text-white"
                         >
                             Shop
                         </Link>

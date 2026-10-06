@@ -22,7 +22,7 @@ export default function RitualPage() {
 
     if (!ritual) {
         return (
-            <div className="-mx-[var(--gutter)] w-[calc(100%+var(--gutter)*2)] min-h-screen bg-white px-8 pt-25 pb-20 text-center">
+            <div className="-mx-[var(--gutter)] w-[calc(100%+var(--gutter)*2)] min-h-screen bg-white px-[var(--gutter)] pt-25 pb-20 text-center">
                 <p className="text-[13px] text-grey">
                     That ritual doesn&apos;t exist.{" "}
                     <Link href="/#rituals" className="text-pink-dark underline">
@@ -43,15 +43,9 @@ export default function RitualPage() {
     }
 
     return (
-        <div className="-mx-[var(--gutter)] w-[calc(100%+var(--gutter)*2)] min-h-screen bg-white px-8 pt-25 pb-20">
-            <div className="mx-auto mb-8 max-w-[680px]">
-                <Link href="/#rituals" className="inline-block text-[12.5px] font-medium text-grey transition-colors hover:text-pink-dark">
-                    ← Rituals
-                </Link>
-            </div>
-
+        <div className="-mx-[var(--gutter)] w-[calc(100%+var(--gutter)*2)] min-h-screen bg-white px-[var(--gutter)] pt-[var(--navbar-h,67px)] pb-20">
             {ritual.image ? (
-                <div className="relative -mx-[var(--gutter)] mb-10 h-[46vh] max-h-[560px] min-h-[380px] w-[calc(100%+var(--gutter)*2)] overflow-hidden">
+                <div className="relative -mx-[var(--gutter)] h-[46vh] max-h-[560px] min-h-[380px] w-[calc(100%+var(--gutter)*2)] overflow-hidden">
                     <Image
                         src={ritual.image}
                         alt={ritual.title}
@@ -61,19 +55,25 @@ export default function RitualPage() {
                         unoptimized={typeof ritual.image === "string"}
                     />
                     <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent" />
-                    <div className="absolute inset-x-0 bottom-0 px-8 pb-10 sm:px-12">
+                    <div className="absolute inset-x-0 bottom-0 px-[var(--gutter)] pb-10 md:px-16 md:pb-12">
                         <span className="eyebrow mb-3 block text-white/70">{ritual.eyebrow}</span>
                         <h1 className="max-w-[680px] text-[clamp(28px,4.2vw,50px)] font-medium text-white">{ritual.title}</h1>
                     </div>
                 </div>
             ) : (
-                <div className="mb-10 text-center">
+                <div className="mb-10 pt-10 text-center">
                     <span className="eyebrow mb-3 block text-grey">{ritual.eyebrow}</span>
                     <h1 className="mx-auto max-w-[680px] text-[clamp(28px,4.2vw,50px)] font-medium text-ink">{ritual.title}</h1>
                 </div>
             )}
 
-            <div className="mx-auto mb-14 max-w-[680px] text-center">
+            <div className="mx-auto max-w-[680px] pt-8 md:pt-10">
+                <Link href="/#rituals" className="inline-flex min-h-11 items-center text-[12.5px] font-medium text-grey transition-colors hover:text-pink-dark">
+                    ← Rituals
+                </Link>
+            </div>
+
+            <div className="mx-auto mt-4 mb-14 max-w-[680px] text-center">
                 <p className="border-l-2 border-pink pl-5 text-left text-[18px] leading-relaxed text-ink">{ritual.copy}</p>
             </div>
 
@@ -118,52 +118,57 @@ export default function RitualPage() {
                             {products.map((product, i) => {
                                 const isWished = wishlist.includes(product.id);
                                 return (
-                                    <div key={product.id} id={`step-${product.id}`} className="flex scroll-mt-24 gap-5 py-8 first:pt-0 sm:gap-6">
-                                        <span className="flex-none pt-1 font-mono text-[12px] text-grey">{String(i + 1).padStart(2, "0")}</span>
-
+                                    <div key={product.id} id={`step-${product.id}`} className="grid scroll-mt-24 grid-cols-1 gap-y-5 py-8 first:pt-8 sm:grid-cols-[200px_minmax(0,1fr)] sm:gap-x-8 sm:gap-y-0 sm:py-10 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-x-10">
                                         <Link
                                             href={`/shop/${product.id}`}
-                                            className="group relative aspect-[4/5] w-[96px] flex-none overflow-hidden border border-ink/10 sm:w-[140px]"
+                                            className="group relative block aspect-square w-full self-start overflow-hidden border border-ink/10"
                                         >
                                             <Image
                                                 src={product.image}
                                                 alt={product.title}
                                                 fill
-                                                sizes="140px"
+                                                sizes="(min-width: 1024px) 240px, (min-width: 640px) 200px, 100vw"
                                                 className="object-cover transition duration-500 group-hover:scale-[1.03]"
                                             />
+                                            <span className="absolute top-3 left-3 bg-white px-2 py-1 font-mono text-[10.5px] tracking-[.08em] text-ink">
+                                                {String(i + 1).padStart(2, "0")}
+                                            </span>
                                         </Link>
 
-                                        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                                        <div className="flex min-w-0 flex-col">
                                             <span className="font-mono text-[10px] uppercase tracking-[.16em] text-grey">{product.category}</span>
                                             <Link
                                                 href={`/shop/${product.id}`}
-                                                className="text-[16px] font-medium leading-snug text-ink transition hover:text-pink-dark"
+                                                className="mt-1.5 text-[17px] leading-snug font-medium text-ink transition hover:text-pink-dark sm:text-[20px]"
                                             >
                                                 {product.title}
                                             </Link>
-                                            <StarRating rating={product.rating} count={product.count} />
-                                            <p className="mt-1 line-clamp-2 max-w-[440px] text-[13px] leading-relaxed text-grey">{product.desc}</p>
+                                            <div className="mt-2">
+                                                <StarRating rating={product.rating} count={product.count} />
+                                            </div>
+                                            <p className="mt-3 line-clamp-3 max-w-[460px] text-[13.5px] leading-relaxed text-grey">{product.desc}</p>
 
-                                            <div className="mt-3 flex items-center gap-4">
-                                                <span className="font-mono text-[13px] text-ink">₱{product.price.toLocaleString()}</span>
-                                                <button
-                                                    onClick={() => addToCart(product.id, 1, cheapestSizeId(product))}
-                                                    className="border border-ink/15 px-4 py-2 text-[11.5px] font-semibold uppercase tracking-wide text-ink transition hover:border-pink-btn hover:bg-pink-btn hover:text-white"
-                                                >
-                                                    Add to Bag
-                                                </button>
-                                                <button
-                                                    aria-label="Toggle wishlist"
-                                                    onClick={() => toggleWishlist(product.id)}
-                                                    className={`ml-auto flex h-11 w-11 flex-none items-center justify-center border transition hover:border-pink-btn hover:bg-pink-btn hover:text-white ${
-                                                        isWished ? "border-pink-btn bg-pink-btn text-white" : "border-ink/15 text-ink"
-                                                    }`}
-                                                >
-                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill={isWished ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
-                                                        <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z" />
-                                                    </svg>
-                                                </button>
+                                            <div className="mt-5 flex flex-wrap items-center justify-between gap-x-4 gap-y-3 border-t border-ink/10 pt-4 sm:mt-auto">
+                                                <span className="font-mono text-[15px] text-ink">₱{product.price.toLocaleString()}</span>
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        aria-label="Toggle wishlist"
+                                                        onClick={() => toggleWishlist(product.id)}
+                                                        className={`flex h-11 w-11 flex-none items-center justify-center border transition hover:border-pink-btn hover:bg-pink-btn hover:text-white ${
+                                                            isWished ? "border-pink-btn bg-pink-btn text-white" : "border-ink/15 text-ink"
+                                                        }`}
+                                                    >
+                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill={isWished ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2">
+                                                            <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z" />
+                                                        </svg>
+                                                    </button>
+                                                    <button
+                                                        onClick={() => addToCart(product.id, 1, cheapestSizeId(product))}
+                                                        className="h-11 bg-navy px-5 text-[11.5px] font-semibold tracking-wide whitespace-nowrap text-white uppercase transition hover:bg-pink-dark"
+                                                    >
+                                                        Add to Bag
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -179,21 +184,21 @@ export default function RitualPage() {
 
 function RitualSkeleton() {
     return (
-        <div className="-mx-[var(--gutter)] w-[calc(100%+var(--gutter)*2)] min-h-screen bg-white px-8 pt-25 pb-20">
+        <div className="-mx-[var(--gutter)] w-[calc(100%+var(--gutter)*2)] min-h-screen bg-white px-[var(--gutter)] pt-[var(--navbar-h,67px)] pb-20">
             <SkeletonGroup>
-                <div className="mx-auto mb-8 max-w-[680px]">
-                    <Skeleton className="h-[12.5px] w-24" />
-                </div>
-
-                <div className="relative -mx-[var(--gutter)] mb-10 h-[46vh] max-h-[560px] min-h-[380px] w-[calc(100%+var(--gutter)*2)] overflow-hidden">
+                <div className="relative -mx-[var(--gutter)] h-[46vh] max-h-[560px] min-h-[380px] w-[calc(100%+var(--gutter)*2)] overflow-hidden">
                     <Skeleton tone="faint" className="absolute inset-0 h-full w-full" />
-                    <div className="absolute inset-x-0 bottom-0 px-8 pb-10 sm:px-12">
+                    <div className="absolute inset-x-0 bottom-0 px-[var(--gutter)] pb-10 md:px-16 md:pb-12">
                         <Skeleton className="mb-3 h-3 w-28" />
                         <Skeleton className="h-[42px] w-[60%] max-w-[560px]" />
                     </div>
                 </div>
 
-                <div className="mx-auto mb-14 max-w-[680px]">
+                <div className="mx-auto max-w-[680px] pt-8 md:pt-10">
+                    <Skeleton className="h-[12.5px] w-24" />
+                </div>
+
+                <div className="mx-auto mt-6 mb-14 max-w-[680px]">
                     <Skeleton tone="outline" className="h-[52px] w-full" />
                 </div>
 

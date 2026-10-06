@@ -24,7 +24,7 @@ export default function JournalPostPage() {
 
     if (!post) {
         return (
-            <div className="-mx-[var(--gutter)] w-[calc(100%+var(--gutter)*2)] min-h-screen bg-white px-8 pt-[calc(var(--navbar-h,68px)+1.5rem)] pb-20 text-center">
+            <div className="-mx-[var(--gutter)] w-[calc(100%+var(--gutter)*2)] min-h-screen bg-white px-[var(--gutter)] pt-[calc(var(--navbar-h,68px)+1.5rem)] pb-20 text-center">
                 <p className="text-[13px] text-grey">
                     That post doesn&apos;t exist.{" "}
                     <Link href="/journal" className="text-pink-dark underline">
@@ -40,7 +40,7 @@ export default function JournalPostPage() {
     const morePosts = published.filter((p) => p.id !== post.id).slice(0, MORE_POSTS_COUNT);
 
     return (
-        <div className="-mx-[var(--gutter)] w-[calc(100%+var(--gutter)*2)] min-h-screen bg-white px-8 pt-[calc(var(--navbar-h,67px))] pb-20">
+        <div className="-mx-[var(--gutter)] w-[calc(100%+var(--gutter)*2)] min-h-screen bg-white px-[var(--gutter)] pt-[calc(var(--navbar-h,67px))] pb-20">
             <JournalArticle post={post} />
 
             {(previousPost || nextPost) && (
@@ -102,11 +102,11 @@ function PostNavLink({
 
 function JournalPostSkeleton() {
     return (
-        <div className="-mx-[var(--gutter)] w-[calc(100%+var(--gutter)*2)] min-h-screen bg-white px-8 pt-[calc(var(--navbar-h,67px))] pb-20">
+        <div className="-mx-[var(--gutter)] w-[calc(100%+var(--gutter)*2)] min-h-screen bg-white px-[var(--gutter)] pt-[calc(var(--navbar-h,67px))] pb-20">
             <SkeletonGroup>
                 <div className="relative -mx-[var(--gutter)] h-[46vh] max-h-[560px] min-h-[380px] w-[calc(100%+var(--gutter)*2)] overflow-hidden">
                     <Skeleton tone="faint" className="absolute inset-0 h-full w-full" />
-                    <div className="absolute inset-x-0 bottom-0 px-8 pb-10 md:px-16 md:pb-12">
+                    <div className="absolute inset-x-0 bottom-0 px-[var(--gutter)] pb-10 md:px-16 md:pb-12">
                         <Skeleton className="h-[11px] w-24" />
                         <Skeleton className="mt-3 h-[40px] w-[70%] max-w-[600px]" />
                     </div>
