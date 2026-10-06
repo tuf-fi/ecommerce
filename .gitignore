@@ -27,3 +27,7 @@ Thumbs.db
 # Editor
 .vscode/
 .idea/
+
+# Backup copies of env files hold real secrets
+.env.bak
+*.env.bak
