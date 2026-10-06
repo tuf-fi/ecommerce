@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, type Variants } from "framer-motion";
-import { BASE_DELAY, VIEWPORT } from "./constants";
+import { BASE_DELAY, VIEWPORT, usePrefersReducedMotion } from "./constants";
 
 export type TypeSegment = { text: string; className?: string };
 
@@ -17,11 +17,7 @@ const char: Variants = {
     visible: { opacity: 1, y: 0, transition: { duration: 0.1, ease: "easeOut" } },
 };
 
-// Splits each segment into words (kept unbreakable so lines wrap normally)
-// and each word into characters, then reveals characters in sequence on a
-// single stagger clock — reads as the paragraph being typed out live. Each
-// letter's own fade (above) runs longer than the gap between letters, so
-// several are mid-fade at once — a smooth cascade rather than a flicker.
+// Splits into words (so lines wrap normally) then characters, staggering reveals so several letters are mid-fade at once — a cascade, not a flicker.
 export default function TypeReveal({
     segments,
     speed = 0.005,
@@ -31,6 +27,20 @@ export default function TypeReveal({
     speed?: number;
     className?: string;
 }) {
+    const prefersReducedMotion = usePrefersReducedMotion();
+
+    if (prefersReducedMotion) {
+        return (
+            <p className={className}>
+                {segments.map((seg, si) => (
+                    <span key={si} className={seg.className}>
+                        {seg.text}
+                    </span>
+                ))}
+            </p>
+        );
+    }
+
     return (
         <motion.p
             className={className}

@@ -1,9 +1,9 @@
-import { journalImages } from "@/components/ui/images";
+import { journalImages, ritualImages, concernImages } from "@/components/ui/images";
 import { faqs } from "../faq";
-import { BlogPost, Faq, NavMenuItem, Promo, StaticPage, Testimonial } from "./types";
+import { BlogPost, Concern, Faq, FooterLinkItem, Promo, Ritual, SiteNavLink, StaticPage, Testimonial } from "./types";
+import { SECTION_KEYS, SectionKey } from "./sections";
 
-// Blog posts don't store a slug — it's derived from the title so renaming a
-// post can't leave a stale slug behind pointing at the old URL.
+// Blog posts don't store a slug — it's derived from the title so renaming a post can't leave a stale one behind.
 export function slugify(title: string) {
     return title
         .toLowerCase()
@@ -16,6 +16,14 @@ export const HOMEPAGE_HERO_DEFAULT = {
     cta: "Shop the edit",
     subtext: "A quiet, considered approach to skincare — formulated with intent, not trend.",
     image: null as string | null,
+};
+
+export const ABOUT_DEFAULT = {
+    founder: "2026",
+    location: "Metro Manila, PH",
+    focus: "Considered skincare, formulated in small batches",
+    lead: "A studio built on restraint.",
+    body: "Cindyrella is a considered skincare studio based in Metro Manila, built on the idea that a routine should be simple, effective, and honest about what's in it. We formulate in small batches, around fewer and better ingredients, and we'd rather make five products we believe in than fifty we don't.",
 };
 
 export const PROMOS: Promo[] = [
@@ -37,15 +45,6 @@ export const PROMOS: Promo[] = [
 
 export const STATIC_PAGES: StaticPage[] = [
     {
-        id: 1,
-        slug: "about",
-        name: "About",
-        category: "Landing Page",
-        updated: "Aug 12, 2026",
-        content:
-            "Cindyrella is a considered skincare studio, built around slow formulation and a small, deliberate catalogue.\n\nWe don't chase trends — every product exists because it earns its place in a routine.",
-    },
-    {
         id: 2,
         slug: "shipping-returns",
         name: "Shipping & Returns",
@@ -60,7 +59,7 @@ export const STATIC_PAGES: StaticPage[] = [
         name: "Privacy Policy",
         category: "Security",
         updated: "Jun 18, 2026",
-        content: "We collect only what's needed to process your order and never sell your data to third parties.",
+        content: "Cindyrella (\"we\", \"us\") is a skincare shop based in the Philippines. This policy explains what personal information we collect when you use this website, why we collect it, and the choices you have. We handle your information in line with the Data Privacy Act of 2012 (Republic Act No. 10173).\n\n## Information we collect\n\n- Account: your name, email address and password (stored only as a one-way hash), plus a profile photo if you add one. If you sign in with Google, we receive your name and email address from Google.\n- Orders: delivery addresses, what you ordered, order totals, discount codes you used, and the payment screenshots you upload.\n- Messages: what you send through the Contact form, and your email address if you subscribe to the newsletter.\n- Reviews and wishlist: the reviews you write and the products you save.\n- Sign-in activity: the device type, IP address and last-active time of each device you are signed in on, so you can review and sign out of them.\n\n## How we use your information\n\n- To create and run your account, take and deliver your orders, and verify your payments.\n- To email order confirmations, status updates and refund notices.\n- To send newsletters and offers, only if you subscribed. Every one has an unsubscribe link, and order emails are not affected.\n- To answer your messages and keep the shop secure.\n\n## Who we share it with\n\nWe never sell your personal information. We share only what is needed with the services that run parts of the shop: payment providers such as GCash and Maya, couriers that deliver your order, our image hosting provider for photos and screenshots, and our email service. We may also disclose information when the law requires it.\n\n## Cookies and local storage\n\nWe use a secure cookie that keeps you signed in. Your bag and wishlist are kept in your browser until you sign in. We do not use advertising or tracking cookies.\n\n## How long we keep it\n\nWe keep your information while your account is active and for as long as needed for orders, returns, accounting and legal requirements.\n\n## How we protect it\n\nPasswords are stored as hashes and cannot be read by anyone, including us. Payment screenshots are private and visible only to you and the staff who verify payments. Staff access is limited by role, and changes made in the admin are recorded.\n\n## Your rights\n\nUnder the Data Privacy Act you have the right to be informed, to access your data, to correct it, to object to its processing, to request its erasure or blocking, to receive a copy of it, to claim compensation for damages, and to file a complaint with the National Privacy Commission. You can change your name, photo and password in My Account. For anything else, email us.\n\n## Changes to this policy\n\nIf we change this policy, we will post the new version on this page.\n\n## Contact\n\nQuestions or requests about your information: hello@cindyrella.ph.",
     },
     {
         id: 4,
@@ -68,7 +67,7 @@ export const STATIC_PAGES: StaticPage[] = [
         name: "Terms of Service",
         category: "Security",
         updated: "Jun 18, 2026",
-        content: "By using cindyrella.ph, you agree to purchase for personal use and not for resale.",
+        content: "These terms apply to your use of this website and to every order you place. By creating an account or placing an order, you agree to them.\n\n## Using the shop\n\n- Personal use: products are sold for your own use or as gifts, not for resale.\n- Your account: give accurate details and keep your password private. You are responsible for what happens under your account.\n- Acceptable use: do not misuse the website, attempt to break into it, or use it to send spam or unlawful content.\n\n## Orders and payment\n\n- Prices: shown in Philippine pesos. Your total includes the shipping fee and any discount code, and is shown before you place the order.\n- Paying: after you place an order, send the exact total by GCash, Maya or bank transfer, then upload a screenshot of your receipt. We mark the order as paid once we have confirmed the payment.\n- Unpaid orders: an order that is not paid is cancelled automatically after 24 hours, unless a screenshot is waiting to be checked. The items then go back on sale.\n- Availability: if an item turns out to be unavailable or a price was wrong, we may cancel that order and refund anything you paid.\n\n## Discount codes\n\nEach customer can use a given code once. A code may have a last day or a limited number of uses, can be turned off at any time, and has no cash value.\n\n## Shipping and delivery\n\nThe shipping fee is shown in your cart before you order. Delivery times are estimates, not guarantees. See Shipping & Returns for details.\n\n## Cancellations and refunds\n\nYou can cancel an order yourself while it is still unpaid. Once payment has been confirmed or the order has shipped, contact us and we will help. When we refund an order, we send the money back to you ourselves and email you to confirm.\n\n## Reviews\n\nYou can write one review per product. Keep it honest and respectful. We may remove reviews that are abusive, unlawful or unrelated to the product. By posting a review, you let us display it on the website.\n\n## Product information\n\nSkincare results vary from person to person. Check the ingredient list, patch test before first use, and stop using a product if it irritates your skin. Nothing on this website is medical advice.\n\n## Limits of our responsibility\n\nTo the extent the law allows, we are not liable for indirect or consequential losses arising from your use of the website or products. Nothing in these terms limits rights you have under Philippine consumer law.\n\n## Changes to these terms\n\nIf we change these terms, we will post the new version on this page. Orders you have already placed are not affected.\n\n## Governing law\n\nThese terms are governed by the laws of the Republic of the Philippines.\n\n## Contact\n\nQuestions about these terms: hello@cindyrella.ph.",
     },
     {
         id: 5,
@@ -80,23 +79,104 @@ export const STATIC_PAGES: StaticPage[] = [
     },
 ];
 
-// Default headline/accent shown atop the Shop, Wishlist, and Cart pages —
-// editable from the admin's Pages tab (see PageIntroEditor) the same way the
-// homepage Hero is, just without an image/CTA since these are listing pages.
-export const PAGE_INTRO_DEFAULTS: Record<"shop" | "wishlist" | "cart", { headline: string; accent: string }> = {
+// Editable from the admin's Pages tab (PageIntroEditor) like the Hero, minus image/CTA since these are listing pages.
+export const PAGE_INTRO_DEFAULTS: Record<"shop" | "wishlist" | "cart" | "journal", { headline: string; accent: string }> = {
     shop: { headline: "Everything we make,", accent: "in one place." },
     wishlist: { headline: "Formulas you're", accent: "still thinking about." },
     cart: { headline: "Everything you're", accent: "taking home." },
+    journal: { headline: "Notes on ingredients, routines,", accent: "and the thinking behind them." },
 };
 
-export const NAV_MENU: NavMenuItem[] = [
-    { id: 1, label: "Serums", link: "#serums" },
-    { id: 2, label: "Treatment", link: "#treatment" },
-    { id: 3, label: "Moisturizers", link: "#moisturizers" },
-    { id: 4, label: "Body", link: "#body" },
-    { id: 5, label: "Journal", link: "/journal" },
-    { id: 6, label: "Contact", link: "#contact" },
+// Built from SECTION_KEYS (not hand-listed) so a new section can't be missing here; every section starts visible.
+export const SECTION_VISIBILITY_DEFAULT: Record<SectionKey, boolean> = Object.fromEntries(
+    SECTION_KEYS.map((key) => [key, true])
+) as Record<SectionKey, boolean>;
+
+// Split like the page-intro headlines: plain first line, accented second.
+export const CONTACT_DEFAULT = {
+    headline: "Let's",
+    accent: "talk skin.",
+};
+
+// One plain string instead of headline/accent — the original markup emphasized one mid-sentence word, which no two-field split captured, traded here for a fully editable line.
+export const PHILOSOPHY_DEFAULT = {
+    eyebrow: "N° 002 — Philosophy",
+    headline: "Good skin isn't fixed overnight. It's the sum of small, consistent choices, applied with care.",
+    subtext:
+        "Every formula is built around fewer, better ingredients — layered in an order that actually works with your skin, not against it.",
+};
+
+// The Shop All section's only genuine editorial string — its filters and product grid are product data, not content.
+export const CATALOGUE_DEFAULT = {
+    ctaLabel: "Go to Shop",
+};
+
+export const NEWSLETTER_DEFAULT = {
+    headline: "Join the",
+    accent: "ritual.",
+    body: "First access to new formulas, routine tips, and members-only offers — straight to your inbox.",
+    socialProof: "Loved by 12,000+ skincare routines",
+};
+
+// Read by both the Contact section and the Footer, which each used to hardcode their own copy of it.
+export const CONTACT_INFO_DEFAULT = {
+    email: "hello@cindyrella.ph",
+    phone: "+63 917 000 0000",
+    addressLine1: "Makati City,",
+    addressLine2: "Metro Manila",
+    hoursLine1: "Monday – Saturday",
+    hoursLine2: "9am – 6pm",
+};
+
+// TODO: replace with real @cindyrella handles — "#" matches the placeholder Contact and Footer shipped with.
+export const SOCIAL_LINKS_DEFAULT = {
+    instagramUrl: "#",
+    instagramEnabled: true,
+    tiktokUrl: "#",
+    tiktokEnabled: true,
+    pinterestUrl: "#",
+    pinterestEnabled: true,
+    facebookUrl: "#",
+    facebookEnabled: true,
+    xUrl: "#",
+    xEnabled: true,
+};
+
+// Seeded from Navbar.tsx; "Home" is excluded since it duplicates the wordmark's scroll-to-top, not a section.
+export const NAV_LINKS_DEFAULT: SiteNavLink[] = [
+    { id: 1, label: "About", section: "about" },
+    { id: 2, label: "Best Sellers", section: "bestSellers", group: "more" },
+    { id: 3, label: "Rituals", section: "moments" },
+    { id: 4, label: "Concern", section: "glossary" },
+    { id: 5, label: "Products", section: "catalogue" },
+    { id: 6, label: "Journal", section: "journal" },
+    { id: 7, label: "FAQ", section: "faq", group: "more" },
+    { id: 8, label: "Testimonials", section: "testimonials", group: "more" },
+    { id: 9, label: "Contact", section: "contact", group: "more" },
 ];
+
+// TODO: point at real filtered listings once /shop reads `?category=` (only `?concern=` today); "#" is the shipped placeholder.
+export const FOOTER_SHOP_LINKS_DEFAULT: FooterLinkItem[] = [
+    { id: 1, label: "Serums", href: "#" },
+    { id: 2, label: "Treatment", href: "#" },
+    { id: 3, label: "Moisturizers", href: "#" },
+    { id: 4, label: "Body", href: "#" },
+    { id: 5, label: "Sets", href: "#" },
+];
+
+export const FOOTER_COMPANY_LINKS_DEFAULT: FooterLinkItem[] = [
+    { id: 1, label: "About", href: "/#about" },
+    { id: 2, label: "Journal", href: "/journal" },
+    { id: 3, label: "Glossary", href: "/#concern" },
+    { id: 4, label: "FAQ", href: "/#faq" },
+    { id: 5, label: "Contact", href: "/#contact" },
+    { id: 6, label: "Shipping & Returns", href: "/pages/shipping-returns" },
+    { id: 7, label: "Privacy Policy", href: "/pages/privacy-policy" },
+    { id: 8, label: "Terms of Service", href: "/pages/terms" },
+];
+
+// TODO: display-only until PayMongo is wired up — should reflect the account's actually-enabled methods.
+export const FOOTER_PAYMENT_METHODS_DEFAULT: string[] = ["GCash", "Maya", "Visa", "Mastercard"];
 
 const JOURNAL_TITLES = Object.keys(journalImages) as (keyof typeof journalImages)[];
 
@@ -145,9 +225,36 @@ export const BLOG_POSTS: BlogPost[] = [
 
 export const FAQS: Faq[] = faqs.map((f, i) => ({ id: i + 1, q: f.q, a: f.a }));
 
-// No photo uploaded yet for any of these — TestimonialCard/the admin table
-// both fall back to an initials avatar when `image` is null, same pattern as
-// StaffMember.photo.
+// Ids reference PRODUCTS in library/products.ts — each ritual is a real shoppable subset, not decorative copy.
+export const RITUALS_DEFAULT: Ritual[] = [
+    {
+        id: 1,
+        eyebrow: "Ritual One",
+        title: "The Glass Skin Routine",
+        copy: "Five steps, applied in order — for skin that looks lit from underneath.",
+        image: ritualImages["The Glass Skin Routine"],
+        productIds: [1, 5, 3],
+    },
+    {
+        id: 2,
+        eyebrow: "Ritual Two",
+        title: "Barrier First",
+        copy: "Rebuild what stripping actively broke, before you treat anything else.",
+        image: ritualImages["Barrier First"],
+        productIds: [2, 9, 8],
+    },
+];
+
+export const CONCERNS_DEFAULT: Concern[] = [
+    { id: 1, key: "dryness", title: "Dryness", image: concernImages.Dryness },
+    { id: 2, key: "breakouts", title: "Breakouts", image: concernImages.Breakouts },
+    { id: 3, key: "dullness", title: "Dullness", image: concernImages.Dullness },
+    { id: 4, key: "fine-lines", title: "Fine Lines", image: concernImages["Fine Lines"] },
+    { id: 5, key: "redness", title: "Redness", image: concernImages.Redness },
+    { id: 6, key: "texture", title: "Texture", image: concernImages.Texture },
+];
+
+// No photos yet — TestimonialCard/the admin table fall back to an initials avatar when `image` is null, same as StaffMember.photo.
 export const TESTIMONIALS: Testimonial[] = [
     {
         id: 1,

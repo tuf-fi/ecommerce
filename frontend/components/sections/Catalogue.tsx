@@ -1,64 +1,111 @@
+"use client";
+
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import Card from "../ui/Card";
 import SectionContainer from "../ui/Section";
 import SectionTitle from "../ui/SectionTitle";
 import RevealIn from "../ui/motion/RevealIn";
-import { PRODUCTS } from "@/library/products";
+import { FILTER_SELECT } from "../ui/SearchField";
+import { CATEGORIES, PRODUCTS } from "@/library/products";
+import { useContent } from "@/library/content";
 
 const PREVIEW_COUNT = 12;
 
-export default function Catalogue(){
-    return(
+type PriceBucket = "all" | "under" | "mid" | "over";
+type RatingFloor = 0 | 4 | 4.5;
+
+export default function Catalogue() {
+    const { catalogue, sectionVisibility } = useContent();
+
+    // Category select mirrors /shop's predicate; price/rating filters are local-only refinements /shop doesn't need.
+    const [category, setCategory] = useState<(typeof CATEGORIES)[number]>("All");
+    const [priceBucket, setPriceBucket] = useState<PriceBucket>("all");
+    const [minRating, setMinRating] = useState<RatingFloor>(0);
+
+    const filtered = useMemo(() => {
+        let list = PRODUCTS;
+        if (category !== "All") list = list.filter((p) => p.category === category);
+        if (priceBucket === "under") list = list.filter((p) => p.price < 1500);
+        else if (priceBucket === "mid") list = list.filter((p) => p.price >= 1500 && p.price <= 2500);
+        else if (priceBucket === "over") list = list.filter((p) => p.price > 2500);
+        if (minRating > 0) list = list.filter((p) => p.rating >= minRating);
+        return list;
+    }, [category, priceBucket, minRating]);
+
+    if (!sectionVisibility.catalogue) return null;
+
+    const visible = filtered.slice(0, PREVIEW_COUNT);
+
+    return (
         <SectionContainer id="products">
-            <SectionTitle num="05" title="Shop All" />
+            <SectionTitle section="catalogue" title="Shop All" />
 
-            {/* TODO: wire these up to real filtering once catalogue data/state exists */}
             <div className="mb-11 flex flex-wrap gap-3">
-                <select className="rounded-none border border-ink/15 bg-transparent px-4 py-2.5 font-mono text-[11px] uppercase tracking-[.1em] text-ink outline-none">
-                    <option>Category</option>
-                    <option>Serums</option>
-                    <option>Treatments</option>
-                    <option>Moisturizers</option>
-                    <option>Body</option>
-                    <option>Sets</option>
+                <select
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value as (typeof CATEGORIES)[number])}
+                    className={FILTER_SELECT}
+                >
+                    <option value="All">Category</option>
+                    {CATEGORIES.filter((c) => c !== "All").map((c) => (
+                        <option key={c} value={c}>
+                            {c}
+                        </option>
+                    ))}
                 </select>
 
-                <select className="rounded-none border border-ink/15 bg-transparent px-4 py-2.5 font-mono text-[11px] uppercase tracking-[.1em] text-ink outline-none">
-                    <option>All Prices</option>
-                    <option>Under ₱1,500</option>
-                    <option>₱1,500 – ₱2,500</option>
-                    <option>₱2,500+</option>
+                <select value={priceBucket} onChange={(e) => setPriceBucket(e.target.value as PriceBucket)} className={FILTER_SELECT}>
+                    <option value="all">All Prices</option>
+                    <option value="under">Under ₱1,500</option>
+                    <option value="mid">₱1,500 – ₱2,500</option>
+                    <option value="over">₱2,500+</option>
                 </select>
 
-                <select className="rounded-none border border-ink/15 bg-transparent px-4 py-2.5 font-mono text-[11px] uppercase tracking-[.1em] text-ink outline-none">
-                    <option>All Ratings</option>
-                    <option>4★ &amp; up</option>
-                    <option>4.5★ &amp; up</option>
+                <select
+                    value={minRating}
+                    onChange={(e) => setMinRating(Number(e.target.value) as RatingFloor)}
+                    className={FILTER_SELECT}
+                >
+                    <option value={0}>All Ratings</option>
+                    <option value={4}>4★ &amp; up</option>
+                    <option value={4.5}>4.5★ &amp; up</option>
                 </select>
             </div>
 
-            <div id="catalogTop" className="grid grid-cols-4 gap-5">
-                {PRODUCTS.slice(0, PREVIEW_COUNT).map((product, index) => (
-                    <RevealIn
-                        key={product.id}
-                        direction="bottom"
-                        distance={28}
-                        delay={Math.floor(index / 4) * 0.12 + (index % 4) * 0.08}
-                    >
-                        <Card product={product} />
-                    </RevealIn>
-                ))}
-            </div>
+            {visible.length === 0 ? (
+                <div className="flex flex-col items-center gap-4 border border-ink/10 py-20 text-center">
+                    <p className="max-w-[280px] text-[13px] leading-relaxed text-grey">No products match these filters.</p>
+                </div>
+            ) : (
+                <div id="catalogTop" className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
+                    {visible.map((product, index) => {
+                        // Lead tile gets extra weight, matching BestSellers/Journal/Moments.
+                        const featured = index === 0;
+                        return (
+                            <RevealIn
+                                key={product.id}
+                                direction="bottom"
+                                distance={28}
+                                delay={Math.floor(index / 4) * 0.12 + (index % 4) * 0.08}
+                                className={featured ? "sm:col-span-2 sm:row-span-2" : undefined}
+                            >
+                                <Card product={product} size={featured ? "large" : "default"} />
+                            </RevealIn>
+                        );
+                    })}
+                </div>
+            )}
 
             <RevealIn direction="bottom" delay={0.45} distance={20} className="mt-14 flex justify-center">
                 <Link
                     href="/shop"
                     className="group/cta inline-flex items-center gap-2.5 bg-navy px-8 py-4 text-[13px] font-semibold uppercase tracking-wide text-white transition hover:bg-pink-dark"
                 >
-                    Go to Shop
+                    {catalogue.ctaLabel}
                     <span className="transition-transform duration-200 group-hover/cta:translate-x-1">→</span>
                 </Link>
             </RevealIn>
         </SectionContainer>
-    )
+    );
 }

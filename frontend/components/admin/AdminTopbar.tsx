@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAdminStore } from "@/library/adminStore";
+import Tooltip from "@/components/ui/Tooltip";
+import { canManageStaff } from "@/library/admin/permissions";
 
 const TITLES: Record<string, string> = {
     dashboard: "Dashboard",
@@ -11,6 +13,9 @@ const TITLES: Record<string, string> = {
     staff: "Staff & Roles",
     content: "Content",
     settings: "Settings",
+    payments: "Payment Details",
+    subscribers: "Newsletter Subscribers",
+    messages: "Contact Messages",
 };
 
 function humanize(segment: string) {
@@ -25,6 +30,11 @@ function useAdminTitle() {
     const pathname = usePathname();
     const segments = pathname.replace(/^\/admin\/?/, "").split("/").filter(Boolean);
     const first = segments[0] ?? "dashboard";
+
+    if (first === "inventory" && segments[1] === "movements") {
+        return { title: "Stock Movements", path: "Admin / Stock Movements" };
+    }
+
     const title = TITLES[first] ?? humanize(first);
     const path = ["Admin", title, ...segments.slice(1).map(humanize)].join(" / ");
     return { title, path };
@@ -42,7 +52,7 @@ function initials(name: string) {
 
 export default function AdminTopbar() {
     const { title, path } = useAdminTitle();
-    const { adminName, logout, notifications, markNotificationRead, markAllNotificationsRead } = useAdminStore();
+    const { adminName, currentStaffMember, logout, notifications, markNotificationRead, markAllNotificationsRead, openMobileSidebar } = useAdminStore();
     const router = useRouter();
     const [notifOpen, setNotifOpen] = useState(false);
     const [profileOpen, setProfileOpen] = useState(false);
@@ -60,6 +70,19 @@ export default function AdminTopbar() {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
+    // Escape closes whichever dropdown is open.
+    useEffect(() => {
+        if (!notifOpen && !profileOpen) return;
+        function handleKeyDown(e: KeyboardEvent) {
+            if (e.key === "Escape") {
+                setNotifOpen(false);
+                setProfileOpen(false);
+            }
+        }
+        document.addEventListener("keydown", handleKeyDown);
+        return () => document.removeEventListener("keydown", handleKeyDown);
+    }, [notifOpen, profileOpen]);
+
     function handleNotificationClick(n: (typeof notifications)[number]) {
         markNotificationRead(n.id);
         setNotifOpen(false);
@@ -75,32 +98,47 @@ export default function AdminTopbar() {
     }
 
     return (
-        <div className="sticky top-0 z-20 flex items-center justify-between border-b border-ink/10 bg-white px-10 py-5.5">
-            <div>
-                <h1 className="m-0 font-display text-[21px] font-normal text-ink">{title}</h1>
-                <div className="mt-0.5 font-mono text-[11px] text-grey">{path}</div>
+        <div className="sticky top-0 z-20 flex items-center justify-between gap-4 border-b border-ink/10 bg-white px-5 py-5.5 sm:px-10">
+            <div className="flex min-w-0 items-center gap-3">
+                <button
+                    onClick={openMobileSidebar}
+                    aria-label="Open menu"
+                    className="flex h-9 w-9 flex-none items-center justify-center text-ink/75 transition hover:bg-off lg:hidden"
+                >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                        <path d="M3 6h18M3 12h18M3 18h18" />
+                    </svg>
+                </button>
+                <div className="min-w-0">
+                    <h1 className="m-0 truncate font-display text-[21px] font-normal text-ink">{title}</h1>
+                    <div className="mt-0.5 truncate font-mono text-[11px] text-grey">{path}</div>
+                </div>
             </div>
 
-            <div className="flex items-center gap-4.5">
+            <div className="flex flex-none items-center gap-4.5">
                 <div className="relative" ref={notifRef}>
-                    <button
-                        aria-label="Notifications"
-                        onClick={() => {
-                            setNotifOpen((o) => !o);
-                            setProfileOpen(false);
-                        }}
-                        className="relative flex h-9 w-9 items-center justify-center text-ink/75 transition hover:bg-off"
-                    >
-                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                            <path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
-                            <path d="M13.7 21a2 2 0 0 1-3.4 0" />
-                        </svg>
-                        {unreadCount > 0 && (
-                            <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-alert px-1 font-mono text-[9px] font-semibold text-white">
-                                {unreadCount > 9 ? "9+" : unreadCount}
-                            </span>
-                        )}
-                    </button>
+                    <Tooltip label="Notifications" disabled={notifOpen}>
+                        <button
+                            aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : "Notifications"}
+                            aria-haspopup="true"
+                            aria-expanded={notifOpen}
+                            onClick={() => {
+                                setNotifOpen((o) => !o);
+                                setProfileOpen(false);
+                            }}
+                            className="relative flex h-9 w-9 items-center justify-center text-ink/75 transition hover:bg-off"
+                        >
+                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                                <path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+                                <path d="M13.7 21a2 2 0 0 1-3.4 0" />
+                            </svg>
+                            {unreadCount > 0 && (
+                                <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-alert px-1 font-mono text-[9px] font-semibold text-white">
+                                    {unreadCount > 9 ? "9+" : unreadCount}
+                                </span>
+                            )}
+                        </button>
+                    </Tooltip>
 
                     {notifOpen && (
                         <div className="absolute top-[calc(100%+14px)] right-0 z-70 min-w-[300px] overflow-hidden border border-ink/10 bg-white shadow-modal">
@@ -135,6 +173,8 @@ export default function AdminTopbar() {
 
                 <div className="relative" ref={profileRef}>
                     <button
+                        aria-haspopup="true"
+                        aria-expanded={profileOpen}
                         onClick={() => {
                             setProfileOpen((o) => !o);
                             setNotifOpen(false);
@@ -146,7 +186,7 @@ export default function AdminTopbar() {
                         </span>
                         <span className="hidden text-left sm:block">
                             <span className="block text-[12.5px] font-semibold text-ink">{adminName || "Admin"}</span>
-                            <span className="block font-mono text-[10.5px] tracking-[.04em] text-grey uppercase">Administrator</span>
+                            <span className="block font-mono text-[10.5px] tracking-[.04em] text-grey uppercase">{currentStaffMember?.role ?? "Administrator"}</span>
                         </span>
                     </button>
 
@@ -161,15 +201,17 @@ export default function AdminTopbar() {
                             >
                                 Account Settings
                             </button>
-                            <button
-                                onClick={() => {
-                                    setProfileOpen(false);
-                                    router.push("/admin/staff");
-                                }}
-                                className="block w-full px-4 py-3 text-left text-[13px] text-ink transition hover:bg-off"
-                            >
-                                Staff & Roles
-                            </button>
+                            {canManageStaff(currentStaffMember) && (
+                                <button
+                                    onClick={() => {
+                                        setProfileOpen(false);
+                                        router.push("/admin/staff");
+                                    }}
+                                    className="block w-full px-4 py-3 text-left text-[13px] text-ink transition hover:bg-off"
+                                >
+                                    Staff & Roles
+                                </button>
+                            )}
                             <div className="h-px bg-ink/10" />
                             <button onClick={handleLogout} className="block w-full px-4 py-3 text-left text-[13px] text-alert transition hover:bg-off">
                                 Log out

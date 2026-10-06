@@ -7,35 +7,74 @@ import Toggle from "@/components/ui/Toggle";
 import Tooltip from "@/components/ui/Tooltip";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import Pagination from "@/components/ui/Pagination";
-import { BTN_ADD, ICON_BTN_DANGER } from "@/components/admin/formClasses";
+import SearchField from "@/components/admin/SearchField";
+import { Toolbar, ToolbarFilters, FilterField, ListMeta } from "@/components/admin/Toolbar";
+import { BTN_ADD, ICON_BTN, ICON_BTN_DANGER, FILTER_SELECT } from "@/components/admin/formClasses";
+import ListPanel from "@/components/admin/ListPanel";
+import { EmptyStateRow } from "@/components/admin/EmptyState";
+import { EditIcon, TrashIcon } from "@/components/admin/icons";
 
 const PAGE_SIZE = 10;
+type SortKey = "default" | "active-first";
 
 export default function PromotionsTab() {
     const { promos, togglePromoActive, deletePromo } = useContent();
     const [deleteId, setDeleteId] = useState<number | null>(null);
+    const [search, setSearch] = useState("");
+    const [sort, setSort] = useState<SortKey>("default");
     const [page, setPage] = useState(1);
     const deleting = promos.find((p) => p.id === deleteId) ?? null;
 
-    const totalPages = Math.max(1, Math.ceil(promos.length / PAGE_SIZE));
+    const filtered = useMemo(() => {
+        let list = promos;
+        if (search.trim()) {
+            const q = search.trim().toLowerCase();
+            list = list.filter((p) => p.text.toLowerCase().includes(q) || p.code.toLowerCase().includes(q));
+        }
+        if (sort === "active-first") list = [...list].sort((a, b) => Number(b.active) - Number(a.active));
+        return list;
+    }, [promos, search, sort]);
+
+    // Render-time reset to page 1 on filter change, rather than an effect (see InventoryPage).
+    const filterKey = `${search}|${sort}`;
+    const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
+    if (filterKey !== prevFilterKey) {
+        setPrevFilterKey(filterKey);
+        setPage(1);
+    }
+
+    const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
     const currentPage = Math.min(page, totalPages);
-    const paged = useMemo(() => promos.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE), [promos, currentPage]);
+    const paged = useMemo(() => filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE), [filtered, currentPage]);
 
     return (
         <div>
-            <div className="mb-5 flex items-center justify-between">
-                <h3 className="m-0 text-[15px] font-medium text-ink">Promo Banners</h3>
-                <Link href="/admin/content/promotions/new" className={BTN_ADD}>
-                    + Add Promotion
-                </Link>
-            </div>
+            <Toolbar
+                actions={
+                    <Link href="/admin/content/promotions/new" className={BTN_ADD}>
+                        + Add Promotion
+                    </Link>
+                }
+                filters={
+                    <ToolbarFilters>
+                        <FilterField label="Search" className="min-w-[220px] flex-1">
+                            <SearchField value={search} onChange={setSearch} placeholder="Search by text or code" className="w-full" />
+                        </FilterField>
+                        <FilterField label="Sort by" className="w-full flex-none sm:w-[170px]">
+                            <select value={sort} onChange={(e) => setSort(e.target.value as SortKey)} className={`${FILTER_SELECT} w-full`}>
+                                <option value="default">Default</option>
+                                <option value="active-first">Active First</option>
+                            </select>
+                        </FilterField>
+                    </ToolbarFilters>
+                }
+            />
 
-            <div className="overflow-hidden border border-ink/10 bg-white">
-                <table className="w-full border-collapse">
+            <ListPanel minWidth={560}>
                     <thead>
                         <tr className="bg-off/50">
                             {["Promotion", "Code", "Active", ""].map((h) => (
-                                <th key={h} className="border-b border-ink/10 px-5 py-3.5 text-left font-mono text-[10px] tracking-[.12em] text-grey uppercase">
+                                <th key={h} scope="col" className="border-b border-ink/10 px-5 py-3.5 text-left font-mono text-[11px] tracking-[.12em] text-grey uppercase">
                                     {h}
                                 </th>
                             ))}
@@ -43,11 +82,11 @@ export default function PromotionsTab() {
                     </thead>
                     <tbody>
                         {paged.length === 0 && (
-                            <tr>
-                                <td colSpan={4} className="px-5 py-16 text-center text-[13px] text-grey">
-                                    No promotions yet.
-                                </td>
-                            </tr>
+                            <EmptyStateRow
+                                colSpan={4}
+                                variant={promos.length === 0 ? "empty" : "filtered"}
+                                message={promos.length === 0 ? "No promotions yet." : "No promotions match this search."}
+                            />
                         )}
                         {paged.map((p) => (
                             <tr key={p.id} className="transition hover:bg-off/40">
@@ -59,25 +98,13 @@ export default function PromotionsTab() {
                                 <td className="border-b border-ink/10 px-5 py-3.5">
                                     <div className="flex items-center justify-end gap-2">
                                         <Tooltip label="Edit">
-                                            <Link
-                                                href={`/admin/content/promotions/${p.id}`}
-                                                aria-label="Edit promotion"
-                                                className="flex h-8 w-8 flex-none items-center justify-center rounded-full border border-ink/10 text-ink transition hover:border-ink/25 hover:bg-off"
-                                            >
-                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                                                    <path d="M12 20h9" />
-                                                    <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5Z" />
-                                                </svg>
+                                            <Link href={`/admin/content/promotions/${p.id}`} aria-label="Edit promotion" className={ICON_BTN}>
+                                                <EditIcon />
                                             </Link>
                                         </Tooltip>
                                         <Tooltip label="Remove">
                                             <button onClick={() => setDeleteId(p.id)} aria-label="Remove promotion" className={ICON_BTN_DANGER}>
-                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                                                    <path d="M4 7h16" />
-                                                    <path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
-                                                    <path d="M18 7l-.8 12.1a2 2 0 0 1-2 1.9H8.8a2 2 0 0 1-2-1.9L6 7" />
-                                                    <path d="M10 11v6M14 11v6" />
-                                                </svg>
+                                                <TrashIcon />
                                             </button>
                                         </Tooltip>
                                     </div>
@@ -85,8 +112,9 @@ export default function PromotionsTab() {
                             </tr>
                         ))}
                     </tbody>
-                </table>
-            </div>
+            </ListPanel>
+
+            <ListMeta>Showing {filtered.length} of {promos.length}</ListMeta>
 
             <Pagination page={currentPage} totalPages={totalPages} onChange={setPage} />
 

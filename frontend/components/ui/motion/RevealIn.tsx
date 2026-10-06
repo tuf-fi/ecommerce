@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { BASE_DELAY, EASE, SPRING, VIEWPORT } from "./constants";
+import { BASE_DELAY, EASE, SPRING, VIEWPORT, usePrefersReducedMotion } from "./constants";
 
 export type Direction = "left" | "right" | "bottom" | "top";
 
@@ -29,11 +29,16 @@ export default function RevealIn({
     duration?: number;
     className?: string;
 }) {
+    const prefersReducedMotion = usePrefersReducedMotion();
     const base = offset[direction];
     const scaled = distance
         ? { x: base.x ? (base.x > 0 ? distance : -distance) : undefined, y: base.y ? (base.y > 0 ? distance : -distance) : undefined }
         : base;
     const start = BASE_DELAY + delay;
+
+    if (prefersReducedMotion) {
+        return <div className={className}>{children}</div>;
+    }
 
     return (
         <motion.div

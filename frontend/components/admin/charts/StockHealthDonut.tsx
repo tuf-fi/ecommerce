@@ -1,44 +1,30 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { AdminProduct } from "@/library/admin/types";
-import { stockStatus } from "@/library/admin/products";
+import { productStockStatus } from "@/library/admin/products";
 
-// Vivid, saturated hues chosen to pop off the white card — a deliberate
-// chart-only accent trio (blue/yellow/pink) distinct from the brand's
-// UI accent colors, not a muted tint of success/pink/alert.
+// Deliberate chart-only accent trio, distinct from the brand's UI accent colors.
 const COLOR_IN = "#4C7EF3";
 const COLOR_LOW = "#FFC531";
 const COLOR_OUT = "#FF5C8D";
 
-// A fresh instance per `key` (the parent keys this by the target percentages),
-// so the sweep-in animation replays on every count change with no need to
-// reset state mid-lifecycle — it simply mounts already-at-zero every time.
-function DonutRing({ inTarget, lowTarget, total }: { inTarget: number; lowTarget: number; total: number }) {
-    const [animated, setAnimated] = useState(false);
-    useEffect(() => {
-        const raf = requestAnimationFrame(() => setAnimated(true));
-        return () => cancelAnimationFrame(raf);
-    }, []);
+const DONUT_SIZE = 150;
 
-    const inEnd = animated ? inTarget : 0;
-    const lowEnd = animated ? lowTarget : 0;
+type StockStatus = "in" | "low" | "out";
+type StockRow = { key: StockStatus; label: string; value: number; color: string };
+type TooltipEntry = { value?: number | string; payload?: StockRow };
+
+function StockTooltip({ active, payload, total }: { active?: boolean; payload?: TooltipEntry[]; total: number }) {
+    if (!active || !payload?.length) return null;
+    const row = payload[0];
+    const count = Number(row.value ?? 0);
 
     return (
-        <div
-            className="relative flex h-[140px] w-[140px] flex-none items-center justify-center rounded-full transition-transform hover:scale-105"
-            style={
-                {
-                    "--donut-in-end": `${inEnd}%`,
-                    "--donut-low-end": `${lowEnd}%`,
-                    transition: "--donut-in-end 0.9s cubic-bezier(.4,0,.2,1), --donut-low-end 0.9s cubic-bezier(.4,0,.2,1)",
-                    background: `conic-gradient(${COLOR_IN} 0% var(--donut-in-end), ${COLOR_LOW} var(--donut-in-end) var(--donut-low-end), ${COLOR_OUT} var(--donut-low-end) 100%)`,
-                } as React.CSSProperties
-            }
-        >
-            <div className="flex h-24 w-24 flex-col items-center justify-center rounded-full bg-white">
-                <div className="font-display text-[22px] font-semibold text-ink">{total}</div>
-                <div className="font-mono text-[9px] tracking-[.06em] text-grey uppercase">Products</div>
+        <div className="rounded bg-ink px-3 py-2 whitespace-nowrap shadow-card">
+            <div className="text-[11.5px] text-grey-light">{row.payload?.label}</div>
+            <div className="font-mono text-[12px] font-medium text-white tabular-nums">
+                {count} of {total} ({Math.round((count / total) * 100)}%)
             </div>
         </div>
     );
@@ -49,27 +35,53 @@ export default function StockHealthDonut({
     onSelect,
 }: {
     products: AdminProduct[];
-    onSelect?: (status: "in" | "low" | "out") => void;
+    onSelect?: (status: StockStatus) => void;
 }) {
     const counts = { in: 0, low: 0, out: 0 };
-    products.forEach((p) => counts[stockStatus(p.stock)]++);
+    products.forEach((p) => counts[productStockStatus(p)]++);
     const total = products.length || 1;
-    const inPct = (counts.in / total) * 100;
-    const lowPct = (counts.low / total) * 100;
 
-    const rows = [
-        { key: "in" as const, label: "In Stock", value: counts.in, color: COLOR_IN },
-        { key: "low" as const, label: "Low Stock", value: counts.low, color: COLOR_LOW },
-        { key: "out" as const, label: "Out of Stock", value: counts.out, color: COLOR_OUT },
+    const rows: StockRow[] = [
+        { key: "in", label: "In Stock", value: counts.in, color: COLOR_IN },
+        { key: "low", label: "Low Stock", value: counts.low, color: COLOR_LOW },
+        { key: "out", label: "Out of Stock", value: counts.out, color: COLOR_OUT },
     ];
 
     return (
         <div className="flex flex-col items-center gap-5">
-            <style>{`
-                @property --donut-in-end { syntax: '<percentage>'; inherits: false; initial-value: 0%; }
-                @property --donut-low-end { syntax: '<percentage>'; inherits: false; initial-value: 0%; }
-            `}</style>
-            <DonutRing key={`${inPct}-${lowPct}-${total}`} inTarget={inPct} lowTarget={inPct + lowPct} total={total} />
+            {/* Pie's onClick has no keyboard equivalent, so it's hidden from assistive tech; the legend below is the real control. */}
+            <div aria-hidden className="relative" style={{ width: DONUT_SIZE, height: DONUT_SIZE }}>
+                <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                        <Pie
+                            data={rows}
+                            dataKey="value"
+                            nameKey="label"
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={48}
+                            outerRadius={72}
+                            // Surface shows between slices instead of a stroke.
+                            paddingAngle={2}
+                            stroke="none"
+                            startAngle={90}
+                            endAngle={-270}
+                            animationDuration={900}
+                            onClick={(entry) => onSelect?.((entry as unknown as { payload: StockRow }).payload.key)}
+                        >
+                            {rows.map((row) => (
+                                <Cell key={row.key} fill={row.color} className={onSelect ? "cursor-pointer outline-none" : "outline-none"} />
+                            ))}
+                        </Pie>
+                        <Tooltip content={<StockTooltip total={total} />} wrapperStyle={{ outline: "none", zIndex: 20 }} />
+                    </PieChart>
+                </ResponsiveContainer>
+                <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+                    <div className="font-display text-[22px] font-semibold text-ink">{products.length}</div>
+                    <div className="font-mono text-[9px] tracking-[.06em] text-grey uppercase">Products</div>
+                </div>
+            </div>
+
             <div className="flex w-full flex-col gap-1">
                 {rows.map((r) => (
                     <button

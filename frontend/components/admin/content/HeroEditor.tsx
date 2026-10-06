@@ -1,68 +1,117 @@
 "use client";
 
+import { useState } from "react";
 import { toast } from "sonner";
-import { useContent } from "@/library/content";
+import { HeroContent, useContent } from "@/library/content";
 import Hero from "@/components/sections/Hero";
-import LivePreviewPane from "../LivePreviewPane";
-import { BTN_PRIMARY, FIELD_INPUT, FIELD_LABEL } from "../formClasses";
+import ContentEditorShell from "./ContentEditorShell";
+import { FIELD_INPUT, FIELD_INPUT_INVALID, FIELD_LABEL, FIELD_ERROR } from "../formClasses";
+import { useAsyncAction, wait } from "@/library/useAsyncAction";
+import { validateAndReadImage } from "@/library/image-upload";
 
-export default function HeroEditor({ onBack }: { onBack: () => void }) {
+// Edits stage in local `draft`, written to the shared content store only on handleSave — see PageContentEditor.tsx.
+export default function HeroEditor() {
     const { hero, updateHero } = useContent();
+    const [draft, setDraft] = useState<HeroContent>(hero);
+    const [dirty, setDirty] = useState(false);
+    const [errors, setErrors] = useState<{ headline?: string; cta?: string }>({});
 
-    function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const [saving, handleSave] = useAsyncAction(async () => {
+        const nextErrors: { headline?: string; cta?: string } = {};
+        if (!draft.headline.trim()) nextErrors.headline = "Headline is required.";
+        if (!draft.cta.trim()) nextErrors.cta = "CTA button text is required.";
+        if (nextErrors.headline || nextErrors.cta) {
+            setErrors(nextErrors);
+            toast.error("Fix the highlighted fields before saving.");
+            return;
+        }
+        setErrors({});
+        await wait();
+        updateHero(draft);
+        setDirty(false);
+        toast.success("Hero content saved.");
+    });
+
+    function handleChange(patch: Partial<HeroContent>) {
+        setDraft((d) => ({ ...d, ...patch }));
+        setDirty(true);
+        for (const key of Object.keys(patch) as (keyof HeroContent)[]) {
+            if (errors[key as "headline" | "cta"]) setErrors((er) => ({ ...er, [key]: undefined }));
+        }
+    }
+
+    async function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
         const file = e.target.files?.[0];
         if (!file) return;
-        const reader = new FileReader();
-        reader.onload = () => updateHero({ image: reader.result as string });
-        reader.readAsDataURL(file);
+        const result = await validateAndReadImage(file);
+        if (!result.ok) {
+            toast.error(result.reason);
+            return;
+        }
+        handleChange({ image: result.url });
     }
 
     return (
-        <div>
-            <div className="mb-6 flex items-center justify-between">
-                <button onClick={onBack} className="text-[12.5px] font-medium text-ink hover:text-pink-dark">
-                    ← Back to Pages
-                </button>
-                <button onClick={() => toast.success("Hero content saved.")} className={BTN_PRIMARY + " px-6 py-3"}>
-                    Save Changes
-                </button>
+        <ContentEditorShell
+            title="Hero"
+            backLabel="Pages"
+            backHref="/admin/content?tab=pages"
+            saving={saving}
+            onSave={handleSave}
+            dirty={dirty}
+            preview={<Hero preview previewData={draft} />}
+            featuredImage={
+                <label
+                    htmlFor="hero-image"
+                    className="group relative flex aspect-video w-full cursor-pointer items-center justify-center overflow-hidden border border-dashed border-ink/20 bg-off/50 transition hover:border-ink/35"
+                >
+                    {draft.image ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={draft.image} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                        <span className="text-center font-mono text-[10px] tracking-[.08em] text-ink/60 uppercase">+ Set image</span>
+                    )}
+                    {draft.image && (
+                        <span className="absolute inset-0 flex items-center justify-center bg-navy/60 text-[11.5px] font-medium text-white opacity-0 transition group-hover:opacity-100">
+                            Replace
+                        </span>
+                    )}
+                    <input id="hero-image" type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
+                </label>
+            }
+        >
+            <div className="mb-4">
+                <label htmlFor="hero-headline" className={FIELD_LABEL}>Hero Headline</label>
+                <input
+                    id="hero-headline"
+                    value={draft.headline}
+                    onChange={(e) => handleChange({ headline: e.target.value })}
+                    aria-invalid={errors.headline ? true : undefined}
+                    className={`${FIELD_INPUT} ${errors.headline ? FIELD_INPUT_INVALID : ""}`}
+                />
+                {errors.headline && <p className={FIELD_ERROR}>{errors.headline}</p>}
             </div>
-            <div className="grid grid-cols-1 overflow-hidden border border-ink/10 bg-white lg:grid-cols-2">
-                <div className="p-7">
-                    <h3 className="mb-4 text-lg font-medium text-ink">Hero</h3>
-                    <label className="relative mb-5 block h-40 w-full cursor-pointer overflow-hidden bg-gradient-to-br from-blue-soft to-pink-soft">
-                        {hero.image ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={hero.image} alt="" className="h-full w-full object-cover" />
-                        ) : (
-                            <span className="flex h-full w-full items-center justify-center font-mono text-[12px] text-ink/60">+ Add hero image</span>
-                        )}
-                        <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
-                    </label>
-
-                    <div className="mb-4">
-                        <label className={FIELD_LABEL}>Hero Headline</label>
-                        <input value={hero.headline} onChange={(e) => updateHero({ headline: e.target.value })} className={FIELD_INPUT} />
-                    </div>
-                    <div className="mb-4">
-                        <label className={FIELD_LABEL}>Hero CTA Button Text</label>
-                        <input value={hero.cta} onChange={(e) => updateHero({ cta: e.target.value })} className={FIELD_INPUT} />
-                    </div>
-                    <div>
-                        <label className={FIELD_LABEL}>Hero Subtext</label>
-                        <textarea
-                            rows={2}
-                            value={hero.subtext}
-                            onChange={(e) => updateHero({ subtext: e.target.value })}
-                            className={`${FIELD_INPUT} resize-y leading-relaxed`}
-                        />
-                    </div>
-                </div>
-
-                <LivePreviewPane label="cindyrella.ph">
-                    <Hero preview />
-                </LivePreviewPane>
+            <div className="mb-4">
+                <label htmlFor="hero-cta" className={FIELD_LABEL}>Hero CTA Button Text</label>
+                <input
+                    id="hero-cta"
+                    value={draft.cta}
+                    onChange={(e) => handleChange({ cta: e.target.value })}
+                    aria-invalid={errors.cta ? true : undefined}
+                    className={`${FIELD_INPUT} ${errors.cta ? FIELD_INPUT_INVALID : ""}`}
+                />
+                {errors.cta && <p className={FIELD_ERROR}>{errors.cta}</p>}
             </div>
-        </div>
+            <div>
+                <label htmlFor="hero-subtext" className={FIELD_LABEL}>Hero Subtext</label>
+                <textarea
+                    id="hero-subtext"
+                    rows={2}
+                    value={draft.subtext}
+                    onChange={(e) => handleChange({ subtext: e.target.value })}
+                    className={`${FIELD_INPUT} resize-y leading-relaxed`}
+                />
+            </div>
+        </ContentEditorShell>
     );
 }

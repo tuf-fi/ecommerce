@@ -1,8 +1,10 @@
 export type BadgeTone = "success" | "warning" | "alert" | "neutral";
 
+// The one tone system for inline status pills — route through this rather than hand-rolling tone classes. Don't unify with StatTile.
 const TONE_CLASSES: Record<BadgeTone, string> = {
     success: "bg-success/10 text-success-dark",
-    warning: "bg-pink-soft text-pink-dark",
+    // Amber, not pink — pink is reserved for CTAs/accents; warning needs its own hue.
+    warning: "bg-amber/10 text-amber-dark",
     alert: "bg-alert/10 text-alert",
     neutral: "bg-blue-soft text-ink",
 };

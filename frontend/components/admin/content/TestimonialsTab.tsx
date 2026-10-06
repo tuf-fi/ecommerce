@@ -1,18 +1,25 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useContent } from "@/library/content";
 import { Testimonial } from "@/library/admin/types";
 import Tooltip from "@/components/ui/Tooltip";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import Pagination from "@/components/ui/Pagination";
 import TestimonialModal from "@/components/admin/modals/TestimonialModal";
+import TestimonialViewModal from "@/components/admin/modals/TestimonialViewModal";
 import { BTN_ADD, ICON_BTN, ICON_BTN_DANGER } from "@/components/admin/formClasses";
+import { EditIcon, TrashIcon, BackLink } from "@/components/admin/icons";
+import ReorderButtons from "@/components/admin/ReorderButtons";
+import { Toolbar } from "@/components/admin/Toolbar";
+
+// Shared between the header and every row so their columns always line up exactly.
+const GRID_COLS = "grid-cols-[24px_44px_1fr_160px_100px]";
 
 const PAGE_SIZE = 10;
 
-// Same initials fallback as app/admin/(panel)/staff/page.tsx, for testimonials
-// with no uploaded photo.
+// Same initials fallback as app/admin/(panel)/staff/page.tsx.
 function initials(name: string) {
     return name
         .split(" ")
@@ -23,9 +30,11 @@ function initials(name: string) {
 }
 
 export default function TestimonialsTab() {
+    const router = useRouter();
     const { testimonials, addTestimonial, updateTestimonial, deleteTestimonial, moveTestimonial } = useContent();
     const [editing, setEditing] = useState<Testimonial | null>(null);
     const [modalOpen, setModalOpen] = useState(false);
+    const [viewing, setViewing] = useState<Testimonial | null>(null);
     const [deleteId, setDeleteId] = useState<number | null>(null);
     const deleting = testimonials.find((t) => t.id === deleteId) ?? null;
 
@@ -41,117 +50,108 @@ export default function TestimonialsTab() {
 
     return (
         <div>
-            <div className="mb-5 flex items-center justify-between">
-                <h3 className="m-0 text-[15px] font-medium text-ink">Testimonials</h3>
-                <button
-                    onClick={() => {
-                        setEditing(null);
-                        setModalOpen(true);
-                    }}
-                    className={BTN_ADD}
-                >
-                    + Add Testimonial
-                </button>
+            {/* Reached via its own /admin/content/pages/testimonials route (see
+                the dispatcher in pages/[slug]/page.tsx), same as Hero/About/FAQ
+                — needs its own way back for the same reason those do, since
+                this route renders with no tab bar above it. */}
+            <div className="mb-6">
+                <BackLink label="Pages" onClick={() => router.push("/admin/content?tab=pages")} />
             </div>
 
-            <div className="overflow-hidden border border-ink/10 bg-white">
-                <table className="w-full border-collapse">
-                    <thead>
-                        <tr className="bg-off/50">
-                            {["ID", "Image", "Name", "Company", "Position", "Message", ""].map((h) => (
-                                <th key={h} className="border-b border-ink/10 px-5 py-3.5 text-left font-mono text-[10px] tracking-[.12em] text-grey uppercase">
-                                    {h}
-                                </th>
-                            ))}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {testimonials.length === 0 && (
-                            <tr>
-                                <td colSpan={7} className="px-5 py-16 text-center text-[13px] text-grey">
-                                    No testimonials yet.
-                                </td>
-                            </tr>
-                        )}
-                        {testimonials.map((t, i) => (
-                            <tr key={t.id} className="transition hover:bg-off/40">
-                                <td className="border-b border-ink/10 px-5 py-3">
-                                    <div className="flex items-center gap-2.5">
-                                        <span className="font-mono text-[12px] text-grey">{t.id}</span>
-                                        <div className="flex flex-col gap-0.5 text-grey">
-                                            <button
-                                                disabled={i === 0}
-                                                onClick={() => moveTestimonial(t.id, "up")}
-                                                aria-label="Move up"
-                                                className="flex h-4 w-4 items-center justify-center hover:text-ink disabled:opacity-25"
-                                            >
-                                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                                                    <path d="M18 15l-6-6-6 6" />
-                                                </svg>
-                                            </button>
-                                            <button
-                                                disabled={i === testimonials.length - 1}
-                                                onClick={() => moveTestimonial(t.id, "down")}
-                                                aria-label="Move down"
-                                                className="flex h-4 w-4 items-center justify-center hover:text-ink disabled:opacity-25"
-                                            >
-                                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                                                    <path d="M6 9l6 6 6-6" />
-                                                </svg>
-                                            </button>
+            <div>
+                <Toolbar
+                    actions={
+                        <button
+                            onClick={() => {
+                                setEditing(null);
+                                setModalOpen(true);
+                            }}
+                            className={BTN_ADD}
+                        >
+                            + Add Testimonial
+                        </button>
+                    }
+                />
+
+                {testimonials.length === 0 ? (
+                    <div className="border border-ink/10 bg-white px-5 py-16 text-center text-[13px] text-grey">No testimonials yet.</div>
+                ) : (
+                    <div className="border border-ink/10 bg-white">
+                        <div className={`grid ${GRID_COLS} items-center gap-4 border-b border-ink/10 bg-off/50 px-5 py-3`}>
+                            <span className="col-span-3 font-mono text-[11px] font-bold tracking-[.12em] text-grey uppercase">Name</span>
+                            <span className="font-mono text-[11px] font-bold tracking-[.12em] text-grey uppercase">Company</span>
+                            <span aria-hidden="true" />
+                        </div>
+                        <div className="divide-y divide-ink/10">
+                            {paged.map((t) => {
+                                const i = testimonials.findIndex((x) => x.id === t.id);
+                                return (
+                                    <div
+                                        key={t.id}
+                                        onClick={() => setViewing(t)}
+                                        role="button"
+                                        tabIndex={0}
+                                        aria-label={`View testimonial from ${t.name}`}
+                                        onKeyDown={(e) => {
+                                            if (e.key === "Enter" || e.key === " ") {
+                                                e.preventDefault();
+                                                setViewing(t);
+                                            }
+                                        }}
+                                        className={`grid ${GRID_COLS} cursor-pointer items-center gap-4 px-5 py-4 transition hover:bg-off/40`}
+                                    >
+                                        <ReorderButtons index={i} count={testimonials.length} onMove={(dir) => moveTestimonial(t.id, dir)} />
+                                        <span className="flex h-11 w-11 flex-none items-center justify-center overflow-hidden rounded-full bg-blue-soft font-mono text-[11px] text-ink">
+                                            {t.image ? (
+                                                // eslint-disable-next-line @next/next/no-img-element
+                                                <img src={t.image} alt="" className="h-full w-full object-cover" />
+                                            ) : (
+                                                initials(t.name)
+                                            )}
+                                        </span>
+                                        <div className="min-w-0 truncate text-[14px] font-medium text-ink">{t.name}</div>
+                                        <div className="truncate text-[12px] text-grey">{t.company}</div>
+                                        <div className="flex items-center justify-end gap-1.5">
+                                            <Tooltip label="Edit">
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setEditing(t);
+                                                        setModalOpen(true);
+                                                    }}
+                                                    aria-label="Edit testimonial"
+                                                    className={ICON_BTN}
+                                                >
+                                                    <EditIcon />
+                                                </button>
+                                            </Tooltip>
+                                            <Tooltip label="Remove">
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setDeleteId(t.id);
+                                                    }}
+                                                    aria-label="Remove testimonial"
+                                                    className={ICON_BTN_DANGER}
+                                                >
+                                                    <TrashIcon />
+                                                </button>
+                                            </Tooltip>
                                         </div>
                                     </div>
-                                </td>
-                                <td className="border-b border-ink/10 px-5 py-3">
-                                    <span className="flex h-9 w-9 flex-none items-center justify-center overflow-hidden rounded-full bg-blue-soft font-mono text-[11px] text-ink">
-                                        {t.image ? (
-                                            // eslint-disable-next-line @next/next/no-img-element
-                                            <img src={t.image} alt="" className="h-full w-full object-cover" />
-                                        ) : (
-                                            initials(t.name)
-                                        )}
-                                    </span>
-                                </td>
-                                <td className="max-w-[180px] border-b border-ink/10 px-5 py-3 text-[13.5px] font-medium text-ink">{t.name}</td>
-                                <td className="max-w-[160px] border-b border-ink/10 px-5 py-3 text-[13px] text-grey">{t.company}</td>
-                                <td className="max-w-[160px] border-b border-ink/10 px-5 py-3 text-[13px] text-grey">{t.position}</td>
-                                <td className="max-w-[320px] border-b border-ink/10 px-5 py-3 text-[13px] text-grey">
-                                    <span className="line-clamp-2">{t.message}</span>
-                                </td>
-                                <td className="border-b border-ink/10 px-5 py-3">
-                                    <div className="flex items-center justify-end gap-2">
-                                        <Tooltip label="Edit">
-                                            <button
-                                                onClick={() => {
-                                                    setEditing(t);
-                                                    setModalOpen(true);
-                                                }}
-                                                aria-label="Edit testimonial"
-                                                className={ICON_BTN}
-                                            >
-                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                                                    <path d="M12 20h9" />
-                                                    <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5Z" />
-                                                </svg>
-                                            </button>
-                                        </Tooltip>
-                                        <Tooltip label="Remove">
-                                            <button onClick={() => setDeleteId(t.id)} aria-label="Remove testimonial" className={ICON_BTN_DANGER}>
-                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                                                    <path d="M4 7h16" />
-                                                    <path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
-                                                    <path d="M18 7l-.8 12.1a2 2 0 0 1-2 1.9H8.8a2 2 0 0 1-2-1.9L6 7" />
-                                                    <path d="M10 11v6M14 11v6" />
-                                                </svg>
-                                            </button>
-                                        </Tooltip>
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+                                );
+                            })}
+                        </div>
+                        <div className="border-t border-ink/10 bg-off/50 px-5 py-2.5 text-right font-mono text-[11px] text-grey">
+                            Showing {testimonials.length} of {testimonials.length}
+                        </div>
+                    </div>
+                )}
+
+                <Pagination page={currentPage} totalPages={totalPages} onChange={setPage} />
             </div>
+
+            <TestimonialViewModal open={viewing !== null} testimonial={viewing} onClose={() => setViewing(null)} />
 
             {modalOpen && <TestimonialModal item={editing} onClose={() => setModalOpen(false)} onSave={handleSave} />}
 

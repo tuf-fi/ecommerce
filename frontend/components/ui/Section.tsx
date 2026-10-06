@@ -6,12 +6,7 @@ const tintVar = {
 
 export type SectionTint = keyof typeof tintVar;
 
-// Ease-in-out fade curve (slow → fast → slow), not a linear ramp — reads as a
-// soft, continuous wash flowing into neighboring sections rather than a
-// color card with visible edges. Offsets are fixed px so the curve looks the
-// same regardless of a section's height. Peak mix is capped well under 100%
-// (unlike a plain background-color swap) so this reads as a light accent on
-// top of the page's own gradient, not a competing block of color.
+// Ease-in-out fade curve with fixed px offsets (consistent regardless of height) and a capped peak mix, so it reads as a soft accent, not a color block.
 const FADE = [
     { offset: 0, mix: 0 },
     { offset: 25, mix: 14 },
@@ -36,18 +31,21 @@ export default function SectionContainer({
     children,
     id,
     tint,
+    preview = false,
 }: {
     children: React.ReactNode;
     id?: string;
     tint?: SectionTint;
+    // Drops the full-bleed negative-margin trick; the admin preview pane is already edge to edge (see Hero.tsx).
+    preview?: boolean;
 }) {
     if (tint) {
         return (
             <div
-                className="-mx-8 w-[calc(100%+4rem)] px-8"
+                className={preview ? "" : "-mx-8 w-[calc(100%+4rem)] px-8"}
                 style={{ backgroundImage: fadeGradient(tintVar[tint]) }}
             >
-                <div id={id} className="py-16">
+                <div id={id} className={`py-16 ${preview ? "px-9" : ""}`}>
                     {children}
                 </div>
             </div>
@@ -55,7 +53,7 @@ export default function SectionContainer({
     }
 
     return (
-        <div id={id} className="py-16">
+        <div id={id} className={`py-16 ${preview ? "px-9" : ""}`}>
             {children}
         </div>
     )
