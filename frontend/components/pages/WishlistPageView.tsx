@@ -57,7 +57,7 @@ export default function WishlistPageView({ preview = false, introPreviewData }: 
     if (!mounted) return <WishlistSkeleton preview={preview} />;
 
     return (
-        <div className={preview ? "bg-white px-8 pt-8 pb-16" : "shadow-glow -mx-[var(--gutter)] w-[calc(100%+var(--gutter)*2)] min-h-screen bg-white px-[var(--gutter)] pt-25 pb-20"}>
+        <div className={preview ? "bg-white px-8 pt-8 pb-16" : "shadow-glow -mx-[var(--gutter)] w-[calc(100%+var(--gutter)*2)] min-h-screen bg-white px-[var(--gutter)] pt-[calc(var(--navbar-h,68px)+1.2rem)] pb-20"}>
             <PageIntro pageKey="wishlist" previewData={introPreviewData} />
 
             <SectionTitle num="—" title={`${saved.length} Saved`} />
@@ -117,10 +117,12 @@ export default function WishlistPageView({ preview = false, introPreviewData }: 
 
 function WishlistSkeleton({ preview = false }: { preview?: boolean } = {}) {
     return (
-        <div className={preview ? "bg-white px-8 pt-8 pb-16" : "shadow-glow -mx-[var(--gutter)] w-[calc(100%+var(--gutter)*2)] min-h-screen bg-white px-[var(--gutter)] pt-25 pb-20"}>
+        <div className={preview ? "bg-white px-8 pt-8 pb-16" : "shadow-glow -mx-[var(--gutter)] w-[calc(100%+var(--gutter)*2)] min-h-screen bg-white px-[var(--gutter)] pt-[calc(var(--navbar-h,68px)+1.2rem)] pb-20"}>
             <SkeletonGroup>
-                <Skeleton className="mt-3 h-[34px] w-[70%] max-w-[520px] sm:h-[42px]" />
-                <Skeleton className="mt-3 mb-11 h-[34px] w-[45%] max-w-[340px] sm:h-[42px]" />
+                <div className="mb-8 border-b border-ink/10 pt-[4.75rem] pb-8 md:mb-12 md:pt-[5.5rem] md:pb-10">
+                    <Skeleton className="h-[34px] w-[70%] max-w-[520px] sm:h-[42px]" />
+                    <Skeleton className="mt-3 h-[34px] w-[45%] max-w-[340px] sm:h-[42px]" />
+                </div>
 
                 <div className="mb-11 flex items-center gap-x-5">
                     <Skeleton className="h-[10.5px] w-3" />

@@ -2,10 +2,10 @@
 
 import { PageIntroContent, PageIntroKey, useContent } from "@/library/content";
 
-// Not CMS-editable: fixed short label per route, same role as SectionTitle's "title" but without a number since these routes aren't a sequence.
+// Fixed short label per route (not CMS-editable), shown above the headline.
 const PAGE_LABEL: Record<PageIntroKey, string> = {
     shop: "Shop All",
-    wishlist: "Saved",
+    wishlist: "Your Wishlist",
     cart: "Your Bag",
     journal: "Journal",
 };
@@ -24,18 +24,13 @@ export default function PageIntro({
     const intro = previewData ?? pageIntros[pageKey];
 
     return (
-        <div className={preview ? "px-9 py-6" : "mb-11"}>
-            {!preview && (
-                <div className="mb-4 flex items-center gap-x-5">
-                    <span className="font-mono text-[10.5px] uppercase tracking-[.16em] text-grey">{PAGE_LABEL[pageKey]}</span>
-                    <span className="h-px flex-1 bg-gradient-to-r from-grey-light to-transparent" />
-                </div>
-            )}
+        <div className={preview ? "px-9 py-6" : "mb-8 border-b border-ink/10 pb-8 md:mb-12 md:pb-10"}>
+            {!preview && <span className="mb-8 flex min-h-11 items-center font-mono text-[10.5px] uppercase tracking-[.16em] text-grey md:mb-10">{PAGE_LABEL[pageKey]}</span>}
             <h1
                 className={
                     preview
                         ? "max-w-none text-[26px] leading-[1.1] font-normal"
-                        : "mt-3 max-w-none text-[30px] leading-[1.08] font-normal sm:text-[38px] lg:text-[42px]"
+                        : "mb-0 max-w-none text-[30px] leading-[1.08] font-normal sm:text-[38px] lg:text-[42px]"
                 }
             >
                 {intro.headline} <br />

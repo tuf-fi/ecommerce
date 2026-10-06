@@ -23,7 +23,7 @@ const PAGE_SIZE = 16;
 // actually editable here. `preview` just drops the bleed trick (the admin's box has no real body padding to cancel).
 export default function ShopPageView({ preview = false, introPreviewData }: { preview?: boolean; introPreviewData?: PageIntroContent } = {}) {
     return (
-        <div className={preview ? "bg-white px-8 pt-8 pb-16" : "shadow-glow -mx-[var(--gutter)] w-[calc(100%+var(--gutter)*2)] min-h-screen bg-white px-[var(--gutter)] pt-25 pb-20"}>
+        <div className={preview ? "bg-white px-8 pt-8 pb-16" : "shadow-glow -mx-[var(--gutter)] w-[calc(100%+var(--gutter)*2)] min-h-screen bg-white px-[var(--gutter)] pt-[calc(var(--navbar-h,68px)+1.2rem)] pb-20"}>
             <PageIntro pageKey="shop" previewData={introPreviewData} />
             <Suspense fallback={<ShopGridSkeleton />}>
                 <ShopContent />
