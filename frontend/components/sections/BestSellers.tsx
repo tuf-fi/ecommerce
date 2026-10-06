@@ -12,10 +12,10 @@ import { useContent } from "@/library/content";
 import { getProduct, cheapestSizeId } from "@/library/products";
 
 const layout = [
-    { id: 1, aspect: "aspect-[4/5]", cols: "grid-cols-[2fr_3fr]", imageFirst: true, overlap: "", align: "items-center", dir: "left" },
-    { id: 2, aspect: "aspect-[4/3]", cols: "grid-cols-[3fr_2fr]", imageFirst: false, overlap: "-mt-12", align: "items-center", dir: "bottom" },
-    { id: 3, aspect: "aspect-[3/4]", cols: "grid-cols-[2fr_3fr]", imageFirst: true, overlap: "-mt-4", align: "items-center", dir: "left" },
-    { id: 7, aspect: "aspect-[3/2]", cols: "grid-cols-[2fr_3fr]", imageFirst: false, overlap: "-mt-10", align: "items-end", dir: "right" },
+    { id: 1, aspect: "aspect-[4/5]", cols: "md:grid-cols-[2fr_3fr]", imageFirst: true, overlap: "", align: "md:items-center", dir: "left" },
+    { id: 2, aspect: "aspect-[4/3]", cols: "md:grid-cols-[3fr_2fr]", imageFirst: false, overlap: "md:-mt-12", align: "md:items-center", dir: "bottom" },
+    { id: 3, aspect: "aspect-[3/4]", cols: "md:grid-cols-[2fr_3fr]", imageFirst: true, overlap: "md:-mt-4", align: "md:items-center", dir: "left" },
+    { id: 7, aspect: "aspect-[3/2]", cols: "md:grid-cols-[2fr_3fr]", imageFirst: false, overlap: "md:-mt-10", align: "md:items-end", dir: "right" },
 ] as const;
 
 function ProductImage({ id, aspect, title }: { id: number; aspect: string; title: string }) {
@@ -26,7 +26,7 @@ function ProductImage({ id, aspect, title }: { id: number; aspect: string; title
 
     return (
         <div className={`relative block w-full ${aspect} overflow-hidden border border-ink/10 text-left`}>
-            <Image src={product.image} alt={title} fill sizes="(min-width: 1024px) 60vw, 100vw" className="object-cover" />
+            <Image src={product.image} alt={title} fill sizes="(min-width: 768px) 55vw, 100vw" className="object-cover" />
             <span
                 role="button"
                 tabIndex={0}
@@ -71,7 +71,7 @@ export default function BestSellers(){
         <SectionContainer id="bestsellers">
             <SectionTitle section="bestSellers" title="Best Sellers" />
 
-            <div className="flex flex-col">
+            <div className="flex flex-col gap-14 md:gap-0">
                 {layout.map((row, index) => {
                     const product = getProduct(row.id);
                     if (!product) return null;
@@ -83,21 +83,21 @@ export default function BestSellers(){
                         >
                             <Link
                                 href={`/shop/${row.id}`}
-                                className={`group grid gap-12 ${row.cols} ${row.align} ${row.overlap}`}
+                                className={`group grid grid-cols-1 gap-6 md:gap-12 ${row.cols} ${row.align} ${row.overlap}`}
                             >
                                 {row.imageFirst && <ProductImage id={row.id} aspect={row.aspect} title={product.title} />}
 
-                                <div className={row.imageFirst ? "" : "text-right"}>
+                                <div className={row.imageFirst ? "" : "lg:text-right"}>
                                     <span className="font-mono text-[10px] uppercase tracking-[.16em] text-grey">{product.category}</span>
                                     <span
-                                        className={`mt-2 mb-3 block w-full text-[clamp(20px,2vw,26px)] font-medium text-ink transition-colors group-hover:text-pink-dark ${row.imageFirst ? "text-left" : "text-right"}`}
+                                        className={`mt-2 mb-3 block w-full text-[clamp(20px,2vw,26px)] font-medium text-ink transition-colors group-hover:text-pink-dark ${row.imageFirst ? "text-left" : "text-left lg:text-right"}`}
                                     >
                                         {product.title}
                                     </span>
-                                    <div className={`mb-4 flex ${row.imageFirst ? "" : "justify-end"}`}>
+                                    <div className={`mb-4 flex ${row.imageFirst ? "" : "lg:justify-end"}`}>
                                         <StarRating rating={product.rating} count={product.count} />
                                     </div>
-                                    <div className={`flex items-center gap-4 ${row.imageFirst ? "" : "justify-end"}`}>
+                                    <div className={`flex items-center gap-4 ${row.imageFirst ? "" : "lg:justify-end"}`}>
                                         <span className="font-mono text-sm text-ink">₱{product.price.toLocaleString()}</span>
                                         <button
                                             onClick={(e) => {
@@ -105,14 +105,18 @@ export default function BestSellers(){
                                                 e.stopPropagation();
                                                 handleAddToBag(row.id);
                                             }}
-                                            className="border border-ink/15 px-4 py-2 text-[11.5px] font-semibold uppercase tracking-wide text-ink transition hover:border-pink-btn hover:bg-pink-btn hover:text-white"
+                                            className="border border-ink/15 px-4 py-2.5 text-[11.5px] font-semibold uppercase tracking-wide text-ink transition hover:border-pink-btn hover:bg-pink-btn hover:text-white"
                                         >
                                             Add to Bag
                                         </button>
                                     </div>
                                 </div>
 
-                                {!row.imageFirst && <ProductImage id={row.id} aspect={row.aspect} title={product.title} />}
+                                {!row.imageFirst && (
+                                    <div className="order-first md:order-none">
+                                        <ProductImage id={row.id} aspect={row.aspect} title={product.title} />
+                                    </div>
+                                )}
                             </Link>
                         </RevealIn>
                     );

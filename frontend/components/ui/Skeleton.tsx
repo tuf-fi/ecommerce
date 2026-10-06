@@ -21,3 +21,23 @@ export function SkeletonGroup({ children, className = "" }: { children: React.Re
         </div>
     );
 }
+
+// Bordered table-shaped placeholder for admin lists while the first page loads.
+export function SkeletonTable({ rows = 6, cols = 4 }: { rows?: number; cols?: number }) {
+    return (
+        <SkeletonGroup className="border border-ink/10 bg-white">
+            <div className="flex gap-6 border-b border-ink/10 px-5 py-4">
+                {Array.from({ length: cols }).map((_, c) => (
+                    <Skeleton key={c} tone="soft" className="h-[10px] flex-1" />
+                ))}
+            </div>
+            {Array.from({ length: rows }).map((_, r) => (
+                <div key={r} className="flex items-center gap-6 border-b border-ink/10 px-5 py-4 last:border-b-0">
+                    {Array.from({ length: cols }).map((_, c) => (
+                        <Skeleton key={c} className={`h-3 flex-1 ${c === 0 ? "max-w-[40%]" : ""}`} />
+                    ))}
+                </div>
+            ))}
+        </SkeletonGroup>
+    );
+}

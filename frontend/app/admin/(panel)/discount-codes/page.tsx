@@ -1,5 +1,6 @@
 "use client";
 
+import { SkeletonTable } from "@/components/ui/Skeleton";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { BTN_ADD, BTN_PRIMARY, FIELD_INPUT, FIELD_LABEL, ICON_BTN, ICON_BTN_DANGER, TABLE_HEAD_ROW, TABLE_TD, TABLE_TH } from "@/components/admin/formClasses";
@@ -128,7 +129,7 @@ export default function DiscountCodesPage() {
             </div>
 
             {!codes ? (
-                <p className="text-[13px] text-grey">Loading…</p>
+                <SkeletonTable rows={6} cols={4} />
             ) : codes.length === 0 ? (
                 <p className="text-[13px] text-grey">No codes yet.</p>
             ) : (

@@ -44,11 +44,11 @@ export default function WelcomePromoModal() {
 
     return (
         <Modal open={open} onClose={closeModal} maxWidth="max-w-[600px]">
-            <div className="grid grid-cols-[38%_62%] items-stretch">
-                <div className="relative overflow-hidden">
-                    <Image src={philosophyImage} alt="" fill sizes="230px" className="object-cover" />
+            <div className="grid grid-cols-1 items-stretch sm:grid-cols-[38%_62%]">
+                <div className="relative h-32 overflow-hidden sm:h-auto">
+                    <Image src={philosophyImage} alt="" fill sizes="(min-width: 640px) 230px, 100vw" className="object-cover" />
                 </div>
-                <div className="flex flex-col justify-center gap-4 px-8 py-9">
+                <div className="flex flex-col justify-center gap-4 px-6 py-7 sm:px-8 sm:py-9">
                     <div>
                         <div className="eyebrow mb-3 inline-flex items-center gap-2 text-pink-dark">✦ Welcome Offer</div>
                         <h3 className="mb-2.5 text-[26px] leading-[1.05] font-medium text-ink">10% off, on us.</h3>

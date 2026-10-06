@@ -52,7 +52,7 @@ export default function JournalArticle({ post, preview = false }: { post: BlogPo
     return (
         <article>
             {post.image ? (
-                <div className="relative -mx-8 h-[46vh] max-h-[560px] min-h-[380px] w-[calc(100%+4rem)] overflow-hidden bg-gradient-to-br from-blue-soft to-pink-soft">
+                <div className="relative -mx-[var(--gutter)] h-[46vh] max-h-[560px] min-h-[380px] w-[calc(100%+var(--gutter)*2)] overflow-hidden bg-gradient-to-br from-blue-soft to-pink-soft">
                     {typeof post.image === "string" ? (
                         // eslint-disable-next-line @next/next/no-img-element -- draft images can be a raw data URL string, not a StaticImageData next/image can optimize
                         <img src={post.image} alt={post.title} className="h-full w-full object-cover" />

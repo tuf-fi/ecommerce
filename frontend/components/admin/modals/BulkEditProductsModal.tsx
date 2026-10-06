@@ -36,7 +36,7 @@ export default function BulkEditProductsModal({
 
     return (
         <Modal open={open} onClose={submitting ? () => {} : onClose} maxWidth="max-w-[420px]">
-            <div className="p-8">
+            <div className="p-5 sm:p-8">
                 <h3 className="mb-1 text-xl font-medium text-ink">
                     Bulk Edit {count} Product{count === 1 ? "" : "s"}
                 </h3>

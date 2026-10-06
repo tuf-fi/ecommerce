@@ -18,12 +18,12 @@ export default function Moments(){
         <SectionContainer id="rituals">
             <SectionTitle section="moments" title="Rituals" />
 
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-6">
                 {rituals.map((ritual, index) => (
                     <RevealIn key={ritual.id} direction="bottom" delay={index * STAGGER}>
                         <Link
                             href={`/rituals/${ritual.id}`}
-                            className="group relative isolate flex h-[440px] flex-col justify-end overflow-hidden border border-ink/10 p-9"
+                            className="group relative isolate flex h-[380px] flex-col justify-end overflow-hidden border border-ink/10 p-6 sm:h-[440px] sm:p-9"
                         >
                             {ritual.image && (
                                 <Image

@@ -31,15 +31,15 @@ export default function ContentPage() {
 
     return (
         <div>
-            <div className="mb-8 flex flex-wrap gap-x-7 gap-y-2 border-b border-ink/10 font-mono text-[11px] tracking-[.1em] uppercase">
+            <div className="mb-6 flex gap-x-7 overflow-x-auto border-b border-ink/10 font-mono text-[11px] tracking-[.1em] whitespace-nowrap uppercase [scrollbar-width:none] sm:mb-8 sm:flex-wrap sm:gap-y-2 sm:overflow-visible [&::-webkit-scrollbar]:hidden">
                 {TABS.map((t) => (
                     <button
                         key={t.key}
                         onClick={() => router.push(`/admin/content?tab=${t.key}`)}
-                        className={`relative pb-2.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-1 ${active === t.key ? "text-pink-dark" : "text-grey hover:text-ink"}`}
+                        className={`relative flex-none pb-2.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-1 ${active === t.key ? "text-pink-dark" : "text-grey hover:text-ink"}`}
                     >
                         {t.label}
-                        {active === t.key && <span className="absolute inset-x-0 -bottom-px h-[2px] bg-pink-dark" />}
+                        {active === t.key && <span className="absolute inset-x-0 bottom-0 h-[2px] bg-pink-dark sm:-bottom-px" />}
                     </button>
                 ))}
             </div>
@@ -57,9 +57,9 @@ export default function ContentPage() {
 function ContentPageSkeleton() {
     return (
         <SkeletonGroup>
-            <div className="mb-8 flex flex-wrap gap-x-7 gap-y-2 border-b border-ink/10 pb-2.5">
+            <div className="mb-6 flex gap-x-7 overflow-hidden border-b border-ink/10 pb-2.5 sm:mb-8 sm:flex-wrap sm:gap-y-2">
                 {TABS.map((t) => (
-                    <Skeleton key={t.key} className="h-[11px] w-16" />
+                    <Skeleton key={t.key} className="h-[11px] w-16 flex-none" />
                 ))}
             </div>
 
@@ -73,17 +73,17 @@ function ContentPageSkeleton() {
                     <div key={g}>
                         <Skeleton tone="soft" className="mb-2 h-[10px] w-28" />
                         <div className="overflow-hidden border border-ink/10 bg-white">
-                            <div className="flex items-center gap-6 border-b border-ink/10 bg-off/50 px-5 py-3.5">
+                            <div className="flex items-center gap-4 border-b border-ink/10 bg-off/50 px-3 py-3.5 sm:gap-6 sm:px-5">
                                 <Skeleton className="h-[10px] w-14" />
-                                <Skeleton className="ml-auto h-[10px] w-20" />
-                                <Skeleton className="h-[10px] w-12" />
+                                <Skeleton className="ml-auto hidden h-[10px] w-20 md:block" />
+                                <Skeleton className="ml-auto h-[10px] w-12 md:ml-0" />
                                 <Skeleton className="h-[10px] w-6" />
                             </div>
                             {Array.from({ length: 3 }).map((_, r) => (
-                                <div key={r} className="flex items-center gap-6 border-b border-ink/10 px-5 py-3.5 last:border-b-0">
+                                <div key={r} className="flex items-center gap-4 border-b border-ink/10 px-3 py-3.5 last:border-b-0 sm:gap-6 sm:px-5">
                                     <Skeleton className="h-[13.5px] w-32" />
-                                    <Skeleton tone="soft" className="ml-auto h-[12px] w-16" />
-                                    <Skeleton tone="outline" className="h-4 w-8" />
+                                    <Skeleton tone="soft" className="ml-auto hidden h-[12px] w-16 md:block" />
+                                    <Skeleton tone="outline" className="ml-auto h-4 w-8 md:ml-0" />
                                     <Skeleton tone="soft" className="h-[14px] w-6" />
                                 </div>
                             ))}

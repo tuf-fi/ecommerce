@@ -242,7 +242,7 @@ export default function ContentEditorShell({
 
             {/* Mobile/tablet: panel content stacks below the preview instead of floating fixed. Title lives in the
                 Live Preview bar above (see LivePreviewPane's `label`), not repeated here. */}
-            <div className="mt-6 flex flex-col gap-5 lg:hidden">
+            <div className="mt-6 flex flex-col gap-5 px-5 pb-12 sm:px-10 lg:hidden">
                 <div className="flex items-center justify-between gap-4">
                     <button onClick={handleBack} className="flex items-center gap-1.5 text-[12.5px] font-medium text-ink hover:text-pink-dark">
                         <BackIcon /> Back to {backLabel}

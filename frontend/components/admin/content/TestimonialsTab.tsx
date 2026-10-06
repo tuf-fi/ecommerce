@@ -15,7 +15,7 @@ import ReorderButtons from "@/components/admin/ReorderButtons";
 import { Toolbar } from "@/components/admin/Toolbar";
 
 // Shared between the header and every row so their columns always line up exactly.
-const GRID_COLS = "grid-cols-[24px_44px_1fr_160px_100px]";
+const GRID_COLS = "grid-cols-[24px_44px_1fr_160px_100px] min-w-[620px]";
 
 const PAGE_SIZE = 10;
 
@@ -76,7 +76,7 @@ export default function TestimonialsTab() {
                 {testimonials.length === 0 ? (
                     <div className="border border-ink/10 bg-white px-5 py-16 text-center text-[13px] text-grey">No testimonials yet.</div>
                 ) : (
-                    <div className="border border-ink/10 bg-white">
+                    <div className="overflow-x-auto border border-ink/10 bg-white">
                         <div className={`grid ${GRID_COLS} items-center gap-4 border-b border-ink/10 bg-off/50 px-5 py-3`}>
                             <span className="col-span-3 font-mono text-[11px] font-bold tracking-[.12em] text-grey uppercase">Name</span>
                             <span className="font-mono text-[11px] font-bold tracking-[.12em] text-grey uppercase">Company</span>

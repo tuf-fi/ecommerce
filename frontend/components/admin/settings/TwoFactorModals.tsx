@@ -49,7 +49,7 @@ export function TwoFactorSetupModal({ onClose, onEnabled }: { onClose: () => voi
 
     return (
         <Modal open onClose={close} maxWidth="max-w-[440px]" title="Two-factor authentication">
-            <div className="p-8">
+            <div className="p-5 sm:p-8">
                 {recoveryCodes ? (
                     <>
                         <h3 className="mb-1 text-xl font-medium text-ink">Save your recovery codes</h3>
@@ -135,7 +135,7 @@ export function TwoFactorDisableModal({ onClose, onDisabled }: { onClose: () => 
 
     return (
         <Modal open onClose={busy ? () => {} : onClose} maxWidth="max-w-[420px]" title="Turn off two-factor authentication">
-            <form onSubmit={submit} className="p-8">
+            <form onSubmit={submit} className="p-5 sm:p-8">
                 <h3 className="mb-1 text-xl font-medium text-ink">Turn off two-factor?</h3>
                 <p className="mb-5 text-[12.5px] leading-relaxed text-grey">Confirm with your password and a current code from your authenticator app.</p>
                 <label htmlFor="twofactor-off-password" className={FIELD_LABEL}>Password</label>

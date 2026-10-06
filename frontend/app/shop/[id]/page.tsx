@@ -11,6 +11,7 @@ import { listProductReviews } from "@/library/api/reviews";
 import StarRating from "@/components/ui/StarRating";
 import SectionTitle from "@/components/ui/SectionTitle";
 import Card from "@/components/ui/Card";
+import Skeleton, { SkeletonGroup } from "@/components/ui/Skeleton";
 import Pagination from "@/components/ui/Pagination";
 import ReviewModal from "@/components/modals/ReviewModal";
 
@@ -28,7 +29,7 @@ export default function ProductPage() {
 
     if (!product) {
         return (
-            <div className="-mx-8 w-[calc(100%+4rem)] min-h-screen bg-white px-8 pt-25 pb-20 text-center">
+            <div className="-mx-[var(--gutter)] w-[calc(100%+var(--gutter)*2)] min-h-screen bg-white px-[var(--gutter)] pt-25 pb-20 text-center">
                 <p className="text-[13px] text-grey">
                     That product doesn&apos;t exist.{" "}
                     <Link href="/shop" className="text-pink-dark underline">
@@ -48,6 +49,7 @@ function ProductPageContent({ product }: { product: Product }) {
     const [selectedSizeId, setSelectedSizeId] = useState<string | null>(() => cheapestSizeId(product));
     const [reviewOpen, setReviewOpen] = useState(false);
     const [reviews, setReviews] = useState<Review[]>([]);
+    const [reviewsLoaded, setReviewsLoaded] = useState(false);
 
     useEffect(() => {
         let stale = false;
@@ -55,7 +57,8 @@ function ProductPageContent({ product }: { product: Product }) {
             .then(({ reviews: list }) => !stale && setReviews(list))
             .catch(() => {
                 // Reviews are supplementary; the page works without them.
-            });
+            })
+            .finally(() => !stale && setReviewsLoaded(true));
         return () => {
             stale = true;
         };
@@ -98,12 +101,12 @@ function ProductPageContent({ product }: { product: Product }) {
     );
 
     return (
-        <div className="-mx-8 w-[calc(100%+4rem)] min-h-screen bg-white px-8 pt-25 pb-20">
+        <div className="-mx-[var(--gutter)] w-[calc(100%+var(--gutter)*2)] min-h-screen bg-white px-[var(--gutter)] pt-25 pb-20">
             <Link href="/shop" className="mb-8 inline-block text-[12.5px] font-medium text-grey hover:text-pink-dark">
                 ← Shop
             </Link>
 
-            <div className="grid grid-cols-1 gap-12 lg:grid-cols-[1.05fr_1fr]">
+            <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1.05fr_1fr] lg:gap-12">
                 <div className="group relative aspect-[4/5] overflow-hidden border border-ink/10 lg:sticky lg:top-[calc(var(--navbar-h,72px)+24px)] lg:self-start">
                     <Image
                         src={product.image}
@@ -151,10 +154,10 @@ function ProductPageContent({ product }: { product: Product }) {
                         <p className="mt-2 max-w-[440px] text-sm leading-relaxed text-grey">{product.desc}</p>
                     </div>
 
-                    <div className="my-8 h-px w-full max-w-[300px] bg-ink/10" />
+                    <div className="my-6 h-px w-full max-w-[300px] sm:my-8 bg-ink/10" />
 
                     <div className="flex flex-col gap-5">
-                        <div className="flex max-w-[300px] items-center justify-between">
+                        <div className="flex items-center justify-between sm:max-w-[300px]">
                             <span className="font-mono text-[11px] uppercase tracking-wide text-grey">Quantity</span>
                             <div className="flex items-center border border-ink/15">
                                 <button
@@ -176,7 +179,7 @@ function ProductPageContent({ product }: { product: Product }) {
                         </div>
 
                         {product.sizes && product.sizes.length > 0 && (
-                            <div className="max-w-[300px]">
+                            <div className="sm:max-w-[300px]">
                                 <span className="font-mono text-[11px] uppercase tracking-wide text-grey">Size</span>
                                 <div className="mt-2 flex flex-wrap gap-2">
                                     {product.sizes.map((s) => {
@@ -203,7 +206,7 @@ function ProductPageContent({ product }: { product: Product }) {
                         <button
                             onClick={() => addToCart(product.id, qty, selectedSizeId)}
                             disabled={outOfStock}
-                            className="w-full max-w-[300px] bg-navy py-3.5 text-[13px] font-semibold tracking-wide text-white transition hover:bg-pink-dark disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-navy"
+                            className="w-full bg-navy py-4 sm:max-w-[300px] sm:py-3.5 text-[13px] font-semibold tracking-wide text-white transition hover:bg-pink-dark disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-navy"
                         >
                             {outOfStock ? "Out of Stock" : "Add to Bag"}
                         </button>
@@ -211,10 +214,10 @@ function ProductPageContent({ product }: { product: Product }) {
                 </div>
             </div>
 
-            <div className="mt-20">
+            <div className="mt-14 md:mt-20">
                 <SectionTitle num="—" title="Reviews" />
 
-                <div className="grid grid-cols-1 gap-12 lg:grid-cols-[260px_1fr]">
+                <div className="grid grid-cols-1 gap-8 lg:gap-12 lg:grid-cols-[260px_1fr]">
                     <div className="flex flex-col gap-8 lg:border-r lg:border-ink/10 lg:pr-10">
                         <div>
                             <div className="font-display text-[44px] leading-none text-ink">{avgRating.toFixed(1)}</div>
@@ -264,19 +267,36 @@ function ProductPageContent({ product }: { product: Product }) {
                     </div>
 
                     <div className="min-w-0">
-                        {filteredReviews.length === 0 ? (
+                        {!reviewsLoaded ? (
+                            <SkeletonGroup className="flex flex-col divide-y divide-ink/10">
+                                {Array.from({ length: 3 }).map((_, i) => (
+                                    <div key={i} className="flex gap-3 py-6 first:pt-0 sm:gap-4">
+                                        <Skeleton tone="soft" className="h-10 w-10 flex-none rounded-full" />
+                                        <div className="min-w-0 flex-1">
+                                            <div className="flex items-center justify-between gap-4">
+                                                <Skeleton className="h-[13px] w-28" />
+                                                <Skeleton tone="soft" className="h-[11px] w-16" />
+                                            </div>
+                                            <Skeleton tone="soft" className="mt-2 h-3 w-24" />
+                                            <Skeleton tone="soft" className="mt-3 h-3 w-full max-w-[620px]" />
+                                            <Skeleton tone="soft" className="mt-2 h-3 w-3/5" />
+                                        </div>
+                                    </div>
+                                ))}
+                            </SkeletonGroup>
+                        ) : filteredReviews.length === 0 ? (
                             <p className="text-[13px] text-grey">
                                 {total === 0 ? "No reviews yet — be the first to share your experience." : "No reviews at this rating."}
                             </p>
                         ) : (
                             <div className="flex flex-col divide-y divide-ink/10">
                                 {pagedReviews.map((r) => (
-                                    <div key={r.id} className="flex gap-4 py-6 first:pt-0">
+                                    <div key={r.id} className="flex gap-3 py-6 first:pt-0 sm:gap-4">
                                         <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-navy font-mono text-[11px] text-white">
                                             {initials(r.author)}
                                         </span>
                                         <div className="min-w-0 flex-1">
-                                            <div className="flex items-center justify-between gap-4">
+                                            <div className="flex flex-wrap items-center justify-between gap-x-4">
                                                 <span className="text-[13px] font-medium text-ink">{r.author}</span>
                                                 <span className="font-mono text-[11px] text-grey">{r.date}</span>
                                             </div>
@@ -294,11 +314,11 @@ function ProductPageContent({ product }: { product: Product }) {
             </div>
 
             {related.length > 0 && (
-                <div className="mt-20 border-t border-ink/10 pt-14">
+                <div className="mt-14 border-t border-ink/10 pt-10 md:mt-20 md:pt-14">
                     <SectionTitle num="—" title="You May Also Like" />
-                    <div className="flex flex-wrap gap-5">
+                    <div className="grid grid-cols-1 gap-5 sm:grid-cols-[repeat(auto-fill,minmax(220px,1fr))]">
                         {related.map((rp) => (
-                            <div key={rp.id} className="w-[220px] flex-none">
+                            <div key={rp.id}>
                                 <Card product={rp} />
                             </div>
                         ))}

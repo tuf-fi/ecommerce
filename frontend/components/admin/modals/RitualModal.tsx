@@ -78,10 +78,10 @@ export default function RitualModal({
     return (
         <>
         <Modal open onClose={submitting ? () => {} : requestClose} maxWidth="max-w-[520px]">
-            <div className="sticky top-0 z-10 border-b border-ink/10 bg-white px-8 py-5">
+            <div className="sticky top-0 z-10 border-b border-ink/10 bg-white px-5 sm:px-8 py-5">
                 <h3 className="text-xl font-medium text-ink">{item ? "Edit Ritual" : "Add Ritual"}</h3>
             </div>
-            <div className="px-8 pt-6 pb-4">
+            <div className="px-5 sm:px-8 pt-6 pb-4">
                 {/* Small square, not full-width — the full-size version is already visible on the homepage. */}
                 <div className="mb-5 flex items-center gap-3.5">
                     <label className="relative h-16 w-16 flex-none cursor-pointer overflow-hidden bg-gradient-to-br from-blue-soft to-pink-soft">
@@ -145,7 +145,7 @@ export default function RitualModal({
                     <p className="mt-2 text-[11.5px] text-grey">These are what &quot;Shop Now&quot; adds to the customer&apos;s bag.</p>
                 </div>
             </div>
-            <div className="sticky bottom-0 border-t border-ink/10 bg-white px-8 py-5">
+            <div className="sticky bottom-0 border-t border-ink/10 bg-white px-5 sm:px-8 py-5">
                 <button onClick={handleSubmit} disabled={submitting} className={`w-full ${BTN_PRIMARY}`}>
                     {submitting ? "Saving…" : "Save Ritual"}
                 </button>

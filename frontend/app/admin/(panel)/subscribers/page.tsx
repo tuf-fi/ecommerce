@@ -1,5 +1,6 @@
 "use client";
 
+import { SkeletonTable } from "@/components/ui/Skeleton";
 import { useEffect, useState } from "react";
 import Pager from "@/components/admin/settings/Pager";
 import { FIELD_INPUT, TABLE_HEAD_ROW, TABLE_TD, TABLE_TH } from "@/components/admin/formClasses";
@@ -48,7 +49,7 @@ export default function SubscribersPage() {
             {error ? (
                 <p className="text-[13px] text-alert">{error}</p>
             ) : !result ? (
-                <p className="text-[13px] text-grey">Loading…</p>
+                <SkeletonTable rows={6} cols={4} />
             ) : result.items.length === 0 ? (
                 <p className="text-[13px] text-grey">{search ? "No subscribers match that." : "No subscribers yet."}</p>
             ) : (

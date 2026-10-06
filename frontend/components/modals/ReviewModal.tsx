@@ -50,7 +50,7 @@ export default function ReviewModal({
 
     return (
         <Modal open={open} onClose={submitting ? () => {} : onClose} maxWidth="max-w-[440px]">
-            <div className="p-8">
+            <div className="p-5 sm:p-8">
                 <div className="mb-1 font-mono text-[10px] uppercase tracking-[.16em] text-grey">Write a review</div>
                 <h3 className="mb-5 text-xl font-medium text-ink">Share your experience</h3>
 
@@ -61,7 +61,7 @@ export default function ReviewModal({
                             type="button"
                             aria-label={`${n} star${n > 1 ? "s" : ""}`}
                             onClick={() => setRating(n)}
-                            className={`text-xl ${n <= rating ? "text-gold" : "text-ink/15"}`}
+                            className={`p-1 text-xl ${n <= rating ? "text-gold" : "text-ink/15"}`}
                         >
                             ★
                         </button>

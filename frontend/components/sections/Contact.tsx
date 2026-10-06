@@ -33,18 +33,18 @@ export default function Contact({ preview = false }: { preview?: boolean } = {})
         <SectionContainer id={preview ? undefined : "contact"} preview={preview}>
             <SectionTitle section="contact" title="Contact" />
 
-            <div className="grid grid-cols-[.85fr_1.15fr] gap-14">
-                <div className="relative aspect-[4/5] overflow-hidden border border-ink/10">
+            <div className="grid grid-cols-1 gap-10 lg:grid-cols-[.85fr_1.15fr] lg:gap-14">
+                <div className="relative aspect-[4/3] overflow-hidden border sm:aspect-[16/9] lg:aspect-[4/5] border-ink/10">
                     <Image src={contactImage} alt="Contact" fill sizes="(min-width: 1024px) 40vw, 100vw" className="object-cover" />
                 </div>
 
                 <div className="flex h-full flex-col justify-end">
-                    <h3 className="mb-6 text-[clamp(34px,4.2vw,54px)] leading-[0.98] font-medium text-ink">
+                    <h3 className="mb-6 text-[clamp(32px,4.2vw,54px)] leading-[0.98] font-medium text-ink">
                         {contact.headline} <br/><em className="font-normal text-pink-dark">{contact.accent}</em>
                     </h3>
 
-                    <div className="grid grid-cols-2 divide-x divide-ink/15 border border-ink/15">
-                        <div className="p-9">
+                    <div className="grid grid-cols-1 divide-y divide-ink/15 border border-ink/15 md:grid-cols-2 md:divide-x md:divide-y-0">
+                        <div className="p-6 sm:p-9">
                             <form onSubmit={handleSubmit}>
                                     <h4 className="mb-3 text-lg font-medium text-ink">Send a Message</h4>
 
@@ -63,14 +63,14 @@ export default function Contact({ preview = false }: { preview?: boolean } = {})
                                     <button
                                         type="submit"
                                         disabled={submitting}
-                                        className="w-full bg-navy py-3.5 text-[13px] font-semibold tracking-wide text-white transition hover:bg-pink-dark disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-navy"
+                                        className="w-full bg-navy py-4 text-[13px] font-semibold tracking-wide text-white transition hover:bg-pink-dark disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-navy"
                                     >
                                         {submitting ? "Sending…" : "Contact Us"}
                                     </button>
                             </form>
                         </div>
 
-                        <div className="flex flex-col gap-8 p-9">
+                        <div className="flex flex-col gap-8 p-6 sm:p-9">
                             <div>
                                 <h4 className="mb-1.5 text-lg font-medium text-ink">Contact</h4>
                                 <a href={`mailto:${contactInfo.email}`} className="block text-[13px] text-grey transition hover:text-pink-dark">{contactInfo.email}</a>

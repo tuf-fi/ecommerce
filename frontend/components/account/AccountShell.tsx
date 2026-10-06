@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useStore } from "@/library/store";
 import { useScrollActiveIntoView } from "@/library/useScrollActiveIntoView";
+import Skeleton, { SkeletonGroup } from "@/components/ui/Skeleton";
 
 const navGroups = [
     {
@@ -132,7 +133,8 @@ export default function AccountShell({ children }: { children: React.ReactNode }
         if (sessionChecked && !isLoggedIn) router.replace("/");
     }, [sessionChecked, isLoggedIn, router]);
 
-    if (!sessionChecked || !isLoggedIn) return null;
+    if (!sessionChecked) return <AccountShellSkeleton />;
+    if (!isLoggedIn) return null;
 
     function handleSignOut() {
         signOut();
@@ -140,27 +142,32 @@ export default function AccountShell({ children }: { children: React.ReactNode }
     }
 
     return (
-        <div className="-mx-8 w-[calc(100%+4rem)] pt-[var(--navbar-h,68px)]">
-            <div className="shadow-glow grid grid-cols-1 border-t border-ink/10 bg-white min-h-[calc(100vh-var(--navbar-h,68px)-var(--promo-h,0px))] lg:grid-cols-[260px_1fr]">
+        <div className="-mx-[var(--gutter)] w-[calc(100%+var(--gutter)*2)] pt-[var(--navbar-h,68px)]">
+            <div className="shadow-glow grid grid-cols-1 grid-rows-[auto_1fr] lg:grid-rows-none border-t border-ink/10 bg-white min-h-[calc(100vh-var(--navbar-h,68px)-var(--promo-h,0px))] lg:grid-cols-[260px_1fr]">
                 <aside className="relative z-10 flex min-w-0 flex-col border-b border-ink/10 bg-white lg:border-r lg:border-b-0">
-                    <div ref={navBox} className="thin-scrollbar min-w-0 overflow-x-hidden px-6 pt-10 pb-6 lg:sticky lg:top-[calc(var(--navbar-h,68px)+var(--promo-h,0px))] lg:max-h-[calc(100vh-var(--navbar-h,68px)-var(--promo-h,0px))] lg:overflow-y-auto">
+                    <div ref={navBox} className="thin-scrollbar min-w-0 overflow-x-hidden px-[var(--gutter)] pt-5 pb-0 lg:px-6 lg:pt-10 lg:pb-6 lg:sticky lg:top-[calc(var(--navbar-h,68px)+var(--promo-h,0px))] lg:max-h-[calc(100vh-var(--navbar-h,68px)-var(--promo-h,0px))] lg:overflow-y-auto">
+                        <div className="mb-1 flex items-center justify-between gap-3 border-b border-ink/10 pb-4 lg:mb-4">
                         <Link
                             href="/account"
-                            className="mb-4 flex h-10 min-w-0 items-center gap-3 border-b border-ink/10 pb-4 transition hover:opacity-80"
+                            className="flex h-10 min-w-0 flex-1 items-center gap-3 transition hover:opacity-80"
                         >
                             <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-navy font-mono text-[12.5px] text-white">
                                 {initials(customerName)}
                             </span>
                             <span className="min-w-0 flex-1 truncate text-[13.5px] font-semibold text-ink">{customerName}</span>
                         </Link>
+                        <button onClick={handleSignOut} className="flex-none px-2 py-2.5 text-[12.5px] text-alert transition hover:bg-alert/5 lg:hidden">
+                            Sign Out
+                        </button>
+                        </div>
 
-                        <nav className="flex flex-col gap-4">
+                        <nav data-hscroll className="thin-scrollbar -mx-[var(--gutter)] flex flex-row gap-1 overflow-x-auto px-[var(--gutter)] lg:mx-0 lg:flex-col lg:gap-4 lg:overflow-visible lg:px-0">
                             {navGroups.map((group) => (
-                                <div key={group.label} className="min-w-0">
-                                    <div className="mb-1 px-2.5 font-mono text-[10px] uppercase tracking-[.16em] text-grey">
+                                <div key={group.label} className="flex min-w-0 flex-none flex-row gap-1 lg:block">
+                                    <div className="mb-1 hidden px-2.5 font-mono lg:block text-[10px] uppercase tracking-[.16em] text-grey">
                                         {group.label}
                                     </div>
-                                    <div className="flex flex-col gap-px">
+                                    <div className="flex flex-row gap-1 lg:flex-col lg:gap-px">
                                         {group.items.map((item) => {
                                             const active = pathname === item.href;
                                             return (
@@ -169,7 +176,7 @@ export default function AccountShell({ children }: { children: React.ReactNode }
                                                     href={item.href}
                                                     aria-current={active ? "page" : undefined}
                                                     // Left accent bar + pink tint matches how the rest of the app marks "current".
-                                                    className={`group flex min-w-0 items-center gap-2.5 border-l-2 py-1.5 pr-2.5 pl-3 text-[12.5px] transition ${
+                                                    className={`group flex min-w-0 flex-none items-center gap-2.5 whitespace-nowrap border-b-2 py-3 pr-3 pl-3 text-[12.5px] transition lg:border-b-0 lg:border-l-2 lg:py-1.5 lg:pr-2.5 ${
                                                         active
                                                             ? "border-pink-btn bg-pink-soft/50 font-semibold text-pink-dark"
                                                             : "border-transparent text-grey hover:border-ink/15 hover:bg-off/70 hover:text-ink"
@@ -187,7 +194,7 @@ export default function AccountShell({ children }: { children: React.ReactNode }
                             ))}
                         </nav>
 
-                        <div className="mt-4">
+                        <div className="mt-4 hidden lg:block">
                             <button
                                 onClick={handleSignOut}
                                 className="flex w-full min-w-0 items-center gap-2.5 px-2.5 py-1.5 text-[12.5px] text-alert transition hover:bg-alert/5"
@@ -203,8 +210,35 @@ export default function AccountShell({ children }: { children: React.ReactNode }
                     </div>
                 </aside>
 
-                <div className="min-w-0 pt-10 pr-6 pb-10 pl-6 sm:pr-10 sm:pb-10 sm:pl-10">{children}</div>
+                <div className="min-w-0 px-[var(--gutter)] py-8 sm:px-8 lg:px-10 lg:py-10">{children}</div>
             </div>
+        </div>
+    );
+}
+
+function AccountShellSkeleton() {
+    return (
+        <div className="-mx-[var(--gutter)] w-[calc(100%+var(--gutter)*2)] pt-[var(--navbar-h,68px)]">
+            <SkeletonGroup className="grid min-h-[calc(100vh-var(--navbar-h,68px)-var(--promo-h,0px))] grid-cols-1 grid-rows-[auto_1fr] lg:grid-rows-none border-t border-ink/10 bg-white lg:grid-cols-[260px_1fr]">
+                <div className="border-b border-ink/10 px-[var(--gutter)] pt-5 pb-4 lg:border-r lg:border-b-0 lg:px-6 lg:pt-10">
+                    <div className="mb-4 flex items-center gap-3 border-b border-ink/10 pb-4">
+                        <Skeleton className="h-10 w-10 flex-none rounded-full" />
+                        <Skeleton className="h-[13px] w-32" />
+                    </div>
+                    <div className="flex gap-2 overflow-hidden lg:flex-col lg:gap-3">
+                        {Array.from({ length: 6 }).map((_, i) => (
+                            <Skeleton key={i} tone="soft" className="h-4 w-28 flex-none lg:w-full" />
+                        ))}
+                    </div>
+                </div>
+                <div className="min-w-0 px-[var(--gutter)] py-8 sm:px-8 lg:px-10 lg:py-10">
+                    <div className="mb-6 border-b border-ink/10 pb-4">
+                        <Skeleton className="h-[18px] w-44" />
+                    </div>
+                    <Skeleton tone="outline" className="h-11 w-full max-w-[520px]" />
+                    <Skeleton tone="outline" className="mt-4 h-11 w-full max-w-[520px]" />
+                </div>
+            </SkeletonGroup>
         </div>
     );
 }

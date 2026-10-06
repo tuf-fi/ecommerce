@@ -41,7 +41,7 @@ export default function Catalogue() {
         <SectionContainer id="products">
             <SectionTitle section="catalogue" title="Shop All" />
 
-            <div className="mb-11 flex flex-wrap gap-3">
+            <div className="mb-8 grid grid-cols-1 gap-3 min-[480px]:grid-cols-3 sm:flex sm:flex-wrap md:mb-11">
                 <select
                     value={category}
                     onChange={(e) => setCategory(e.target.value as (typeof CATEGORIES)[number])}
@@ -78,7 +78,7 @@ export default function Catalogue() {
                     <p className="max-w-[280px] text-[13px] leading-relaxed text-grey">No products match these filters.</p>
                 </div>
             ) : (
-                <div id="catalogTop" className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
+                <div id="catalogTop" className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                     {visible.map((product, index) => {
                         // Lead tile gets extra weight, matching BestSellers/Journal/Moments.
                         const featured = index === 0;
@@ -97,10 +97,10 @@ export default function Catalogue() {
                 </div>
             )}
 
-            <RevealIn direction="bottom" delay={0.45} distance={20} className="mt-14 flex justify-center">
+            <RevealIn direction="bottom" delay={0.45} distance={20} className="mt-10 flex justify-center md:mt-14">
                 <Link
                     href="/shop"
-                    className="group/cta inline-flex items-center gap-2.5 bg-navy px-8 py-4 text-[13px] font-semibold uppercase tracking-wide text-white transition hover:bg-pink-dark"
+                    className="group/cta inline-flex w-full items-center justify-center gap-2.5 bg-navy px-8 py-4 sm:w-auto text-[13px] font-semibold uppercase tracking-wide text-white transition hover:bg-pink-dark"
                 >
                     {catalogue.ctaLabel}
                     <span className="transition-transform duration-200 group-hover/cta:translate-x-1">→</span>

@@ -21,9 +21,9 @@ export const ICON_BTN_DANGER = "flex h-11 w-11 flex-none items-center justify-ce
 export const FILTER_SELECT = "admin-select h-11 rounded-none border border-ink/10 bg-white pl-3.5 pr-8 text-[12.5px] text-ink outline-none transition focus:border-navy/30 focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-1";
 
 // Breaks a section out of the root layout's px-8 padding to run edge-to-edge; `4rem` assumes that padding is exactly 2rem on both sides.
-export const FULL_BLEED = "-mx-8 w-[calc(100%+4rem)]";
+export const FULL_BLEED = "-mx-[var(--gutter)] w-[calc(100%+var(--gutter)*2)]";
 
-export const BTN_HEADER_ACTION = "border border-ink/15 px-5 py-2 text-[12.5px] font-semibold tracking-wide text-ink transition hover:border-pink-btn hover:bg-pink-btn hover:text-white";
+export const BTN_HEADER_ACTION = "border border-ink/15 px-5 py-2 whitespace-nowrap text-[12.5px] font-semibold tracking-wide text-ink transition hover:border-pink-btn hover:bg-pink-btn hover:text-white";
 
 // BulkActionBar's own buttons sit on its dark navy bar and need their own white-on-transparent language; don't fold DANGER and SECONDARY into one "outline" class.
 export const BTN_BULK_PRIMARY = "flex h-9 items-center bg-pink-btn px-4 text-[12px] font-semibold text-white transition hover:bg-pink-btn-hover";

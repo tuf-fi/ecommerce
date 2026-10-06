@@ -35,7 +35,7 @@ export default function ConfirmModal({
 
     return (
         <Modal open={open} onClose={confirming ? () => {} : onClose} maxWidth="max-w-[400px]">
-            <div className="p-8 text-center">
+            <div className="p-6 text-center sm:p-8">
                 <span className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-alert/10 text-alert">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                         <path d="M4 7h16" />

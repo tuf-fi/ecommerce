@@ -20,8 +20,8 @@ export default function AboutSection({
         <SectionContainer id={preview ? undefined : "about"} preview={preview}>
             <SectionTitle section="about" title="About" />
 
-            <div className="flex flex-row gap-x-20">
-                <FadeIn delay={0.1} className="left-info flex flex-col gap-y-7">
+            <div className="flex flex-col gap-y-10 lg:flex-row lg:gap-x-20">
+                <FadeIn delay={0.1} className="left-info grid grid-cols-2 gap-x-6 gap-y-7 sm:grid-cols-3 lg:flex lg:flex-none lg:flex-col">
                     <div className="info flex flex-col">
                         <span className="text-[10px] uppercase tracking-[.16em] text-grey">Founder</span>
                         <span className="text-[13px]">{about.founder}</span>
@@ -38,7 +38,7 @@ export default function AboutSection({
                     </div>
                 </FadeIn>
 
-                <div className="right-info w-[98%] text-[clamp(20px,2.3vw,28px)] flex-shrink-1">
+                <div className="right-info min-w-0 flex-1 text-[clamp(20px,2.3vw,28px)]">
                     <TypeReveal
                         segments={[
                             { text: about.lead, className: "italic pink-highlight" },

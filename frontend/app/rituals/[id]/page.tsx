@@ -22,7 +22,7 @@ export default function RitualPage() {
 
     if (!ritual) {
         return (
-            <div className="-mx-8 w-[calc(100%+4rem)] min-h-screen bg-white px-8 pt-25 pb-20 text-center">
+            <div className="-mx-[var(--gutter)] w-[calc(100%+var(--gutter)*2)] min-h-screen bg-white px-8 pt-25 pb-20 text-center">
                 <p className="text-[13px] text-grey">
                     That ritual doesn&apos;t exist.{" "}
                     <Link href="/#rituals" className="text-pink-dark underline">
@@ -43,7 +43,7 @@ export default function RitualPage() {
     }
 
     return (
-        <div className="-mx-8 w-[calc(100%+4rem)] min-h-screen bg-white px-8 pt-25 pb-20">
+        <div className="-mx-[var(--gutter)] w-[calc(100%+var(--gutter)*2)] min-h-screen bg-white px-8 pt-25 pb-20">
             <div className="mx-auto mb-8 max-w-[680px]">
                 <Link href="/#rituals" className="inline-block text-[12.5px] font-medium text-grey transition-colors hover:text-pink-dark">
                     ← Rituals
@@ -51,7 +51,7 @@ export default function RitualPage() {
             </div>
 
             {ritual.image ? (
-                <div className="relative -mx-8 mb-10 h-[46vh] max-h-[560px] min-h-[380px] w-[calc(100%+4rem)] overflow-hidden">
+                <div className="relative -mx-[var(--gutter)] mb-10 h-[46vh] max-h-[560px] min-h-[380px] w-[calc(100%+var(--gutter)*2)] overflow-hidden">
                     <Image
                         src={ritual.image}
                         alt={ritual.title}
@@ -179,13 +179,13 @@ export default function RitualPage() {
 
 function RitualSkeleton() {
     return (
-        <div className="-mx-8 w-[calc(100%+4rem)] min-h-screen bg-white px-8 pt-25 pb-20">
+        <div className="-mx-[var(--gutter)] w-[calc(100%+var(--gutter)*2)] min-h-screen bg-white px-8 pt-25 pb-20">
             <SkeletonGroup>
                 <div className="mx-auto mb-8 max-w-[680px]">
                     <Skeleton className="h-[12.5px] w-24" />
                 </div>
 
-                <div className="relative -mx-8 mb-10 h-[46vh] max-h-[560px] min-h-[380px] w-[calc(100%+4rem)] overflow-hidden">
+                <div className="relative -mx-[var(--gutter)] mb-10 h-[46vh] max-h-[560px] min-h-[380px] w-[calc(100%+var(--gutter)*2)] overflow-hidden">
                     <Skeleton tone="faint" className="absolute inset-0 h-full w-full" />
                     <div className="absolute inset-x-0 bottom-0 px-8 pb-10 sm:px-12">
                         <Skeleton className="mb-3 h-3 w-28" />

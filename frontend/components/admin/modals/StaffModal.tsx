@@ -98,10 +98,10 @@ export default function StaffModal({
     return (
         <>
         <Modal open onClose={submitting ? () => {} : requestClose} maxWidth="max-w-[460px]">
-            <div className="sticky top-0 z-10 border-b border-ink/10 bg-white px-8 py-5">
+            <div className="sticky top-0 z-10 border-b border-ink/10 bg-white px-5 sm:px-8 py-5">
                 <h3 className="text-xl font-medium text-ink">{staff ? "Edit Staff" : "Add Staff"}</h3>
             </div>
-            <div className="px-8 pt-6 pb-4">
+            <div className="px-5 sm:px-8 pt-6 pb-4">
                 <AvatarUploadField photo={photo} onPhotoChange={setPhoto} name={name} placeholder="New staff member" />
 
                 <div className="mb-4">
@@ -138,7 +138,7 @@ export default function StaffModal({
                 </div>
 
                 {/* Paired, not stacked — Access is disabled/derived the moment Role is Administrator (see handleRoleChange). */}
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div>
                         <label htmlFor="staff-role" className={FIELD_LABEL}>Role</label>
                         <select
@@ -200,7 +200,7 @@ export default function StaffModal({
                     </div>
                 )}
             </div>
-            <div className="sticky bottom-0 border-t border-ink/10 bg-white px-8 py-5">
+            <div className="sticky bottom-0 border-t border-ink/10 bg-white px-5 sm:px-8 py-5">
                 <button onClick={handleSubmit} disabled={submitting} className={`w-full ${BTN_PRIMARY}`}>
                     {submitting ? "Saving…" : "Save Staff Account"}
                 </button>
