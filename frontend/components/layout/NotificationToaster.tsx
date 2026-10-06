@@ -16,10 +16,15 @@ function Popup({ n }: { n: CustomerNotification }) {
     const router = useRouter();
     const [fading, setFading] = useState(false);
 
+    // Timers, not animation callbacks: framer pauses animations in background tabs, which left popups stuck on screen.
     useEffect(() => {
-        const t = setTimeout(() => setFading(true), VISIBLE_MS);
-        return () => clearTimeout(t);
-    }, []);
+        const fade = setTimeout(() => setFading(true), VISIBLE_MS);
+        const remove = setTimeout(() => dismissLiveNotification(n.id), VISIBLE_MS + FADE_S * 1000 + 150);
+        return () => {
+            clearTimeout(fade);
+            clearTimeout(remove);
+        };
+    }, [n.id, dismissLiveNotification]);
 
     function open() {
         markNotificationRead(n.id);
@@ -34,7 +39,6 @@ function Popup({ n }: { n: CustomerNotification }) {
             animate={{ opacity: fading ? 0 : 1, x: 0 }}
             exit={{ opacity: 0, x: 40, transition: { duration: 0.2 } }}
             transition={fading ? { opacity: { duration: FADE_S, ease: "linear" } } : { duration: 0.4, ease: EASE }}
-            onAnimationComplete={() => fading && dismissLiveNotification(n.id)}
             role="status"
             className="pointer-events-auto relative w-[min(360px,calc(100vw-2rem))] border border-ink/10 bg-white shadow-modal"
         >
