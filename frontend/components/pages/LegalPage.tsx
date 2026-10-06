@@ -114,7 +114,7 @@ export default function LegalPage({ page, preview = false, embedded = false }: {
     const headed = sections.filter((s) => s.heading);
 
     return (
-        <div className="mx-auto max-w-[1040px] py-4 md:py-10">
+        <div className="mx-auto max-w-[1040px] py-0 md:py-8">
             <BackLink />
             <header className="mb-8 border-b border-ink/10 pb-8 md:mb-12 md:pb-10">
                 <h1 className="m-0 font-display text-[clamp(30px,4.5vw,46px)] leading-[1.05] font-medium tracking-tight text-balance text-ink">{page.name}</h1>
