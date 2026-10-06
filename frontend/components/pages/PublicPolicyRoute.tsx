@@ -18,12 +18,12 @@ export default function PublicPolicyRoute({ slug }: { slug: "privacy-policy" | "
         if (sessionChecked && isLoggedIn) router.replace(`/account/${slug}`);
     }, [sessionChecked, isLoggedIn, slug, router]);
 
-    const shell = "-mx-[var(--gutter)] w-[calc(100%+var(--gutter)*2)] min-h-screen bg-white px-[var(--gutter)] pt-[calc(var(--navbar-h,68px)+1.5rem)] pb-20";
+    const shell = "-mx-[var(--gutter)] w-[calc(100%+var(--gutter)*2)] min-h-screen bg-white px-[var(--gutter)] pt-[calc(var(--navbar-h,68px)+0.5rem)] pb-20 md:pt-[calc(var(--navbar-h,68px)+1.5rem)]";
 
     if (!sessionChecked || isLoggedIn || !page) {
         return (
             <div className={shell}>
-                <SkeletonGroup className="mx-auto max-w-[720px] py-8 md:py-16">
+                <SkeletonGroup className="mx-auto max-w-[720px] py-4 md:py-10">
                     <Skeleton tone="soft" className="h-[10px] w-24" />
                     <Skeleton className="mt-4 mb-10 h-[34px] w-3/5 sm:h-[44px]" />
                     <Skeleton tone="soft" className="mb-3 h-3 w-full" />
