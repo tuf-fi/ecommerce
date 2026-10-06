@@ -269,6 +269,10 @@ const routes: Route[] = [
         findOrder(m[1]).refund = refund;
         return { ok: true, refund };
     }],
+    ["POST", /^\/orders\/([^/]+)\/reopen$/, ({ m }) => {
+        findOrder(m[1]).status = "PENDING";
+        return ok;
+    }],
     ["POST", /^\/orders\/([^/]+)\/cancel$/, ({ m }) => {
         const order = findOrder(m[1]);
         order.status = "CANCELLED";

@@ -33,7 +33,8 @@ export default function OrderModal({
     onStatusChange: (orderNo: string, status: AdminOrderStatus) => void;
     onReviewPayment: (orderNo: string, proofId: number, input: { decision: "approve" } | { decision: "reject"; reason: string }) => Promise<boolean>;
 }) {
-    const { currentStaffMember, refundOrder } = useAdminStore();
+    const { currentStaffMember, refundOrder, reopenOrder } = useAdminStore();
+    const [reopening, setReopening] = useState(false);
     const [refundOpen, setRefundOpen] = useState(false);
     const [refundAmount, setRefundAmount] = useState("");
     const [refundNote, setRefundNote] = useState("");
@@ -262,6 +263,23 @@ export default function OrderModal({
                         )}
                         <div className="flex justify-between"><span>Shipping</span><span className="font-mono text-ink">{(order.shippingFee ?? 0) > 0 ? `₱${order.shippingFee!.toLocaleString()}` : "Free"}</span></div>
                     </div>
+
+                    {order.status === "Cancelled" && !order.paidAt && !refunded && isAdministrator(currentStaffMember) && (
+                        <div className="mt-4">
+                            <p className="mb-2 text-[12px] leading-relaxed text-grey">Cancelled by mistake (for example, the customer was still paying)? Reopening takes the items out of stock again, and fails if they&apos;ve sold since.</p>
+                            <button
+                                disabled={reopening}
+                                onClick={async () => {
+                                    setReopening(true);
+                                    await reopenOrder(order.no);
+                                    setReopening(false);
+                                }}
+                                className="border border-ink/15 px-4 py-2.5 text-[12.5px] text-ink transition hover:bg-off disabled:opacity-50"
+                            >
+                                {reopening ? "Reopening…" : "Reopen this order"}
+                            </button>
+                        </div>
+                    )}
 
                     {refunded ? (
                         <p className="mt-4 border-l-2 border-pink-dark bg-pink-soft/40 px-3 py-2 text-[12.5px] text-ink">

@@ -76,6 +76,9 @@ export async function fetchProofImage(no: string, proofId: number): Promise<stri
     if (!res.ok) throw new Error("Couldn't load the screenshot");
     return URL.createObjectURL(await res.blob());
 }
+// Administrators only. Puts an order the system cancelled (unpaid) back to Pending and takes the stock again.
+export const reopenOrderRequest = (no: string) => api<{ ok: true }>(`/orders/${encodeURIComponent(no)}/reopen`, send("POST"));
+
 // Administrators only. Records money already sent back by hand (GCash / bank); it doesn't move any money itself.
 export const recordRefund = (no: string, input: { amount: number; note?: string }) =>
     api<{ ok: true; refund: { at: string; amount: number; note: string | null } }>(`/orders/${encodeURIComponent(no)}/refund`, send("POST", input));
@@ -178,6 +181,11 @@ export function toCustomerOrder(o: ApiOrder): Order {
         ...trackerFor(o),
         date: o.createdAt.slice(0, 10),
         items: lines,
+        subtotal: o.subtotal,
+        discount: o.discount,
+        shippingFee: o.shippingFee,
+        voucherCode: o.voucherCode ?? undefined,
+        refund: o.refund ?? undefined,
         payment: { state: o.payment.state, rejectReason: o.payment.proofs[0]?.rejectReason ?? null },
     };
 }

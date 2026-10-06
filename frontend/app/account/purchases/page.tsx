@@ -443,6 +443,23 @@ export default function PurchasesPage() {
                                     })}
                                 </div>
 
+                                {o.subtotal !== undefined && ((o.discount ?? 0) > 0 || (o.shippingFee ?? 0) > 0) && (
+                                    <div className="mt-6 flex flex-col gap-1.5 border-t border-ink/10 pt-6 text-[13px] text-grey">
+                                        <div className="flex justify-between"><span>Items</span><span className="font-mono text-ink">₱{o.subtotal.toLocaleString()}</span></div>
+                                        {(o.discount ?? 0) > 0 && (
+                                            <div className="flex justify-between"><span>Discount{o.voucherCode ? ` · ${o.voucherCode}` : ""}</span><span className="font-mono text-ink">−₱{o.discount!.toLocaleString()}</span></div>
+                                        )}
+                                        <div className="flex justify-between"><span>Shipping</span><span className="font-mono text-ink">{(o.shippingFee ?? 0) > 0 ? `₱${o.shippingFee!.toLocaleString()}` : "Free"}</span></div>
+                                    </div>
+                                )}
+
+                                {o.refund && (
+                                    <p className="mt-6 border-l-2 border-pink-dark bg-pink-soft/40 px-3 py-2 text-[13px] text-ink">
+                                        We refunded ₱{o.refund.amount.toLocaleString()} on {new Date(o.refund.at).toLocaleDateString([], { dateStyle: "medium" })}
+                                        {o.refund.note ? ` — ${o.refund.note}` : ""}. It may take a little while to show in your account.
+                                    </p>
+                                )}
+
                                 <div className="mt-6 border-t border-ink/10 pt-6">
                                     <p className="mb-1 font-mono text-[10px] uppercase tracking-[.14em] text-grey">Status</p>
                                     <OrderTracker order={o} />
