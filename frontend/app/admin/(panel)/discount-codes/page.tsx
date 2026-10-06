@@ -123,7 +123,7 @@ export default function DiscountCodesPage() {
                 <p className="max-w-[560px] text-[12.5px] leading-relaxed text-grey">
                     Percentage-off codes customers type at checkout. Each customer can use a code once. Turning a code off stops it working straight away.
                 </p>
-                <button onClick={openAdd} className={BTN_ADD}>
+                <button onClick={openAdd} className={`${BTN_ADD} ml-auto`}>
                     + Add Code
                 </button>
             </div>
