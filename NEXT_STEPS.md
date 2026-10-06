@@ -180,7 +180,7 @@ Built (the design below is what was implemented, with these differences): the pr
 
 ### C3. Refunds (manual) and payment mistakes — refunds DONE
 
-Built: `POST /orders/:no/refund` (administrators; once per order; amount up to the total; audit entry; email to the customer), a Money section with a "Record a refund" form in the order dialog, the refund shown on the order and in the CSV export, and a reminder in the cancel confirmation when the order was already paid. Not built: the `reopen` endpoint for mistaken auto-cancels (step 5) and showing the refund in My Purchase.
+Built: `POST /orders/:no/refund` (administrators; once per order; amount up to the total; audit entry; email to the customer), a Money section with a "Record a refund" form in the order dialog, the refund shown on the order and in the CSV export, and a reminder in the cancel confirmation when the order was already paid. Also built: `POST /orders/:no/reopen` (administrators) with a "Reopen this order" button for orders cancelled while unpaid (it takes the stock again and is refused if the items sold meanwhile or its discount code is no longer valid), and My Purchase now shows the money breakdown and a refund note.
 
 Money is returned outside the system (you send it back through GCash or your bank). The system should *record* that, so nothing is forgotten and the customer is told.
 

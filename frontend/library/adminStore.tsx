@@ -20,7 +20,7 @@ import {
     daysUntilExpiry,
     EXPIRY_WARNING_DAYS,
 } from "./admin/products";
-import { importOrderStatuses, listAllOrders, recordRefund, reviewPaymentProof, setOrderStatus, toAdminOrder } from "./api/orders";
+import { importOrderStatuses, listAllOrders, recordRefund, reopenOrderRequest, reviewPaymentProof, setOrderStatus, toAdminOrder } from "./api/orders";
 import { adminLoginTwoFactor } from "./api/auth";
 import { createStaff, deleteStaff as deleteStaffById, listCustomers, listNotifications, listStaff, markNotificationsRead, StaffInput, StaffPatch, updateStaff as updateStaffById } from "./api/admin";
 import { adminLogin, adminLogout, adminSession, SessionStaff } from "./api/auth";
@@ -94,6 +94,8 @@ type AdminStoreValue = {
     reviewPayment: (orderNo: string, proofId: number, input: { decision: "approve" } | { decision: "reject"; reason: string }) => Promise<boolean>;
     // Administrators only: records money already sent back to the customer by hand.
     refundOrder: (orderNo: string, input: { amount: number; note?: string }) => Promise<boolean>;
+    // Administrators only: puts an unpaid order the system cancelled back to Pending (takes the stock again).
+    reopenOrder: (orderNo: string) => Promise<boolean>;
 
     // Staff
     staff: StaffMember[];
@@ -441,6 +443,21 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
         [reloadOrders]
     );
 
+    const reopenOrder = useCallback(
+        async (orderNo: string) => {
+            try {
+                await reopenOrderRequest(orderNo);
+                toast.success(`${orderNo} is open again and its items are held for the customer.`);
+                await Promise.all([reloadOrders(), reloadInventory()]);
+                return true;
+            } catch (err) {
+                toast.error(errorMessage(err));
+                return false;
+            }
+        },
+        [reloadOrders, reloadInventory]
+    );
+
     const bulkUpdateOrderStatus = useCallback(
         async (orderNos: string[], status: AdminOrderStatus) => {
             if (orderNos.length === 0) return;
@@ -630,6 +647,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
         importOrders,
         reviewPayment,
         refundOrder,
+        reopenOrder,
         staff,
         addStaff,
         updateStaff,

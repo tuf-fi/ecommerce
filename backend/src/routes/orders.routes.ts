@@ -25,6 +25,7 @@ ordersRouter.get("/export.csv", requireStaff, requireSection("orders"), ordersCs
 ordersRouter.post("/import", requireStaff, requireSection("orders"), csvUpload.single("file"), ordersCsv.importOrderStatuses);
 // Recording a refund (money already sent back by hand) is administrators only.
 ordersRouter.post("/:no/refund", requireStaff, requireSection("orders"), requireRole("ADMINISTRATOR"), validate({ params: orderNoParams, body: refunds.refundSchema }), refunds.recordRefund);
+ordersRouter.post("/:no/reopen", requireStaff, requireSection("orders"), requireRole("ADMINISTRATOR"), validate({ params: orderNoParams }), refunds.reopenOrder);
 ordersRouter.post("/:no/cancel", requireCustomer, validate({ params: orderNoParams }), orders.cancelMyOrder);
 ordersRouter.patch("/:no/status", requireStaff, requireSection("orders"), validate({ params: orderNoParams }), orders.setStatus);
 // Screenshots are held in memory just long enough to check and store them: JPG/PNG/WEBP, 3 MB, one file.

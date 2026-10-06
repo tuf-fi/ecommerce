@@ -47,6 +47,7 @@ An administrator can do **everything** in the table above: every inventory, orde
 | **Audit log** | Audit Log (System section of the sidebar): read the record of who changed what (orders, products, staff accounts, discount codes, site content), newest first, filtered by type or id |
 | **Discount codes** | Discount Codes (Sales section): create percentage-off codes (optional last day and total-use limit) and turn them on or off |
 | **Shipping** | Set the flat shipping fee and an optional free-shipping amount (Payment Details → Shipping). Until it is set, shipping is free |
+| **Reopen orders** | Reopen an order that was cancelled while still unpaid (for example by the 24-hour auto-cancel while the customer was paying). It holds the items again and is refused if they have sold out meanwhile. Paid or refunded orders can't be reopened |
 | **Refunds** | Record that a paid order was refunded (amount and note, once per order, never more than the total). It doesn't move any money: you send it back yourself; the customer is emailed |
 
 ### Safeguards, which apply to administrators too
@@ -128,6 +129,7 @@ Visitors **can't** place an order, write a review, or see any account page. Tryi
 | **Reviews** | Write one review per product (they don't have to have bought it). It appears straight away under "First L." |
 | **Account** | Change their name and profile photo, and change their password (they must enter the current one) |
 | **Delivery addresses** | Add, edit and remove addresses (up to 10) and pick one for checkout. Saved on their account, so they appear on any device |
+| **Refund notice** | See the money breakdown (items, discount, shipping) and any refund the shop recorded, in My Purchase |
 | **Wishlist** | Saved on their account and available on any device |
 | **Discount codes** | Type a code in the cart; the server applies it and shows the discount. Each customer can use a given code once. They can also see their own unused, unexpired welcome codes under My Vouchers |
 | **Shipping** | See the shipping fee in the cart before ordering (free if the shop hasn't set one, or the order is over the free-shipping amount) |

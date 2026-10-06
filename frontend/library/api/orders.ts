@@ -76,6 +76,9 @@ export async function fetchProofImage(no: string, proofId: number): Promise<stri
 export const recordRefund = (no: string, input: { amount: number; note?: string }) =>
     api<{ ok: true; refund: { at: string; amount: number; note: string | null } }>(`/orders/${encodeURIComponent(no)}/refund`, send("POST", input));
 
+// Administrators only. Puts an order the system cancelled (unpaid) back to Pending and takes the stock again.
+export const reopenOrderRequest = (no: string) => api<{ ok: true }>(`/orders/${encodeURIComponent(no)}/reopen`, send("POST"));
+
 export const cancelMyOrder = (no: string) => api<{ order: ApiOrder }>(`/orders/${encodeURIComponent(no)}/cancel`, send("POST"));
 
 export type OrderHistoryEntry = {
@@ -159,6 +162,11 @@ export function toCustomerOrder(o: ApiOrder): Order {
         date: o.createdAt.slice(0, 10),
         items: lines,
         payment: { state: o.payment.state, rejectReason: o.payment.proofs[0]?.rejectReason ?? null },
+        subtotal: o.subtotal,
+        discount: o.discount,
+        shippingFee: o.shippingFee,
+        voucherCode: o.voucherCode ?? undefined,
+        refund: o.refund ?? undefined,
     };
 }
 
