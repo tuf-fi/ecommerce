@@ -36,7 +36,7 @@ export default function NotificationBell() {
     }
 
     return (
-        <div ref={ref} className="relative">
+        <div ref={ref} className="relative max-sm:static">
             <Tooltip label="Notifications" disabled={open}>
                 <button
                     aria-label={unreadNotifications > 0 ? `Notifications, ${unreadNotifications} unread` : "Notifications"}
@@ -58,7 +58,7 @@ export default function NotificationBell() {
             </Tooltip>
 
             {open && (
-                <div className="absolute top-full right-0 z-70 mt-2 w-[min(340px,calc(100vw-2rem))] overflow-hidden border border-ink/10 bg-white text-ink shadow-modal">
+                <div className="absolute top-full right-[var(--gutter)] z-70 mt-2 w-[min(340px,calc(100vw-2*var(--gutter)))] overflow-hidden sm:right-0 border border-ink/10 bg-white text-ink shadow-modal">
                     <div className="flex items-center justify-between border-b border-ink/10 px-4 py-3">
                         <span className="font-display text-[13.5px] font-medium">Notifications</span>
                         <div className="flex items-center gap-3">

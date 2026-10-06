@@ -472,7 +472,7 @@ export default function PurchasesPage() {
                                         <p className="font-mono text-[10px] uppercase tracking-[.14em] text-grey">Order Total</p>
                                         <p className="font-mono text-[15px] font-semibold text-ink">₱{o.total.toLocaleString()}</p>
                                     </div>
-                                    <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+                                    <div className="ml-auto flex flex-wrap items-center justify-end gap-x-5 gap-y-2">
                                         {o.status === "To Pay" && (
                                             <button
                                                 onClick={() => setCancelNo(selectedOrderNo)}

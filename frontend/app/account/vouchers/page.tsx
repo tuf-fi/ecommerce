@@ -35,12 +35,12 @@ export default function VouchersPage() {
             {vouchers === null ? (
                 <SkeletonGroup className="flex flex-col gap-3">
                     {Array.from({ length: 3 }).map((_, i) => (
-                        <div key={i} className="flex flex-wrap items-center gap-x-6 gap-y-3 border border-ink/10 p-5">
+                        <div key={i} className="flex flex-col gap-4 border border-ink/10 p-5 sm:flex-row sm:items-center sm:gap-6">
                             <div className="min-w-0 flex-1">
                                 <Skeleton className="h-[14px] w-28" />
                                 <Skeleton tone="soft" className="mt-2 h-3 w-48 max-w-full" />
                             </div>
-                            <div className="flex flex-none items-center gap-4 border-l border-dashed border-ink/15 pl-5">
+                            <div className="flex flex-none items-center justify-between gap-4 border-t border-dashed border-ink/15 pt-4 sm:justify-start sm:border-t-0 sm:border-l sm:pt-0 sm:pl-5">
                                 <Skeleton tone="soft" className="h-[10px] w-24" />
                                 <Skeleton tone="outline" className="h-9 w-24" />
                             </div>
@@ -54,13 +54,13 @@ export default function VouchersPage() {
             ) : (
                 <div className="flex flex-col gap-3">
                     {vouchers.map((v) => (
-                        <div key={v.code} className="flex flex-wrap items-center gap-x-6 gap-y-3 border border-ink/10 p-5 transition hover:border-pink-btn/40">
+                        <div key={v.code} className="flex flex-col gap-4 border border-ink/10 p-5 transition hover:border-pink-btn/40 sm:flex-row sm:items-center sm:gap-6">
                             <div className="min-w-0 flex-1">
-                                <div className="font-mono text-[14px] font-semibold tracking-[.04em] text-ink">{v.code}</div>
+                                <div className="font-mono text-[14px] font-semibold tracking-[.04em] break-all text-ink">{v.code}</div>
                                 <div className="mt-1 text-[12.5px] text-grey">{v.description}</div>
                             </div>
 
-                            <div className="flex flex-none items-center gap-4 border-l border-dashed border-ink/15 pl-5">
+                            <div className="flex flex-none items-center justify-between gap-4 border-t border-dashed border-ink/15 pt-4 sm:justify-start sm:border-t-0 sm:border-l sm:pt-0 sm:pl-5">
                                 <span className="font-mono text-[10px] uppercase tracking-[.14em] text-grey">
                                     {v.expiresAt ? `Expires ${new Date(v.expiresAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}` : "No expiry"}
                                 </span>

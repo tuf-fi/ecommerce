@@ -165,8 +165,8 @@ export default function Navbar(){
                 </Link>
 
                 <div className="flex items-center gap-x-1 border-l border-white/10 pl-4">
-                    <div ref={accountRef} className="relative">
-                        <Tooltip label={isLoggedIn ? "Account" : "Sign in"}>
+                    <div ref={accountRef} className="relative max-sm:static">
+                        <Tooltip label={isLoggedIn ? "Account" : "Sign in"} disabled={accountOpen}>
                             <button
                                 aria-label="Account"
                                 onClick={handleAccountClick}
@@ -180,7 +180,7 @@ export default function Navbar(){
                         </Tooltip>
 
                         {accountOpen && isLoggedIn && (
-                            <div className="absolute right-0 top-full mt-2 w-60 border border-ink/10 bg-white py-2 text-ink shadow-modal">
+                            <div className="absolute right-[var(--gutter)] top-full mt-2 w-[min(15rem,calc(100vw-2*var(--gutter)))] border border-ink/10 bg-white py-2 text-ink shadow-modal sm:right-0 sm:w-60">
                                 <div className="px-4 py-3">
                                     <div className="text-[13px] text-ink">Hi, {customerName}</div>
                                 </div>
