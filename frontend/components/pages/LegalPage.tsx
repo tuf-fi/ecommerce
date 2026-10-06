@@ -78,10 +78,6 @@ function PolicyBody({ sections, anchors = false }: { sections: Section[]; anchor
     );
 }
 
-function Updated({ page }: { page: StaticPage }) {
-    return page.updated ? <p className="font-mono text-[11px] text-grey">Last updated {page.updated}</p> : null;
-}
-
 // Shared by the Privacy Policy, Terms of Service and Shipping & Returns: the public routes, the account area, and the admin live-preview pane (fed unsaved draft content).
 // `embedded` renders inside the signed-in account area, which already supplies the sidebar.
 export default function LegalPage({ page, preview = false, embedded = false }: { page: StaticPage; preview?: boolean; embedded?: boolean }) {
@@ -103,9 +99,6 @@ export default function LegalPage({ page, preview = false, embedded = false }: {
         return (
             <div>
                 <PageHeading>{page.name}</PageHeading>
-                <div className="-mt-2 mb-8">
-                    <Updated page={page} />
-                </div>
                 <PolicyBody sections={sections} />
             </div>
         );
@@ -118,9 +111,6 @@ export default function LegalPage({ page, preview = false, embedded = false }: {
             <BackLink />
             <header className="mb-8 border-b border-ink/10 pb-8 md:mb-12 md:pb-10">
                 <h1 className="m-0 font-display text-[clamp(30px,4.5vw,46px)] leading-[1.05] font-medium tracking-tight text-balance text-ink">{page.name}</h1>
-                <div className="mt-4">
-                    <Updated page={page} />
-                </div>
             </header>
 
             <div className={headed.length > 0 ? "grid gap-10 lg:grid-cols-[200px_minmax(0,1fr)] lg:gap-16" : ""}>
