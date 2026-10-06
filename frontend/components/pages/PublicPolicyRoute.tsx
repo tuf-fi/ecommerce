@@ -18,7 +18,7 @@ export default function PublicPolicyRoute({ slug }: { slug: "privacy-policy" | "
         if (sessionChecked && isLoggedIn) router.replace(`/account/${slug}`);
     }, [sessionChecked, isLoggedIn, slug, router]);
 
-    const shell = "-mx-[var(--gutter)] w-[calc(100%+var(--gutter)*2)] min-h-screen bg-white px-[var(--gutter)] pt-[calc(var(--navbar-h,68px)+0.5rem)] pb-20 md:pt-[calc(var(--navbar-h,68px)+1.5rem)]";
+    const shell = "-mx-[var(--gutter)] w-[calc(100%+var(--gutter)*2)] min-h-screen bg-white px-[var(--gutter)] pt-[calc(var(--navbar-h,68px)+1.2rem)] pb-20";
 
     if (!sessionChecked || isLoggedIn || !page) {
         return (
