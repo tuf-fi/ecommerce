@@ -69,7 +69,7 @@ export default function BestSellers(){
 
     return(
         <SectionContainer id="bestsellers">
-            <SectionTitle num="02" title="Best Sellers" />
+            <SectionTitle section="bestSellers" title="Best Sellers" />
 
             <div className="flex flex-col">
                 {layout.map((row, index) => {

@@ -44,6 +44,14 @@ export type AdminOrder = {
     total?: number;
     // When the order was placed (ISO); `date` above is only for display.
     createdAt?: string;
+    // The money breakdown fixed when the order was placed (total = subtotal - discount + shippingFee).
+    subtotal?: number;
+    discount?: number;
+    shippingFee?: number;
+    voucherCode?: string;
+    paidAt?: string;
+    // Set once an administrator records that the money was sent back.
+    refund?: { at: string; amount: number; note: string | null };
     payment?: { state: PaymentState; proofs: ProofInfo[] };
 };
 

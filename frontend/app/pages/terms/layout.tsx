@@ -5,7 +5,7 @@ const page = STATIC_PAGES.find((p) => p.slug === "terms");
 
 export const metadata: Metadata = {
     title: page?.name ?? "Terms of Service",
-    description: page?.content,
+    description: page?.content.split("\n\n")[0],
 };
 
 export default function TermsLayout({ children }: { children: React.ReactNode }) {

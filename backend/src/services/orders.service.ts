@@ -4,6 +4,10 @@ import { prisma } from "../lib/prisma";
 import { HttpError } from "../lib/httpError";
 import { adjustStockTx } from "./stock.service";
 import { Actor, recordOrderStatus, SYSTEM_ACTOR } from "./audit.service";
+import { getShippingRule, shippingFor } from "./pricing.service";
+import { quoteVoucher, redeemVoucher, releaseVoucher } from "./voucher.service";
+import { emailOrderPlaced, emailOrderStatus } from "./orderEmails.service";
+import { notifyOrderPlaced, notifyOrderStatus } from "./customerNotifications.service";
 
 export const orderInclude = {
   items: { include: { size: { select: { label: true } } }, orderBy: { id: "asc" } },
@@ -70,10 +74,36 @@ async function priceLines(db: Prisma.TransactionClient | typeof prisma, lines: C
     });
 }
 
-export async function checkCart(lines: CartLineInput[]) {
+// What the customer will actually pay: items, the optional code's discount and the shipping fee, all worked out here so
+// the website never has to know the rules. A bad code doesn't fail the quote; it is reported next to it.
+export async function checkCart(lines: CartLineInput[], opts: { voucherCode?: string; customer?: { id: number; email: string } | null } = {}) {
   const priced = await priceLines(prisma, lines);
+  const subtotal = priced.reduce((sum, l) => sum + l.unitPrice * l.qty, 0);
+  const shippingFee = shippingFor(await getShippingRule(), subtotal);
+
+  let discount = 0;
+  let voucher: { code: string; description: string; percentOff: number | null } | null = null;
+  let voucherError: string | null = null;
+  if (opts.voucherCode?.trim()) {
+    if (!opts.customer) voucherError = "Sign in to use a code";
+    else {
+      try {
+        const q = await quoteVoucher(prisma, opts.voucherCode, opts.customer, subtotal);
+        discount = q.discount;
+        voucher = { code: q.voucher.code, description: q.voucher.description, percentOff: q.voucher.percentOff };
+      } catch (err) {
+        voucherError = err instanceof HttpError ? err.message : "That code isn't valid";
+      }
+    }
+  }
   return {
     ok: priced.every((l) => l.qty <= l.available),
+    subtotal,
+    discount,
+    shippingFee,
+    total: subtotal - discount + shippingFee,
+    voucher,
+    voucherError,
     items: priced.map((l) => ({
       productId: l.productId,
       sizeId: l.sizeId,
@@ -94,10 +124,17 @@ export async function createOrder(input: {
   shipName: string;
   shipEmail: string;
   shipAddress: string;
+  customerEmail: string;
+  voucherCode?: string;
 }): Promise<OrderWithItems> {
-  return prisma.$transaction(async (tx) => {
+  const order = await prisma.$transaction(async (tx) => {
     const priced = await priceLines(tx, input.lines);
-    const total = priced.reduce((sum, l) => sum + l.unitPrice * l.qty, 0);
+    const subtotal = priced.reduce((sum, l) => sum + l.unitPrice * l.qty, 0);
+    const shippingFee = shippingFor(await getShippingRule(tx), subtotal);
+    const customer = { id: input.customerId, email: input.customerEmail };
+    const code = input.voucherCode?.trim() ? input.voucherCode : null;
+    const discount = code ? (await quoteVoucher(tx, code, customer, subtotal)).discount : 0;
+    const total = subtotal - discount + shippingFee;
 
     const created = await tx.order.create({
       data: {
@@ -106,6 +143,10 @@ export async function createOrder(input: {
         shipName: input.shipName,
         shipEmail: input.shipEmail,
         shipAddress: input.shipAddress,
+        subtotal,
+        discount,
+        shippingFee,
+        voucherCode: code ? code.trim().toUpperCase() : null,
         total,
         items: {
           create: priced.map((l) => ({
@@ -121,6 +162,8 @@ export async function createOrder(input: {
     const number = `LM-${1000 + created.id}`;
     await tx.order.update({ where: { id: created.id }, data: { number } });
     await recordOrderStatus(tx, { orderId: created.id, from: null, to: "PENDING", actor: input.actor, note: "Order placed" });
+    // Used up inside this transaction: if stock then fails, the code is not spent.
+    if (code) await redeemVoucher(tx, code, customer, created.id);
 
     for (const l of priced) {
       try {
@@ -143,12 +186,15 @@ export async function createOrder(input: {
     }
     return tx.order.findUniqueOrThrow({ where: { id: created.id }, include: orderInclude });
   });
+  void emailOrderPlaced({ number: order.number, shipEmail: order.shipEmail, shipName: order.shipName, total: order.total });
+  void notifyOrderPlaced(order);
+  return order;
 }
 
 // Moves an order to a new status; cancelling returns its units to stock in the same transaction.
 // The UPDATE is conditional on the status we read, so two simultaneous requests can't both apply (or double-restock).
 export async function changeOrderStatus(number: string, to: OrderStatus, actor: Actor, note?: string) {
-  return prisma.$transaction(async (tx) => {
+  const order = await prisma.$transaction(async (tx) => {
     const order = await tx.order.findUnique({ where: { number }, include: orderInclude });
     const isCustomer = actor.type === "CUSTOMER";
     if (!order || (isCustomer && order.customerId !== actor.id)) {
@@ -163,7 +209,7 @@ export async function changeOrderStatus(number: string, to: OrderStatus, actor: 
     if (!TRANSITIONS[order.status].includes(to)) {
       throw new HttpError(409, `A ${order.status.toLowerCase()} order can't be marked ${to.toLowerCase()}`);
     }
-    const moved = await tx.order.updateMany({ where: { id: order.id, status: order.status }, data: { status: to } });
+    const moved = await tx.order.updateMany({ where: { id: order.id, status: order.status }, data: { status: to, ...(to === "PAID" ? { paidAt: new Date() } : {}) } });
     if (moved.count === 0) throw new HttpError(409, "This order was just updated — refresh and try again");
     await recordOrderStatus(tx, { orderId: order.id, from: order.status, to, actor, note });
 
@@ -176,6 +222,8 @@ export async function changeOrderStatus(number: string, to: OrderStatus, actor: 
       });
     }
     if (to === "CANCELLED") {
+      // A code spent on an order that was never paid for goes back to the customer.
+      if (order.status === "PENDING") await releaseVoucher(tx, order.id, order.voucherCode);
       // A screenshot still waiting for review would otherwise sit in the review queue forever.
       await tx.paymentProof.updateMany({
         where: { orderId: order.id, status: "PENDING" },
@@ -195,6 +243,14 @@ export async function changeOrderStatus(number: string, to: OrderStatus, actor: 
     }
     return tx.order.findUniqueOrThrow({ where: { id: order.id }, include: orderInclude });
   });
+  void emailOrderStatus(
+    { number: order.number, shipEmail: order.shipEmail, shipName: order.shipName, total: order.total },
+    to,
+    actor.type === "CUSTOMER",
+    actor.type === "STAFF",
+  );
+  void notifyOrderStatus(order, to, actor.type === "CUSTOMER", actor.type === "STAFF");
+  return order;
 }
 
 // Unpaid orders hold stock (see the policy at the top), so ones nobody pays for are cancelled and their units released.

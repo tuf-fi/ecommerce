@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useStore } from "@/library/store";
+import { useScrollActiveIntoView } from "@/library/useScrollActiveIntoView";
 
 const navGroups = [
     {
@@ -16,6 +17,16 @@ const navGroups = [
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                         <circle cx="12" cy="7" r="4" />
+                    </svg>
+                ),
+            },
+            {
+                label: "Notifications",
+                href: "/account/notifications",
+                icon: (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                        <path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+                        <path d="M13.7 21a2 2 0 0 1-3.4 0" />
                     </svg>
                 ),
             },
@@ -82,10 +93,20 @@ const navGroups = [
             },
             {
                 label: "Privacy Policy",
-                href: "/pages/privacy-policy",
+                href: "/account/privacy-policy",
                 icon: (
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                         <path d="M12 2.5 4 6v6c0 5 3.4 8.2 8 9.5 4.6-1.3 8-4.5 8-9.5V6l-8-3.5Z" />
+                    </svg>
+                ),
+            },
+            {
+                label: "Terms of Service",
+                href: "/account/terms",
+                icon: (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                        <path d="M7 3h8l4 4v14H7V3Z" />
+                        <path d="M10 12h6M10 16h6" />
                     </svg>
                 ),
             },
@@ -99,15 +120,19 @@ function initials(name: string) {
 }
 
 export default function AccountShell({ children }: { children: React.ReactNode }) {
-    const { isLoggedIn, customerName, signOut } = useStore();
+    const { isLoggedIn, sessionChecked, customerName, signOut } = useStore();
     const pathname = usePathname();
     const router = useRouter();
+    const navBox = useRef<HTMLDivElement>(null);
+    const ready = sessionChecked && isLoggedIn;
+    useScrollActiveIntoView(navBox, [pathname, ready]);
 
     useEffect(() => {
-        if (!isLoggedIn) router.replace("/");
-    }, [isLoggedIn, router]);
+        // Wait for the session check: on a reload isLoggedIn starts false, which would otherwise bounce to the homepage.
+        if (sessionChecked && !isLoggedIn) router.replace("/");
+    }, [sessionChecked, isLoggedIn, router]);
 
-    if (!isLoggedIn) return null;
+    if (!sessionChecked || !isLoggedIn) return null;
 
     function handleSignOut() {
         signOut();
@@ -118,7 +143,7 @@ export default function AccountShell({ children }: { children: React.ReactNode }
         <div className="-mx-8 w-[calc(100%+4rem)] pt-[var(--navbar-h,68px)]">
             <div className="shadow-glow grid grid-cols-1 border-t border-ink/10 bg-white min-h-[calc(100vh-var(--navbar-h,68px)-var(--promo-h,0px))] lg:grid-cols-[260px_1fr]">
                 <aside className="relative z-10 flex min-w-0 flex-col border-b border-ink/10 bg-white lg:border-r lg:border-b-0">
-                    <div className="thin-scrollbar min-w-0 overflow-x-hidden px-6 pt-10 pb-6 lg:sticky lg:top-[calc(var(--navbar-h,68px)+var(--promo-h,0px))] lg:max-h-[calc(100vh-var(--navbar-h,68px)-var(--promo-h,0px))] lg:overflow-y-auto">
+                    <div ref={navBox} className="thin-scrollbar min-w-0 overflow-x-hidden px-6 pt-10 pb-6 lg:sticky lg:top-[calc(var(--navbar-h,68px)+var(--promo-h,0px))] lg:max-h-[calc(100vh-var(--navbar-h,68px)-var(--promo-h,0px))] lg:overflow-y-auto">
                         <Link
                             href="/account"
                             className="mb-4 flex h-10 min-w-0 items-center gap-3 border-b border-ink/10 pb-4 transition hover:opacity-80"
@@ -142,6 +167,7 @@ export default function AccountShell({ children }: { children: React.ReactNode }
                                                 <Link
                                                     key={item.href}
                                                     href={item.href}
+                                                    aria-current={active ? "page" : undefined}
                                                     // Left accent bar + pink tint matches how the rest of the app marks "current".
                                                     className={`group flex min-w-0 items-center gap-2.5 border-l-2 py-1.5 pr-2.5 pl-3 text-[12.5px] transition ${
                                                         active

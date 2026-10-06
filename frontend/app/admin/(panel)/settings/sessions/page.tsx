@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { SettingsSection, SettingsList, SettingsRow } from "@/components/admin/settings/SettingsSection";
-import { BTN_HEADER_ACTION } from "@/components/admin/formClasses";
+import { SettingsSection } from "@/components/admin/settings/SettingsSection";
+import { BTN_HEADER_ACTION, TABLE_HEAD_ROW, TABLE_TD, TABLE_TH } from "@/components/admin/formClasses";
+import ListPanel from "@/components/admin/ListPanel";
 import { useMounted } from "@/library/useMounted";
 import Skeleton, { SkeletonGroup } from "@/components/ui/Skeleton";
 import { ApiError } from "@/library/api/client";
@@ -82,31 +83,37 @@ export default function AdminSessionsSettingsPage() {
                 </button>
             }
         >
-            <SettingsList>
-                {sessions.map((s) => (
-                    <SettingsRow
-                        key={s.id}
-                        label={s.current ? `${describeDevice(s.userAgent)} (this device)` : describeDevice(s.userAgent)}
-                        description={
-                            <span className="font-mono text-[11px]">
-                                {s.ip ? `${s.ip} · ` : ""}signed in {timeAgo(s.createdAt)}
-                            </span>
-                        }
-                        control={
-                            s.current ? (
-                                <span className="font-mono text-[11px] text-success-dark">Active now</span>
-                            ) : (
-                                <div className="flex items-center gap-4">
-                                    <span className="font-mono text-[11px] text-grey">Active {timeAgo(s.lastSeenAt)}</span>
-                                    <button onClick={() => signOut(s.id)} className="text-[12px] font-semibold text-pink-dark underline underline-offset-2 hover:text-pink-btn">
+            <ListPanel minWidth={760} footer={<>Showing {sessions.length} of {sessions.length}</>}>
+                <thead>
+                    <tr className={TABLE_HEAD_ROW}>
+                        {["Device", "IP address", "Signed in", "Last active", ""].map((h, i) => (
+                            <th key={i} scope="col" className={TABLE_TH}>{h}</th>
+                        ))}
+                    </tr>
+                </thead>
+                <tbody>
+                    {sessions.map((s) => (
+                        <tr key={s.id}>
+                            <td className={`${TABLE_TD} text-[13px] font-medium whitespace-nowrap text-ink`}>
+                                {describeDevice(s.userAgent)}
+                                {s.current && <span className="ml-2 font-mono text-[10.5px] font-normal tracking-[.1em] text-success-dark uppercase">This device</span>}
+                            </td>
+                            <td className={`${TABLE_TD} font-mono text-[12px] whitespace-nowrap text-grey`}>{s.ip ?? "—"}</td>
+                            <td className={`${TABLE_TD} font-mono text-[12px] whitespace-nowrap text-grey`}>{timeAgo(s.createdAt)}</td>
+                            <td className={`${TABLE_TD} font-mono text-[12px] whitespace-nowrap ${s.current ? "text-success-dark" : "text-grey"}`}>
+                                {s.current ? "Active now" : timeAgo(s.lastSeenAt)}
+                            </td>
+                            <td className={`${TABLE_TD} w-px text-right`}>
+                                {!s.current && (
+                                    <button onClick={() => signOut(s.id)} className="border border-ink/15 px-3.5 py-2 text-[12.5px] whitespace-nowrap text-ink transition hover:bg-off">
                                         Sign out
                                     </button>
-                                </div>
-                            )
-                        }
-                    />
-                ))}
-            </SettingsList>
+                                )}
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </ListPanel>
         </SettingsSection>
     );
 }
@@ -118,15 +125,7 @@ function SessionsSettingsSkeleton() {
                 <Skeleton className="h-[18px] w-36" />
                 <Skeleton tone="outline" className="h-[33px] w-48" />
             </div>
-            {[0, 1].map((i) => (
-                <div key={i} className="flex items-center justify-between gap-4 border-b border-ink/10 py-4">
-                    <div>
-                        <Skeleton className="h-[13.5px] w-40" />
-                        <Skeleton tone="soft" className="mt-1.5 h-3 w-48" />
-                    </div>
-                    <Skeleton tone="soft" className="h-3 w-20" />
-                </div>
-            ))}
+            <Skeleton tone="outline" className="h-[150px] w-full" />
         </SkeletonGroup>
     );
 }

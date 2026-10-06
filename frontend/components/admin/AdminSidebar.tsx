@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
@@ -89,6 +89,54 @@ const NAV_GROUPS: { label: string; items: { href: string; label: string; section
                     </svg>
                 ),
             },
+            {
+                href: "/admin/discount-codes",
+                label: "Discount Codes",
+                section: "payments",
+                icon: (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                        <path d="M20 12 12 20 4 12V4h8l8 8Z" />
+                        <circle cx="8.5" cy="8.5" r="1" />
+                    </svg>
+                ),
+            },
+            {
+                href: "/admin/payments",
+                label: "Payment Details",
+                section: "payments",
+                icon: (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                        <rect x="3" y="6" width="18" height="12" rx="1.5" />
+                        <path d="M3 10h18M7 15h3" />
+                    </svg>
+                ),
+            },
+        ],
+    },
+    {
+        label: "Customers",
+        items: [
+            {
+                href: "/admin/subscribers",
+                label: "Newsletter Subscribers",
+                section: "customers",
+                icon: (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                        <rect x="3" y="5" width="18" height="14" rx="1.5" />
+                        <path d="m3 7 9 6 9-6" />
+                    </svg>
+                ),
+            },
+            {
+                href: "/admin/messages",
+                label: "Contact Messages",
+                section: "customers",
+                icon: (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                        <path d="M4 5h16v11H9l-5 4V5Z" />
+                    </svg>
+                ),
+            },
         ],
     },
     {
@@ -125,6 +173,17 @@ const NAV_GROUPS: { label: string; items: { href: string; label: string; section
     {
         label: "System",
         items: [
+            {
+                href: "/admin/audit-log",
+                label: "Audit Log",
+                section: "payments",
+                icon: (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                        <path d="M7 3h8l4 4v14H7V3Z" />
+                        <path d="M10 12h6M10 16h6" />
+                    </svg>
+                ),
+            },
             {
                 href: "/admin/settings",
                 label: "Settings",
@@ -168,6 +227,19 @@ export default function AdminSidebar() {
     const activeHref = allHrefs
         .filter((href) => pathname === href || pathname.startsWith(href + "/"))
         .sort((a, b) => b.length - a.length)[0];
+
+    const navRef = useRef<HTMLElement>(null);
+    const visibleCount = visibleGroups.reduce((n, g) => n + g.items.length, 0);
+    useEffect(() => {
+        const nav = navRef.current;
+        const link = nav?.querySelector<HTMLElement>('[aria-current="page"]');
+        if (!nav || !link) return;
+        const navRect = nav.getBoundingClientRect();
+        const linkRect = link.getBoundingClientRect();
+        if (linkRect.top < navRect.top || linkRect.bottom > navRect.bottom) {
+            nav.scrollTop += linkRect.top - navRect.top - (navRect.height - linkRect.height) / 2;
+        }
+    }, [activeHref, visibleCount, mobileSidebarOpen, sidebarCollapsed]);
 
     return (
         <>
@@ -234,7 +306,7 @@ export default function AdminSidebar() {
                     </button>
                 </div>
 
-                <nav className="flex min-h-0 flex-1 flex-col overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                <nav ref={navRef} className="flex min-h-0 flex-1 flex-col overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                     {visibleGroups.map((group, i) => (
                         <div key={group.label} className={`mt-5 first:mt-0 ${sidebarCollapsed ? "lg:mt-3 lg:first:mt-0" : ""}`}>
                             <div className={`mb-1 px-3 font-mono text-[11px] tracking-[.14em] text-white/35 uppercase ${sidebarCollapsed ? "lg:hidden" : ""}`}>
@@ -250,6 +322,7 @@ export default function AdminSidebar() {
                                         <Link
                                             href={item.href}
                                             aria-label={item.label}
+                                            aria-current={active ? "page" : undefined}
                                             className={`flex w-full items-center gap-2.5 px-3 py-2.5 text-[13px] whitespace-nowrap transition ${
                                                 sidebarCollapsed ? "lg:justify-center lg:px-0" : ""
                                             } ${

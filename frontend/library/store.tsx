@@ -1,19 +1,21 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { PRODUCTS, getProduct } from "./products";
 import { customerLogout, customerSession, updateCustomerProfile } from "./api/auth";
-import { ApiError } from "./api/client";
+import { API_BASE_URL, ApiError } from "./api/client";
+import { addToWishlist, createAddress, customerLogoutAll, deleteAddress, listAddresses, listMyNotifications, markMyNotificationsRead, mergeWishlist, removeFromWishlist, updateAddress, type CustomerNotification } from "./api/customer";
 import { useProducts } from "./productsStore";
+import { playDing, unlockAudio } from "./notificationSound";
 
 const STORAGE_KEY = "cindyrella_customer_store";
+const SOUND_KEY = "cindyrella_notification_sound";
 
 // What survives a refresh — not activeModal, which is intentionally session-only.
 type PersistedStore = {
     cart: CartMap;
     wishlist: number[];
-    addresses: Address[];
     checkoutAddressId: number | null;
 };
 
@@ -53,10 +55,11 @@ type StoreValue = {
     toggleWishlist: (id: number) => void;
 
     addresses: Address[];
-    addAddress: (label: string, text: string) => void;
-    editAddress: (id: number, label: string, text: string) => void;
-    removeAddress: (id: number) => void;
-    setDefaultAddress: (id: number) => void;
+    // Saved on the server for signed-in customers (so they follow the person to any device).
+    addAddress: (label: string, text: string) => Promise<void>;
+    editAddress: (id: number, label: string, text: string) => Promise<void>;
+    removeAddress: (id: number) => Promise<void>;
+    setDefaultAddress: (id: number) => Promise<void>;
     checkoutAddress: Address | null;
     selectCheckoutAddress: (id: number) => void;
 
@@ -64,6 +67,19 @@ type StoreValue = {
     catalogVersion: number;
 
     isLoggedIn: boolean;
+    notifications: CustomerNotification[];
+    unreadNotifications: number;
+    // Bumps whenever a notification arrives live, so a page showing its own copy of the list can reload it.
+    notificationVersion: number;
+    soundEnabled: boolean;
+    setSoundEnabled: (on: boolean) => void;
+    // Notifications that just arrived, shown as pop-ups in the corner until dismissed or faded out.
+    liveNotifications: CustomerNotification[];
+    dismissLiveNotification: (id: number) => void;
+    markNotificationRead: (id: number) => void;
+    markAllNotificationsRead: () => void;
+    // False until the first sign-in check finishes, so pages can tell "not signed in" from "still checking".
+    sessionChecked: boolean;
     customerName: string;
     customerEmail: string;
     customerAvatar: string;
@@ -71,6 +87,8 @@ type StoreValue = {
     // Saves to the server, then updates the signed-in customer here. Resolves true on success.
     updateProfile: (patch: { name?: string; avatarUrl?: string | null }) => Promise<boolean>;
     signOut: () => void;
+    // Ends every login of this customer on every device, including this one.
+    signOutEverywhere: () => Promise<void>;
 
     showToast: (type: "success" | "error", message: string) => void;
 
@@ -89,6 +107,48 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const [checkoutAddressId, setCheckoutAddressId] = useState<number | null>(null);
     const [hydrated, setHydrated] = useState(false);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [sessionChecked, setSessionChecked] = useState(false);
+    const [notifications, setNotifications] = useState<CustomerNotification[]>([]);
+    const [unreadNotifications, setUnreadNotifications] = useState(0);
+    const [liveNotifications, setLiveNotifications] = useState<CustomerNotification[]>([]);
+    const [notificationVersion, setNotificationVersion] = useState(0);
+    const [soundEnabled, setSoundEnabledState] = useState(true);
+    const soundRef = useRef(true);
+
+    // The sound preference lives in this browser; the first click/tap/keypress also unlocks audio so later dings can play.
+    /* eslint-disable react-hooks/set-state-in-effect */
+    useEffect(() => {
+        try {
+            if (localStorage.getItem(SOUND_KEY) === "off") {
+                soundRef.current = false;
+                setSoundEnabledState(false);
+            }
+        } catch {
+            // Storage blocked: keep the default (sound on).
+        }
+        const unlock = () => {
+            unlockAudio();
+            window.removeEventListener("pointerdown", unlock);
+            window.removeEventListener("keydown", unlock);
+        };
+        window.addEventListener("pointerdown", unlock);
+        window.addEventListener("keydown", unlock);
+        return () => {
+            window.removeEventListener("pointerdown", unlock);
+            window.removeEventListener("keydown", unlock);
+        };
+    }, []);
+    /* eslint-enable react-hooks/set-state-in-effect */
+
+    const setSoundEnabled = useCallback((on: boolean) => {
+        soundRef.current = on;
+        setSoundEnabledState(on);
+        try {
+            localStorage.setItem(SOUND_KEY, on ? "on" : "off");
+        } catch {
+            // Storage blocked: the choice lasts until the page is closed.
+        }
+    }, []);
     const [customerName, setCustomerName] = useState("");
     const [customerEmail, setCustomerEmail] = useState("");
     const [customerAvatar, setCustomerAvatar] = useState("");
@@ -116,8 +176,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
                 const saved = JSON.parse(raw) as Partial<PersistedStore>;
                 if (saved.cart) setCart(saved.cart);
                 if (saved.wishlist) setWishlist(saved.wishlist);
-                // Browsers that saved the old built-in demo address (it was never a customer's own) drop it here.
-                if (saved.addresses) setAddresses(saved.addresses.filter((a) => !a.text.startsWith("221B Kalayaan Ave")));
                 if (saved.checkoutAddressId !== undefined) setCheckoutAddressId(saved.checkoutAddressId);
             }
         } catch {
@@ -137,9 +195,89 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             })
             .catch(() => {
                 // Not signed in (401) or API unreachable — stay signed out.
-            });
+            })
+            .finally(() => setSessionChecked(true));
     }, []);
     /* eslint-enable react-hooks/set-state-in-effect */
+
+    // Once signed in, the server's copy takes over: saved addresses are loaded, and whatever wishlist the browser held as a
+    // visitor is merged into the customer's own (nothing saved before signing in is lost).
+    useEffect(() => {
+        if (!isLoggedIn) return;
+        let alive = true;
+        let local: number[] = [];
+        try {
+            local = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}").wishlist ?? [];
+        } catch {
+            // Unreadable storage: just use the server's list.
+        }
+        mergeWishlist(local)
+            .then((ids) => alive && setWishlist(ids))
+            .catch(() => {});
+        listAddresses()
+            .then((list) => alive && setAddresses(list))
+            .catch(() => {});
+        return () => {
+            alive = false;
+        };
+    }, [isLoggedIn]);
+
+    // The bell is refreshed on sign-in, every minute, and when the tab regains focus.
+    useEffect(() => {
+        if (!isLoggedIn) return;
+        let alive = true;
+        const load = () =>
+            listMyNotifications()
+                .then((r) => {
+                    if (!alive) return;
+                    setNotifications(r.notifications);
+                    setUnreadNotifications(r.unread);
+                })
+                .catch(() => {});
+        void load();
+        // New ones arrive the moment they are created (server-sent events); the refresh below is only a safety net.
+        const source = new EventSource(`${API_BASE_URL}/my/notifications/stream`, { withCredentials: true });
+        source.addEventListener("notification", (e) => {
+            if (!alive) return;
+            const n = JSON.parse((e as MessageEvent<string>).data) as CustomerNotification;
+            setNotifications((list) => [n, ...list.filter((x) => x.id !== n.id)]);
+            setUnreadNotifications((c) => c + 1);
+            setNotificationVersion((v) => v + 1);
+            setLiveNotifications((list) => [n, ...list.filter((x) => x.id !== n.id)].slice(0, 3));
+            if (soundRef.current) playDing();
+        });
+        // A dropped connection reconnects by itself; reload on reconnect to pick up anything sent in the gap.
+        let opened = false;
+        source.onopen = () => {
+            if (opened) void load();
+            opened = true;
+        };
+        const timer = setInterval(load, 60_000);
+        const onFocus = () => void load();
+        window.addEventListener("focus", onFocus);
+        return () => {
+            alive = false;
+            source.close();
+            clearInterval(timer);
+            window.removeEventListener("focus", onFocus);
+        };
+    }, [isLoggedIn]);
+
+    const dismissLiveNotification = useCallback((id: number) => {
+        setLiveNotifications((list) => list.filter((n) => n.id !== id));
+    }, []);
+
+    const markNotificationRead = useCallback((id: number) => {
+        setNotifications((list) => list.map((n) => (n.id === id && !n.read ? { ...n, read: true } : n)));
+        setUnreadNotifications((c) => Math.max(0, c - 1));
+        markMyNotificationsRead([id]).catch(() => {});
+    }, []);
+
+    const markAllNotificationsRead = useCallback(() => {
+        setNotifications((list) => list.map((n) => ({ ...n, read: true })));
+        setUnreadNotifications(0);
+        markMyNotificationsRead().catch(() => {});
+    }, []);
 
     // Persists on every change — cheap to over-write each commit; diffing isn't worth it for this little state.
     useEffect(() => {
@@ -148,14 +286,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             const toSave: PersistedStore = {
                 cart,
                 wishlist,
-                addresses,
                 checkoutAddressId,
             };
             localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
         } catch {
             // Private-browsing/storage-full — losing persistence is better than crashing the app.
         }
-    }, [hydrated, cart, wishlist, addresses, checkoutAddressId]);
+    }, [hydrated, cart, wishlist, checkoutAddressId]);
 
     const addToCart = useCallback(
         (id: number, qty: number = 1, sizeId: string | null = null) => {
@@ -233,39 +370,74 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         (id: number) => {
             const p = getProduct(id);
             const idx = wishlist.indexOf(id);
-            if (idx > -1) {
-                setWishlist(wishlist.filter((x) => x !== id));
-                showToast("success", `Removed "${p?.title ?? "item"}" from wishlist.`);
-            } else {
-                setWishlist([...wishlist, id]);
-                showToast("success", `Saved "${p?.title ?? "item"}" to your wishlist.`);
+            const had = idx > -1;
+            setWishlist(had ? wishlist.filter((x) => x !== id) : [...wishlist, id]);
+            showToast("success", had ? `Removed "${p?.title ?? "item"}" from wishlist.` : `Saved "${p?.title ?? "item"}" to your wishlist.`);
+            if (isLoggedIn) {
+                (had ? removeFromWishlist(id) : addToWishlist(id)).catch(() => {
+                    // Put it back the way it was and say so.
+                    setWishlist((w) => (had ? [...w, id] : w.filter((x) => x !== id)));
+                    showToast("error", "Couldn't save that to your account. Please try again.");
+                });
             }
         },
-        [wishlist, showToast]
+        [wishlist, showToast, isLoggedIn]
     );
 
-    const addAddress = useCallback((label: string, text: string) => {
-        setAddresses((a) => [...a, { id: Date.now(), label, text, isDefault: a.length === 0 }]);
-    }, []);
+    const addressError = (err: unknown) => showToast("error", err instanceof ApiError ? err.message : "Couldn't save your address. Please try again.");
 
-    const editAddress = useCallback((id: number, label: string, text: string) => {
-        setAddresses((a) => a.map((x) => (x.id === id ? { ...x, label, text } : x)));
-    }, []);
-
-    const removeAddress = useCallback((id: number) => {
-        setAddresses((a) => {
-            const removingDefault = a.find((x) => x.id === id)?.isDefault;
-            const next = a.filter((x) => x.id !== id);
-            if (removingDefault && next.length > 0 && !next.some((x) => x.isDefault)) {
-                next[0] = { ...next[0], isDefault: true };
+    // Every change is made on the server and then the list is re-read, so what's shown is always what's saved.
+    const addAddress = useCallback(
+        async (label: string, text: string) => {
+            try {
+                await createAddress({ label, text });
+                setAddresses(await listAddresses());
+            } catch (err) {
+                addressError(err);
             }
-            return next;
-        });
-    }, []);
+        },
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- addressError only closes over showToast
+        [showToast]
+    );
 
-    const setDefaultAddress = useCallback((id: number) => {
-        setAddresses((a) => a.map((x) => ({ ...x, isDefault: x.id === id })));
-    }, []);
+    const editAddress = useCallback(
+        async (id: number, label: string, text: string) => {
+            try {
+                await updateAddress(id, { label, text });
+                setAddresses(await listAddresses());
+            } catch (err) {
+                addressError(err);
+            }
+        },
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- addressError only closes over showToast
+        [showToast]
+    );
+
+    const removeAddress = useCallback(
+        async (id: number) => {
+            try {
+                await deleteAddress(id);
+                setAddresses(await listAddresses());
+            } catch (err) {
+                addressError(err);
+            }
+        },
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- addressError only closes over showToast
+        [showToast]
+    );
+
+    const setDefaultAddress = useCallback(
+        async (id: number) => {
+            try {
+                await updateAddress(id, { isDefault: true });
+                setAddresses(await listAddresses());
+            } catch (err) {
+                addressError(err);
+            }
+        },
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- addressError only closes over showToast
+        [showToast]
+    );
 
     const selectCheckoutAddress = useCallback((id: number) => {
         setCheckoutAddressId(id);
@@ -283,14 +455,35 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         [showToast]
     );
 
-    const signOut = useCallback(() => {
-        customerLogout().catch(() => {});
+    // Forget everything personal in this browser: a shared computer shouldn't keep the last customer's addresses or wishlist.
+    const forgetCustomer = useCallback(() => {
         setIsLoggedIn(false);
         setCustomerName("");
         setCustomerEmail("");
         setCustomerAvatar("");
+        setAddresses([]);
+        setWishlist([]);
+        setCheckoutAddressId(null);
+        setNotifications([]);
+        setUnreadNotifications(0);
+        setLiveNotifications([]);
+    }, []);
+
+    const signOut = useCallback(() => {
+        customerLogout().catch(() => {});
+        forgetCustomer();
         showToast("success", "Signed out.");
-    }, [showToast]);
+    }, [forgetCustomer, showToast]);
+
+    const signOutEverywhere = useCallback(async () => {
+        try {
+            await customerLogoutAll();
+            forgetCustomer();
+            showToast("success", "Signed out of all devices.");
+        } catch {
+            showToast("error", "Couldn't sign you out everywhere. Please try again.");
+        }
+    }, [forgetCustomer, showToast]);
 
     const updateProfile = useCallback(
         async (patch: { name?: string; avatarUrl?: string | null }) => {
@@ -336,11 +529,22 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         selectCheckoutAddress,
         catalogVersion,
         isLoggedIn,
+        notifications,
+        unreadNotifications,
+        notificationVersion,
+        soundEnabled,
+        setSoundEnabled,
+        liveNotifications,
+        dismissLiveNotification,
+        markNotificationRead,
+        markAllNotificationsRead,
+        sessionChecked,
         customerName,
         customerEmail,
         customerAvatar,
         updateProfile,
         signIn,
+        signOutEverywhere,
         signOut,
         showToast,
         activeModal,

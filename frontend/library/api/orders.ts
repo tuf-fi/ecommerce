@@ -12,6 +12,11 @@ export type ApiOrder = {
     email: string;
     address: string;
     total: number;
+    subtotal: number;
+    discount: number;
+    shippingFee: number;
+    voucherCode: string | null;
+    refund: { at: string; amount: number; note: string | null } | null;
     createdAt: string;
     paidAt: string | null;
     payment: { state: PaymentState; proofs: ProofInfo[] };
@@ -20,6 +25,13 @@ export type ApiOrder = {
 
 export type CartCheckResult = {
     ok: boolean;
+    // What the customer will pay, worked out by the server: items, a code's discount, and shipping.
+    subtotal: number;
+    discount: number;
+    shippingFee: number;
+    total: number;
+    voucher: { code: string; description: string; percentOff: number | null } | null;
+    voucherError: string | null;
     items: { productId: number; sizeId: number | null; name: string; sizeLabel: string | null; unitPrice: number; qty: number; available: number; ok: boolean }[];
 };
 
@@ -27,8 +39,8 @@ const send = (method: string, body?: unknown): RequestInit => ({ method, body: b
 
 export type CheckoutLine = { productId: number; sizeId: number | null; qty: number };
 
-export const checkCart = (items: CheckoutLine[]) => api<CartCheckResult>("/cart/check", send("POST", { items }));
-export const placeOrder = (input: { items: CheckoutLine[]; address: string }) => api<{ order: ApiOrder }>("/orders", send("POST", input));
+export const checkCart = (items: CheckoutLine[], voucherCode?: string) => api<CartCheckResult>("/cart/check", send("POST", { items, ...(voucherCode ? { voucherCode } : {}) }));
+export const placeOrder = (input: { items: CheckoutLine[]; address: string; voucherCode?: string }) => api<{ order: ApiOrder }>("/orders", send("POST", input));
 // The API returns orders in pages of at most 100 (newest first); these walk them, up to 20 pages.
 async function allOrderPages(path: string): Promise<{ orders: ApiOrder[] }> {
     const orders: ApiOrder[] = [];
@@ -60,6 +72,10 @@ export async function fetchProofImage(no: string, proofId: number): Promise<stri
     if (!res.ok) throw new Error("Couldn't load the screenshot");
     return URL.createObjectURL(await res.blob());
 }
+// Administrators only. Records money already sent back by hand (GCash / bank); it doesn't move any money itself.
+export const recordRefund = (no: string, input: { amount: number; note?: string }) =>
+    api<{ ok: true; refund: { at: string; amount: number; note: string | null } }>(`/orders/${encodeURIComponent(no)}/refund`, send("POST", input));
+
 export const cancelMyOrder = (no: string) => api<{ order: ApiOrder }>(`/orders/${encodeURIComponent(no)}/cancel`, send("POST"));
 
 export type OrderHistoryEntry = {
@@ -163,6 +179,12 @@ export function toAdminOrder(o: ApiOrder): AdminOrder {
         date: new Date(o.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
         status: ADMIN_STATUS[o.status],
         total: o.total,
+        subtotal: o.subtotal,
+        discount: o.discount,
+        shippingFee: o.shippingFee,
+        voucherCode: o.voucherCode ?? undefined,
+        refund: o.refund ?? undefined,
+        paidAt: o.paidAt ?? undefined,
         createdAt: o.createdAt,
         payment: o.payment,
         items: o.items.map((i) => ({ productId: i.productId, qty: i.qty, name: lineLabel(i), unitPrice: i.unitPrice })),

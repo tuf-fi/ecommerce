@@ -1,3 +1,4 @@
+import { notifyPasswordChanged,notifyProfileUpdated } from "../services/customerNotifications.service";
 import type { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import crypto from "node:crypto";
@@ -5,6 +6,7 @@ import { z } from "zod";
 import { prisma } from "../lib/prisma";
 import { clearAuthCookie, COOKIE_NAMES, readToken, setAuthCookie, signTwoFactorChallenge } from "../lib/jwt";
 import { startAdminSession } from "../services/adminSession.service";
+import { GoogleProfile, verifyGoogleIdToken } from "../services/google.service";
 
 const BCRYPT_ROUNDS = 12;
 const OTP_TTL_MS = 10 * 60 * 1000;
@@ -52,7 +54,7 @@ export async function customerRegister(req: Request, res: Response) {
   const customer = await prisma.customer.create({
     data: { name, email, passwordHash: await bcrypt.hash(password, BCRYPT_ROUNDS) },
   });
-  setAuthCookie(res, "customer", customer.id);
+  setAuthCookie(res, "customer", customer.id, undefined, customer.tokenVersion);
   res.status(201).json({ customer: { id: customer.id, name: customer.name, email: customer.email } });
 }
 
@@ -65,7 +67,7 @@ export async function customerLogin(req: Request, res: Response) {
   if (!(await passwordMatches(password, customer?.passwordHash)) || !customer) {
     return res.status(401).json({ error: "Invalid email or password" });
   }
-  setAuthCookie(res, "customer", customer.id);
+  setAuthCookie(res, "customer", customer.id, undefined, customer.tokenVersion);
   res.json({ customer: { id: customer.id, name: customer.name, email: customer.email } });
 }
 
@@ -88,8 +90,41 @@ export async function customerChangePassword(req: Request, res: Response) {
   if (!(await bcrypt.compare(currentPassword, customer.passwordHash))) return res.status(400).json({ error: "Your current password is incorrect" });
   if (currentPassword === newPassword) return res.status(400).json({ error: "Choose a password you haven't used here" });
 
-  await prisma.customer.update({ where: { id: customer.id }, data: { passwordHash: await bcrypt.hash(newPassword, BCRYPT_ROUNDS) } });
+  // Other devices are signed out (someone may have known the old password); this one is re-issued so the person stays in.
+  const updated = await prisma.customer.update({
+    where: { id: customer.id },
+    data: { passwordHash: await bcrypt.hash(newPassword, BCRYPT_ROUNDS), tokenVersion: { increment: 1 } },
+  });
+  setAuthCookie(res, "customer", updated.id, undefined, updated.tokenVersion);
+  void notifyPasswordChanged(updated.id);
   res.json({ ok: true });
+}
+
+export async function customerLogoutAll(req: Request, res: Response) {
+  await prisma.customer.update({ where: { id: req.customerId }, data: { tokenVersion: { increment: 1 } } });
+  clearAuthCookie(res, "customer");
+  res.json({ ok: true });
+}
+
+const googleSchema = z.object({ idToken: z.string().min(20).max(4000) });
+
+// "Sign in with Google": the browser sends the ID token Google gave it. If an account with that (Google-verified) email
+// exists, that person is signed in; otherwise an account is created with an unusable random password.
+export async function customerGoogle(req: Request, res: Response) {
+  const parsed = googleSchema.safeParse(req.body);
+  if (!parsed.success) return invalid(res, parsed.error);
+  const profile = await verifyGoogleIdToken(parsed.data.idToken);
+  const customer = await findOrCreateGoogleCustomer(profile);
+  setAuthCookie(res, "customer", customer.id, undefined, customer.tokenVersion);
+  res.json({ customer: { id: customer.id, name: customer.name, email: customer.email, avatarUrl: customer.avatarUrl } });
+}
+
+export async function findOrCreateGoogleCustomer(profile: GoogleProfile) {
+  const existing = await prisma.customer.findUnique({ where: { email: profile.email } });
+  if (existing) return existing;
+  return prisma.customer.create({
+    data: { email: profile.email, name: profile.name, passwordHash: await bcrypt.hash(crypto.randomBytes(32).toString("hex"), BCRYPT_ROUNDS) },
+  });
 }
 
 export async function customerUpdateProfile(req: Request, res: Response) {
@@ -107,6 +142,7 @@ export async function customerUpdateProfile(req: Request, res: Response) {
     data: { ...(name !== undefined ? { name } : {}), ...(avatarUrl !== undefined ? { avatarUrl } : {}) },
     select: { id: true, name: true, email: true, avatarUrl: true },
   });
+  if (name !== undefined || avatarUrl !== undefined) void notifyProfileUpdated(customer.id, name !== undefined && avatarUrl !== undefined ? "name and photo" : name !== undefined ? "name" : "photo");
   res.json({ customer });
 }
 
@@ -152,9 +188,10 @@ export async function otpVerify(req: Request, res: Response) {
   if (!customer) return res.status(400).json({ error: "Invalid or expired code" });
 
   await prisma.$transaction([
-    prisma.customer.update({ where: { id: customer.id }, data: { passwordHash: await bcrypt.hash(newPassword, BCRYPT_ROUNDS) } }),
+    prisma.customer.update({ where: { id: customer.id }, data: { passwordHash: await bcrypt.hash(newPassword, BCRYPT_ROUNDS), tokenVersion: { increment: 1 } } }),
     prisma.otpCode.update({ where: { id: otp.id }, data: { usedAt: new Date() } }),
   ]);
+  void notifyPasswordChanged(customer.id);
   res.json({ ok: true });
 }
 

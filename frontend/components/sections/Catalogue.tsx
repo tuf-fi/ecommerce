@@ -39,7 +39,7 @@ export default function Catalogue() {
 
     return (
         <SectionContainer id="products">
-            <SectionTitle num="05" title="Shop All" />
+            <SectionTitle section="catalogue" title="Shop All" />
 
             <div className="mb-11 flex flex-wrap gap-3">
                 <select

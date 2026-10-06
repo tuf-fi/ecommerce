@@ -16,7 +16,7 @@ export default function Glossary(){
 
     return(
         <SectionContainer id="concern">
-            <SectionTitle num="04" title="Shop by Concern" />
+            <SectionTitle section="glossary" title="Shop by Concern" />
 
             {/* Horizontally scrollable so the row holds up whether the CMS list has fewer or more tiles than a fixed grid. */}
             <div className="thin-scrollbar flex justify-center gap-4 overflow-x-auto pb-2">

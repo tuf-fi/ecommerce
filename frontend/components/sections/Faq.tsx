@@ -42,7 +42,7 @@ export default function Faqs({ preview = false }: { preview?: boolean } = {}) {
 
     return(
         <SectionContainer id="faq">
-            <SectionTitle num="07" title="FAQ" />
+            <SectionTitle section="faq" title="FAQ" />
 
             <div className="grid grid-cols-[.9fr_1.1fr] gap-14">
                 <FadeIn>

@@ -20,7 +20,7 @@ import {
     daysUntilExpiry,
     EXPIRY_WARNING_DAYS,
 } from "./admin/products";
-import { importOrderStatuses, listAllOrders, reviewPaymentProof, setOrderStatus, toAdminOrder } from "./api/orders";
+import { importOrderStatuses, listAllOrders, recordRefund, reviewPaymentProof, setOrderStatus, toAdminOrder } from "./api/orders";
 import { adminLoginTwoFactor } from "./api/auth";
 import { createStaff, deleteStaff as deleteStaffById, listCustomers, listNotifications, listStaff, markNotificationsRead, StaffInput, StaffPatch, updateStaff as updateStaffById } from "./api/admin";
 import { adminLogin, adminLogout, adminSession, SessionStaff } from "./api/auth";
@@ -92,6 +92,8 @@ type AdminStoreValue = {
     importOrders: (file: File) => Promise<{ updated: number; skipped: string[] } | null>;
     // Approving marks the order Paid; rejecting needs a reason the customer will see. Resolves true when saved.
     reviewPayment: (orderNo: string, proofId: number, input: { decision: "approve" } | { decision: "reject"; reason: string }) => Promise<boolean>;
+    // Administrators only: records money already sent back to the customer by hand.
+    refundOrder: (orderNo: string, input: { amount: number; note?: string }) => Promise<boolean>;
 
     // Staff
     staff: StaffMember[];
@@ -424,6 +426,21 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
         [reloadOrders]
     );
 
+    const refundOrder = useCallback(
+        async (orderNo: string, input: { amount: number; note?: string }) => {
+            try {
+                await recordRefund(orderNo, input);
+                toast.success(`Refund of ₱${input.amount.toLocaleString()} recorded for ${orderNo}. The customer has been emailed.`);
+                await reloadOrders();
+                return true;
+            } catch (err) {
+                toast.error(errorMessage(err));
+                return false;
+            }
+        },
+        [reloadOrders]
+    );
+
     const bulkUpdateOrderStatus = useCallback(
         async (orderNos: string[], status: AdminOrderStatus) => {
             if (orderNos.length === 0) return;
@@ -612,6 +629,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
         bulkUpdateOrderStatus,
         importOrders,
         reviewPayment,
+        refundOrder,
         staff,
         addStaff,
         updateStaff,

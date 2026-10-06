@@ -5,7 +5,7 @@ const page = STATIC_PAGES.find((p) => p.slug === "privacy-policy");
 
 export const metadata: Metadata = {
     title: page?.name ?? "Privacy Policy",
-    description: page?.content,
+    description: page?.content.split("\n\n")[0],
 };
 
 export default function PrivacyPolicyLayout({ children }: { children: React.ReactNode }) {

@@ -33,15 +33,20 @@ enum StockReason {
 }
 
 model Customer {
-  avatarUrl    String?
-  id           Int       @id @default(autoincrement())
-  email        String    @unique
-  passwordHash String
-  name         String
-  createdAt    DateTime  @default(now())
-  addresses    Address[]
-  orders       Order[]
-  reviews      Review[]
+  // Raised by "sign out of all devices", a password change or a reset; older login cookies stop working.
+  tokenVersion  Int                    @default(0)
+  wishlist      WishlistItem[]
+  voucherUses   VoucherUse[]
+  avatarUrl     String?
+  id            Int                    @id @default(autoincrement())
+  email         String                 @unique
+  passwordHash  String
+  name          String
+  createdAt     DateTime               @default(now())
+  addresses     Address[]
+  orders        Order[]
+  reviews       Review[]
+  notifications CustomerNotification[]
 }
 
 model StaffMember {
@@ -80,6 +85,7 @@ model Address {
 }
 
 model Product {
+  wishlistItems    WishlistItem[]
   id               Int             @id @default(autoincrement())
   sku              String          @unique
   name             String
@@ -150,8 +156,18 @@ model Order {
   shipName      String
   shipEmail     String
   shipAddress   String
-  // Set by the PayMongo webhook when payment is confirmed.
+  // Set when staff verify the customer's payment screenshot (or mark the order Paid).
   paidAt        DateTime?
+  // total = subtotal - discount + shippingFee, all in whole pesos, fixed when the order is placed.
+  subtotal      Int                  @default(0)
+  discount      Int                  @default(0)
+  shippingFee   Int                  @default(0)
+  voucherCode   String?
+  // Refunds are paid back by hand (GCash / bank); this records that it happened.
+  refundedAt    DateTime?
+  refundAmount  Int?
+  refundNote    String?
+  voucherUses   VoucherUse[]
   paymentMethod String?
   total         Int
   createdAt     DateTime             @default(now())
@@ -195,15 +211,19 @@ model Review {
 }
 
 model Voucher {
-  id          Int       @id @default(autoincrement())
-  code        String    @unique
+  id          Int          @id @default(autoincrement())
+  code        String       @unique
   description String
   percentOff  Int?
   expiresAt   DateTime?
-  active      Boolean   @default(true)
+  active      Boolean      @default(true)
   // Set for one-time codes issued to a specific subscriber.
   forEmail    String?
   usedAt      DateTime?
+  // null = unlimited. Personal welcome codes are created with 1. A customer can use any one code only once (VoucherUse).
+  maxUses     Int?
+  uses        Int          @default(0)
+  redemptions VoucherUse[]
 }
 
 // One JSON blob per homepage/CMS section (hero, about, promos, blog, faqs, ...).
@@ -338,4 +358,44 @@ model NotificationRead {
   createdAt DateTime    @default(now())
 
   @@id([staffId, key])
+}
+
+// What a customer sees in their notification bell: order progress, account changes, new vouchers.
+model CustomerNotification {
+  id         Int       @id @default(autoincrement())
+  customerId Int
+  customer   Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  // "order" | "account" | "voucher"
+  type       String
+  title      String
+  body       String
+  // Where clicking it goes (a path on the shop site).
+  href       String?
+  readAt     DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([customerId, createdAt])
+}
+
+model VoucherUse {
+  id         Int      @id @default(autoincrement())
+  voucherId  Int
+  voucher    Voucher  @relation(fields: [voucherId], references: [id], onDelete: Cascade)
+  customerId Int
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  orderId    Int?
+  order      Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  createdAt  DateTime @default(now())
+
+  @@unique([voucherId, customerId])
+}
+
+model WishlistItem {
+  customerId Int
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  productId  Int
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@id([customerId, productId])
 }

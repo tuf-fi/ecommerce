@@ -13,6 +13,11 @@ function serialize(o: OrderWithItems) {
     email: o.shipEmail,
     address: o.shipAddress,
     total: o.total,
+    subtotal: o.subtotal || o.total,
+    discount: o.discount,
+    shippingFee: o.shippingFee,
+    voucherCode: o.voucherCode,
+    refund: o.refundedAt ? { at: o.refundedAt.toISOString(), amount: o.refundAmount ?? 0, note: o.refundNote } : null,
     createdAt: o.createdAt.toISOString(),
     paidAt: o.paidAt ? o.paidAt.toISOString() : null,
     // none: nothing sent yet · review: a screenshot is waiting for staff · rejected: the last one was refused · approved: verified
@@ -57,11 +62,13 @@ const line = z.object({
 const lines = z.array(line).min(1, "Your bag is empty").max(50);
 
 const statuses = ["PENDING", "PAID", "SHIPPED", "DELIVERED", "CANCELLED"] as const;
-const checkSchema = z.object({ items: lines });
+const voucherCode = z.string().trim().max(40).optional();
+const checkSchema = z.object({ items: lines, voucherCode });
 const createSchema = z.object({
   items: lines,
   address: z.string().trim().min(5, "Choose a delivery address").max(500),
   name: z.string().trim().min(1).max(100).optional(),
+  voucherCode,
 });
 const statusSchema = z.object({ status: z.enum(statuses) });
 const listQuery = z.object({
@@ -71,8 +78,9 @@ const listQuery = z.object({
 });
 
 export async function cartCheck(req: Request, res: Response) {
-  const { items } = parseBody(checkSchema, req.body);
-  res.json(await checkCart(items));
+  const { items, voucherCode } = parseBody(checkSchema, req.body);
+  const customer = req.customerId ? await prisma.customer.findUnique({ where: { id: req.customerId }, select: { id: true, email: true } }) : null;
+  res.json(await checkCart(items, { voucherCode, customer }));
 }
 
 export async function placeOrder(req: Request, res: Response) {
@@ -86,6 +94,8 @@ export async function placeOrder(req: Request, res: Response) {
     shipName: d.name ?? customer.name,
     shipEmail: customer.email,
     shipAddress: d.address,
+    customerEmail: customer.email,
+    voucherCode: d.voucherCode,
   });
   res.status(201).json({ order: serialize(order) });
 }

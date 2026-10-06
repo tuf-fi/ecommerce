@@ -7,6 +7,8 @@ import ScrollToTop from "@/components/layout/ScrollToTop";
 import ConditionalModalRoot from "@/components/modals/ConditionalModalRoot";
 import ConditionalPromoBanner from "@/components/layout/ConditionalPromoBanner";
 import PageContentFrame from "@/components/layout/PageContentFrame";
+import NotificationToaster from "@/components/layout/NotificationToaster";
+import DevToolsFab from "@/components/dev/DevToolsFab";
 import { StoreProvider } from "@/library/store";
 import { ProductsProvider } from "@/library/productsStore";
 import { fetchCatalog } from "@/library/api/products";
@@ -62,6 +64,8 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
           <PageContentFrame>{children}</PageContentFrame>
           <ConditionalFooter />
           <ConditionalModalRoot />
+          <NotificationToaster />
+          <DevToolsFab />
           <Toaster
             position="top-center"
             icons={{

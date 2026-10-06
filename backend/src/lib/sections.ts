@@ -3,15 +3,13 @@
 // display-only rule, which showed everything for unknown values.
 export type Section = "inventory" | "orders" | "content" | "customers";
 
-export const ACCESS_LEVELS = ["Full access", "Inventory & orders only", "Inventory only", "Orders only", "Custom"] as const;
+export const ACCESS_LEVELS = ["Full access", "Inventory & orders only", "Inventory only", "Orders only"] as const;
 
 const ALLOWED: Record<string, Section[]> = {
   "Full access": ["inventory", "orders", "content", "customers"],
   "Inventory & orders only": ["inventory", "orders"],
   "Inventory only": ["inventory"],
   "Orders only": ["orders"],
-  // "Custom" has no definition yet, so it grants nothing beyond the dashboard and the person's own security settings.
-  Custom: [],
 };
 
 export function canAccess(staff: { role: string; access: string }, section: Section): boolean {

@@ -4,6 +4,41 @@ A working checklist for what's left after Phases 0–8 (see `BACKEND_PROGRESS.md
 
 ---
 
+## What's left — summary, in priority order
+
+The code for the original roadmap (Phases 0–8) is built. What remains is mostly proving it works, a few gaps in the shop, and going live. Details and how-to for each item are in the parts below.
+
+### 1. Prove what's built works (about a day, no new code) — Part B
+- [ ] **Browser pass (B1):** nothing in the frontend has been clicked through yet. Do the customer flow and the admin flow, including the Staff page, the notification bell, the dashboard charts, and order import/export.
+- [ ] **Manual payment run (B2):** place an order, upload a screenshot, reject it, upload again, approve it. The backend is tested; the screens are not.
+- [ ] **Cloudinary (B3) and real email (B4):** need your accounts. Until then, uploads show an unsaved preview and emails print in the API terminal.
+
+### 2. Gaps in the shop itself — Part C
+- [x] **Vouchers (C2):** done. Customers type a code in the cart; the server applies it, uses it up exactly once, and gives it back if an unpaid order is cancelled. Administrators manage codes in Settings → Discount Codes.
+- [x] **Shipping fee (C4):** done. Administrators set a flat fee and an optional free-shipping amount in Settings → Payment Details → Shipping. Until they do, shipping is free.
+- [x] **Refunds (C3):** done. Administrators record a refund on a paid order (amount + note); the customer is emailed and it shows in the order, the audit log and the CSV export. The money itself is still sent back by hand.
+- [x] **Customer addresses and wishlists (C5):** done. Both are saved on the server per customer and follow them to any device; a wishlist built before signing in is merged in at sign-in.
+- [x] **"Custom" access level (C1):** removed from the Staff dropdown and the server. The four remaining levels are Full access, Inventory & orders only, Inventory only, Orders only.
+
+### 3. Smaller improvements, all optional — C6 and C7
+- [ ] **Payment safeguards (C7):** warn on reused reference numbers, a "payments to review" badge, delete old screenshots after 90 days, and optionally let only administrators approve large orders.
+- [x] **Screens for data that is already stored:** Settings → Audit Log (administrators), Newsletter Subscribers and Contact Messages (administrators and staff with Full access).
+- [x] **Extras (C6):** newsletter unsubscribe links, order emails to customers, customer sign-out-everywhere, Google sign-in — all built. Two need your accounts to see working: emails need SMTP (B4) and Google sign-in needs a Google client id (`GOOGLE_CLIENT_ID` in `backend/.env` and `NEXT_PUBLIC_GOOGLE_CLIENT_ID` in `frontend/.env.local`); without them the button says it isn't available.
+- [ ] **Click through all of the above in a browser.** The backend for these was tested with real requests (including simultaneous orders on one code, and stock failures rolling a code back); the new screens compile and load but nobody has used them yet.
+
+### 4. Before you go live — Part D
+- [ ] **Secrets and accounts (D1, D2):** fresh secret keys; replace the test accounts with real ones; turn on two-factor for every administrator.
+- [ ] **Database (D3):** a managed Postgres with automatic backups, and a restore you have practised.
+- [ ] **Login cookies across your two addresses (D6):** the site and API need a shared parent domain (e.g. `www.yourshop.ph` and `api.yourshop.ph`), and the code needs a small `COOKIE_DOMAIN` change. Without it, admins look signed out on the live site.
+- [ ] **Start script (D4):** the API has no production `start` script yet.
+- [ ] **Payment procedure (D7):** write down who checks screenshots, how fast, and how you match them to the real GCash / bank statement.
+- [ ] **Email sender (D8):** SPF/DKIM records so emails don't land in spam.
+- [ ] **Monitoring (D9) and a final real small order (D10).**
+
+**Suggested order:** do section 1 first because it shows what is actually broken; then server-side customer addresses; then the cookie-domain and start-script changes; then Part D.
+
+---
+
 ## Part A — Get everything running locally
 
 - [ ] **Start Postgres.**
@@ -115,10 +150,12 @@ Conventions used throughout (they match how the existing code is written):
 
 Built: the Staff page now manages real accounts (add, edit, deactivate, set a password, turn off someone's two-factor, delete), administrators only, with the "last administrator" and "not yourself" protections, audit entries, and **server-enforced access levels**. See "Mock data removal" in `BACKEND_PROGRESS.md`. What to still do:
 - [ ] **Try it in a browser**: add a staff member with "Orders only", sign in as them in a private window, and confirm the menu shows only what they may use and other pages are refused. Then deactivate them and confirm they're signed out.
-- [ ] **Decide what "Custom" access means.** Right now it grants nothing beyond the dashboard and personal settings. Either define it (for example, a ticked list of areas stored on the account) or remove it from the dropdown in `StaffModal.tsx` and `backend/src/lib/sections.ts`.
+- [x] **"Custom" access** — removed (dropdown, server list and the browser-side permission map). Any account that still holds the old value gets no section access (fails closed) until an administrator picks one of the four levels.
 - [ ] **Optional:** let administrators require two-factor for every staff account.
 
-### C2. Vouchers at checkout
+### C2. Vouchers at checkout — DONE
+
+Built (the design below is what was implemented, with these differences): the preview goes through `POST /cart/check` with an optional `voucherCode` instead of a separate `/cart/voucher`; reusable codes use `Voucher.maxUses/uses` plus a `VoucherUse` table (one use per customer per code); the cart (`app/cart/page.tsx`), the order dialog and `GET /vouchers/mine` for the My Vouchers page are wired up; administrators create and switch off codes in Settings → Discount Codes (`/discount-codes`). Not done: seeding a `RITUAL10` demo code — create it from the new page if you want it.
 
 **Goal:** a customer can enter a code in the cart; the server applies the discount; single-use codes are used up exactly once.
 
@@ -141,7 +178,9 @@ Built: the Staff page now manages real accounts (add, edit, deactivate, set a pa
 
 **Test:** claim a welcome code (Part B1), apply it in the cart, place the order → total is 10% lower; reuse the same code → 409; two simultaneous orders with the same code → exactly one succeeds (same technique as the stock race test); cancel the unpaid order → the code works again.
 
-### C3. Refunds (manual) and payment mistakes
+### C3. Refunds (manual) and payment mistakes — refunds DONE
+
+Built: `POST /orders/:no/refund` (administrators; once per order; amount up to the total; audit entry; email to the customer), a Money section with a "Record a refund" form in the order dialog, the refund shown on the order and in the CSV export, and a reminder in the cancel confirmation when the order was already paid. Not built: the `reopen` endpoint for mistaken auto-cancels (step 5) and showing the refund in My Purchase.
 
 Money is returned outside the system (you send it back through GCash or your bank). The system should *record* that, so nothing is forgotten and the customer is told.
 
@@ -156,7 +195,9 @@ Money is returned outside the system (you send it back through GCash or your ban
 
 **Test:** refund a paid order, a second refund is refused, the amount can't exceed the total, a Staff-role account gets 403, and the audit log shows who did it.
 
-### C4. Shipping fee
+### C4. Shipping fee — DONE
+
+Built as an administrator setting rather than env variables: `shipping` content (flat fee + free-over amount) edited in Settings → Payment Details, applied server-side in `createOrder` and `/cart/check`, shown as its own line in the cart and the order dialog. By-region fees are not built.
 
 1. Decide the rule: flat rate, free over a threshold (e.g. ₱2,000 — the demo promo text already says "free shipping on orders over ₱2,000"), or by region.
 2. Backend: put the rule in one function, `services/shipping.service.ts` `shippingFee(subtotal, address)`, configured by env (`SHIPPING_FLAT=150`, `FREE_SHIPPING_OVER=2000`). Schema: `Order.shippingFee Int @default(0)`. In `createOrder`: `total = subtotal - discount + shippingFee`.
@@ -170,19 +211,24 @@ Money is returned outside the system (you send it back through GCash or your ban
 ### C5. Mock data — DONE, with a few follow-ups
 
 The invented admin data is gone (staff, customers, notifications, dashboard charts, sample orders and reviews); see "Mock data removal" in `BACKEND_PROGRESS.md`. Still open:
-- [ ] **Customer delivery addresses on the server.** Today they live only in the customer's browser. Add `GET/POST/PATCH/DELETE /addresses` (customer, own addresses only, one default), load them after sign-in in `library/store.tsx`, and use them in `app/account/addresses/page.tsx`. The `Address` table already exists. Also save the wishlist per customer the same way if you want it to follow them across devices.
+- [x] **Customer delivery addresses (and wishlists) on the server — done.** (Original note: they lived only in the customer's browser.) Add `GET/POST/PATCH/DELETE /addresses` (customer, own addresses only, one default), load them after sign-in in `library/store.tsx`, and use them in `app/account/addresses/page.tsx`. The `Address` table already exists. Also save the wishlist per customer the same way if you want it to follow them across devices.
 - [ ] **Dashboard on the server** when order volume grows: a `GET /admin/stats?range=` doing the sums in SQL (`date_trunc('day', "createdAt")`, `groupBy`), instead of computing from up to 2,000 orders in the browser (`library/admin/dashboard.ts`).
 - [ ] **Save the location on the order** (`shipCity` at checkout) rather than reading it out of the free-text address (`library/admin/location.ts`).
 - [ ] **Notification preferences, done properly.** The two fake pages were removed. Bring them back only together with the thing they control: store preferences on `Customer` / `StaffMember` (a JSON column), then have `sendMail` and the order/stock events check them before emailing.
 
 ### C6. Smaller improvements
 
-- **Audit log / subscribers / messages viewers.** Backend: the audit endpoint exists; add `GET /subscribers` and `GET /contact-messages` (staff, paginated). Frontend: pages under `app/admin/(panel)/` (e.g. `settings/audit`) with a table, filters (entity, id) and a page selector; copy the layout of the Stock Movements page.
-- **Newsletter unsubscribe.** Put a link in every marketing email: `${API}/newsletter/unsubscribe?e=<email>&t=<token>` where `token = HMAC-SHA256(email, JWT_SECRET)` (hex). The handler recomputes the token with `timingSafeEqual`, deletes the `Subscriber` row, and redirects to a "you've been unsubscribed" page.
-- **CMS conflict protection.** Return each section's `updatedAt` in `GET /content` (it's already stored), pass it into `ContentProvider`, send it as `expectedUpdatedAt` with each save, and in `saveContent` use `updateMany({ where: { key, updatedAt: expected } })`; no match → 409 and a toast "Someone else edited this — reload".
-- **Customer security extras.** Mirror the admin work: a `CustomerSession` table + `jti` in the customer JWT, a "devices" page, and `POST /auth/customer/logout-all`.
-- **Google sign-in.** Use Google Identity Services in the login modal to get an ID token, `POST /auth/customer/google {idToken}`; the backend verifies it with the `google-auth-library` package (`OAuth2Client.verifyIdToken`, checking audience = your client id and `email_verified`), finds-or-creates the `Customer` by email, and sets the normal `customer_token` cookie. Create the OAuth client in Google Cloud Console and add `GOOGLE_CLIENT_ID` to both apps' env.
-- **Order emails.** In `services/orders.service.ts`, after a successful commit (never inside the transaction), call `sendMail` for "order placed", "shipped" and "delivered" using the order's `shipEmail`. Keep the text in a small `services/emailTemplates.ts`.
+- [x] **Audit log / subscribers / messages viewers — done** (Settings → Audit Log, Newsletter Subscribers, Contact Messages).
+  Original plan: Backend: the audit endpoint exists; add `GET /subscribers` and `GET /contact-messages` (staff, paginated). Frontend: pages under `app/admin/(panel)/` (e.g. `settings/audit`) with a table, filters (entity, id) and a page selector; copy the layout of the Stock Movements page.
+- [x] **Newsletter unsubscribe — done** (link in the welcome and promo emails; landing page `/unsubscribed`).
+  Original plan: Put a link in every marketing email: `${API}/newsletter/unsubscribe?e=<email>&t=<token>` where `token = HMAC-SHA256(email, JWT_SECRET)` (hex). The handler recomputes the token with `timingSafeEqual`, deletes the `Subscriber` row, and redirects to a "you've been unsubscribed" page.
+- [ ] **CMS conflict protection.** Return each section's `updatedAt` in `GET /content` (it's already stored), pass it into `ContentProvider`, send it as `expectedUpdatedAt` with each save, and in `saveContent` use `updateMany({ where: { key, updatedAt: expected } })`; no match → 409 and a toast "Someone else edited this — reload".
+- [x] **Customer sign-out-everywhere — done** (Account → Change Password → "Sign out of all devices"; implemented with a per-customer token version rather than a sessions table). A "devices" list page is not built.
+  Original plan: mirror the admin work: a `CustomerSession` table + `jti` in the customer JWT, a "devices" page, and `POST /auth/customer/logout-all`.
+- [x] **Google sign-in — built, untested with Google** (needs your client id, see above).
+  Original plan: Use Google Identity Services in the login modal to get an ID token, `POST /auth/customer/google {idToken}`; the backend verifies it with the `google-auth-library` package (`OAuth2Client.verifyIdToken`, checking audience = your client id and `email_verified`), finds-or-creates the `Customer` by email, and sets the normal `customer_token` cookie. Create the OAuth client in Google Cloud Console and add `GOOGLE_CLIENT_ID` to both apps' env.
+- [x] **Order emails — done** (placed, status changes, refund; sent after the order is saved; printed in the API terminal until SMTP is set).
+  Original plan: In `services/orders.service.ts`, after a successful commit (never inside the transaction), call `sendMail` for "order placed", "shipped" and "delivered" using the order's `shipEmail`. Keep the text in a small `services/emailTemplates.ts`.
 
 ### C7. Make manual verification harder to fool
 

@@ -19,7 +19,7 @@ export default function Journal(){
 
     return(
         <SectionContainer id="journal">
-            <SectionTitle num="06" title="Journal" />
+            <SectionTitle section="journal" title="Journal" />
 
             <div className="grid grid-cols-[1.1fr_1fr] gap-14">
                 <RevealIn direction="bottom">

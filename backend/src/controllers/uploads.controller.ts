@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "../lib/prisma";
 import { HttpError } from "../lib/httpError";
 import { COOKIE_NAMES, verifyToken } from "../lib/jwt";
+import { resolveCustomerId } from "../middleware/auth";
 import { signUpload, UPLOAD_FOLDERS } from "../services/cloudinary.service";
 
 const bodySchema = z.object({ folder: z.enum(UPLOAD_FOLDERS) });
@@ -15,7 +16,7 @@ export async function uploadSignature(req: Request, res: Response) {
 
   const staffId = verifyToken("staff", req.cookies?.[COOKIE_NAMES.staff]);
   const staff = staffId === null ? null : await prisma.staffMember.findUnique({ where: { id: staffId }, select: { id: true } });
-  const customerId = verifyToken("customer", req.cookies?.[COOKIE_NAMES.customer]);
+  const customerId = await resolveCustomerId(req);
 
   // Folder decides who is acting, so a browser holding both sessions still works.
   if (folder === "avatars") {

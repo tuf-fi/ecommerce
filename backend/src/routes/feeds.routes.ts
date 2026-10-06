@@ -8,6 +8,8 @@ import * as feeds from "../controllers/adminFeeds.controller";
 export const feedsRouter = Router();
 
 feedsRouter.get("/customers", requireStaff, requireSection("customers"), feeds.listCustomers);
+feedsRouter.get("/subscribers", requireStaff, requireSection("customers"), feeds.listSubscribers);
+feedsRouter.get("/contact-messages", requireStaff, requireSection("customers"), feeds.listMessages);
 feedsRouter.get("/notifications", requireStaff, feeds.listNotifications);
 feedsRouter.post("/notifications/read", requireStaff, validate({ body: feeds.markReadSchema }), feeds.markNotificationsRead);
 feedsRouter.get("/vouchers/mine", requireCustomer, feeds.myVouchers);

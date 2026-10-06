@@ -29,3 +29,11 @@ export const BTN_HEADER_ACTION = "border border-ink/15 px-5 py-2 text-[12.5px] f
 export const BTN_BULK_PRIMARY = "flex h-9 items-center bg-pink-btn px-4 text-[12px] font-semibold text-white transition hover:bg-pink-btn-hover";
 export const BTN_BULK_DANGER = "flex h-9 items-center border border-white/40 px-3.5 text-[12px] font-semibold text-white transition hover:border-alert hover:bg-alert";
 export const BTN_BULK_SECONDARY = "flex h-9 items-center border border-white/25 px-3.5 text-[12px] font-semibold text-white transition hover:border-white hover:bg-white/10";
+
+// Shared by every list table (ListPanel) so header and cell treatment match across the admin.
+export const TABLE_HEAD_ROW = "bg-off/50";
+export const TABLE_TH = "whitespace-nowrap border-b border-ink/10 px-5 py-3.5 text-left font-mono text-[11px] tracking-[.12em] text-grey uppercase";
+export const TABLE_TD = "border-b border-ink/10 px-5 py-3.5";
+// Form panel: fields in a body, actions in a right-aligned footer strip (Change Password, Shipping, Discount Codes).
+export const FORM_PANEL = "border border-ink/10 bg-white";
+export const FORM_PANEL_FOOTER = "flex items-center justify-end border-t border-ink/10 bg-off/40 px-6 py-4 sm:px-7";

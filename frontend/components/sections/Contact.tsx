@@ -31,7 +31,7 @@ export default function Contact({ preview = false }: { preview?: boolean } = {})
 
     return (
         <SectionContainer id={preview ? undefined : "contact"} preview={preview}>
-            <SectionTitle num="09" title="Contact" />
+            <SectionTitle section="contact" title="Contact" />
 
             <div className="grid grid-cols-[.85fr_1.15fr] gap-14">
                 <div className="relative aspect-[4/5] overflow-hidden border border-ink/10">

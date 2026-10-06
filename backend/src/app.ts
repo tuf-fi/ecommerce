@@ -11,6 +11,8 @@ import { marketingRouter } from "./routes/marketing.routes";
 import { uploadsRouter } from "./routes/uploads.routes";
 import { staffRouter } from "./routes/staff.routes";
 import { feedsRouter } from "./routes/feeds.routes";
+import { addressesRouter, myNotificationsRouter, wishlistRouter } from "./routes/customer.routes";
+import { vouchersRouter } from "./routes/vouchers.routes";
 import { apiLimiter } from "./middleware/rateLimit";
 import { HttpError } from "./lib/httpError";
 
@@ -39,7 +41,11 @@ app.use("/content", contentRouter);
 app.use("/reviews", reviewsRouter);
 app.use("/uploads", uploadsRouter);
 app.use("/staff", staffRouter);
+app.use("/discount-codes", vouchersRouter);
 app.use(feedsRouter);
+app.use("/addresses", addressesRouter);
+app.use("/my/notifications", myNotificationsRouter);
+app.use("/wishlist", wishlistRouter);
 app.use(marketingRouter);
 
 app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {

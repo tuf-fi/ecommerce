@@ -52,57 +52,21 @@ export default function AdminSecuritySettingsPage() {
 
     return (
         <div>
-            {/* The one genuine form on this page gets the explanatory aside; the toggle list below is self-explanatory. */}
             <SettingsSection title="Change Password" aside="Use at least 8 characters — a mix of letters and numbers keeps this account safest.">
-                <form onSubmit={handleChangePassword}>
-                    <div className="mb-4">
-                        <label htmlFor="current-password" className={FIELD_LABEL}>Current Password</label>
-                        <input
-                            id="current-password"
-                            type="password"
-                            value={currentPassword}
-                            onChange={(e) => setCurrentPassword(e.target.value)}
-                            placeholder="••••••••"
-                            autoComplete="current-password"
-                            className={FIELD_INPUT}
-                        />
+                <form onSubmit={handleChangePassword} className="border border-ink/10 bg-white">
+                    <div className="flex flex-col gap-5 p-6 sm:p-7">
+                        <PasswordField id="current-password" label="Current Password" value={currentPassword} onChange={setCurrentPassword} autoComplete="current-password" />
+                        <div className="h-px bg-ink/10" aria-hidden="true" />
+                        <div className="grid gap-5 sm:grid-cols-2">
+                            <PasswordField id="new-password" label="New Password" value={newPassword} onChange={setNewPassword} autoComplete="new-password" />
+                            <PasswordField id="confirm-password" label="Confirm New Password" value={confirmPassword} onChange={setConfirmPassword} autoComplete="new-password" />
+                        </div>
                     </div>
-                    <div className="mb-4">
-                        <label htmlFor="new-password" className={FIELD_LABEL}>New Password</label>
-                        <input
-                            id="new-password"
-                            type="password"
-                            value={newPassword}
-                            onChange={(e) => setNewPassword(e.target.value)}
-                            placeholder="••••••••"
-                            autoComplete="new-password"
-                            className={FIELD_INPUT}
-                        />
+                    <div className="flex items-center justify-end border-t border-ink/10 bg-off/40 px-6 py-4 sm:px-7">
+                        <button type="submit" disabled={submitting} className={`${BTN_PRIMARY} min-w-[168px]`}>
+                            {submitting ? "Updating…" : "Update Password"}
+                        </button>
                     </div>
-                    <div className="mb-5">
-                        <label htmlFor="confirm-password" className={FIELD_LABEL}>Confirm New Password</label>
-                        <input
-                            id="confirm-password"
-                            type="password"
-                            value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
-                            placeholder="••••••••"
-                            autoComplete="new-password"
-                            className={FIELD_INPUT}
-                        />
-                    </div>
-                    <button
-                        type="submit"
-                        disabled={submitting}
-                        className={`inline-flex items-center gap-2 ${BTN_PRIMARY}`}
-                    >
-                        {!submitting && (
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                <path d="M20 6 9 17l-5-5" />
-                            </svg>
-                        )}
-                        {submitting ? "Updating…" : "Update Password"}
-                    </button>
                 </form>
             </SettingsSection>
 
@@ -122,6 +86,50 @@ export default function AdminSecuritySettingsPage() {
     );
 }
 
+function PasswordField({
+    id,
+    label,
+    value,
+    onChange,
+    autoComplete,
+}: {
+    id: string;
+    label: string;
+    value: string;
+    onChange: (v: string) => void;
+    autoComplete: string;
+}) {
+    const [shown, setShown] = useState(false);
+    return (
+        <div>
+            <label htmlFor={id} className={FIELD_LABEL}>{label}</label>
+            <div className="relative">
+                <input
+                    id={id}
+                    type={shown ? "text" : "password"}
+                    value={value}
+                    onChange={(e) => onChange(e.target.value)}
+                    autoComplete={autoComplete}
+                    className={`${FIELD_INPUT} pr-12`}
+                />
+                <button
+                    type="button"
+                    onClick={() => setShown((v) => !v)}
+                    aria-label={shown ? `Hide ${label.toLowerCase()}` : `Show ${label.toLowerCase()}`}
+                    aria-pressed={shown}
+                    className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-grey transition hover:text-ink focus-visible:text-ink focus-visible:outline-none"
+                >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                        <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z" />
+                        <circle cx="12" cy="12" r="3" />
+                        {shown && <path d="M4 4l16 16" />}
+                    </svg>
+                </button>
+            </div>
+        </div>
+    );
+}
+
 function SecuritySettingsSkeleton() {
     return (
         <SkeletonGroup>
@@ -129,22 +137,19 @@ function SecuritySettingsSkeleton() {
                 <div className="mb-6 flex h-10 items-center border-b border-ink/10 pb-4">
                     <Skeleton className="h-[18px] w-40" />
                 </div>
-                <div className="grid grid-cols-1 gap-12 lg:grid-cols-[240px_1fr]">
-                    <Skeleton tone="soft" className="h-[42px] w-[220px]" />
-                    <div className="max-w-[420px]">
-                        <div className="mb-4">
-                            <Skeleton tone="soft" className="mb-1.5 h-[10.5px] w-28" />
-                            <Skeleton tone="outline" className="h-11 w-full" />
+                <div>
+                    <Skeleton tone="soft" className="mb-7 h-4 w-80 max-w-full" />
+                    <div className="border border-ink/10">
+                        <div className="flex flex-col gap-5 p-6 sm:p-7">
+                            <Skeleton tone="outline" className="h-[66px] w-full" />
+                            <div className="grid gap-5 sm:grid-cols-2">
+                                <Skeleton tone="outline" className="h-[66px] w-full" />
+                                <Skeleton tone="outline" className="h-[66px] w-full" />
+                            </div>
                         </div>
-                        <div className="mb-4">
-                            <Skeleton tone="soft" className="mb-1.5 h-[10.5px] w-24" />
-                            <Skeleton tone="outline" className="h-11 w-full" />
+                        <div className="flex justify-end border-t border-ink/10 px-7 py-4">
+                            <Skeleton tone="outline" className="h-[45px] w-[168px]" />
                         </div>
-                        <div className="mb-5">
-                            <Skeleton tone="soft" className="mb-1.5 h-[10.5px] w-36" />
-                            <Skeleton tone="outline" className="h-11 w-full" />
-                        </div>
-                        <Skeleton tone="outline" className="h-[45px] w-40" />
                     </div>
                 </div>
             </div>

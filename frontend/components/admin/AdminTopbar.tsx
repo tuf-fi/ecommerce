@@ -13,6 +13,9 @@ const TITLES: Record<string, string> = {
     staff: "Staff & Roles",
     content: "Content",
     settings: "Settings",
+    payments: "Payment Details",
+    subscribers: "Newsletter Subscribers",
+    messages: "Contact Messages",
 };
 
 function humanize(segment: string) {

@@ -1,5 +1,6 @@
+import { notifyVoucher } from "../services/customerNotifications.service";
 import type { Request, Response } from "express";
-import { randomInt } from "node:crypto";
+import { createHmac, randomInt, timingSafeEqual } from "node:crypto";
 import { z } from "zod";
 import { prisma } from "../lib/prisma";
 import { HttpError } from "../lib/httpError";
@@ -19,12 +20,31 @@ function parse<T extends z.ZodType>(schema: T, body: unknown): z.infer<T> {
   return parsed.data;
 }
 
+// An unsubscribe link is signed with the server's secret so nobody can unsubscribe a stranger by guessing their address.
+function unsubscribeToken(address: string) {
+  return createHmac("sha256", process.env.JWT_SECRET ?? "").update(`unsubscribe:${address}`).digest("hex");
+}
+
+export function unsubscribeUrl(address: string) {
+  const api = process.env.PUBLIC_API_URL ?? `http://localhost:${process.env.PORT ?? 4000}`;
+  return `${api}/newsletter/unsubscribe?e=${encodeURIComponent(address)}&t=${unsubscribeToken(address)}`;
+}
+
+export async function unsubscribe(req: Request, res: Response) {
+  const address = String(req.query.e ?? "").trim().toLowerCase();
+  const given = Buffer.from(String(req.query.t ?? ""), "hex");
+  const expected = Buffer.from(unsubscribeToken(address), "hex");
+  if (!address || given.length !== expected.length || !timingSafeEqual(given, expected)) throw new HttpError(400, "That unsubscribe link isn't valid");
+  await prisma.subscriber.deleteMany({ where: { email: address } });
+  res.redirect(`${process.env.FRONTEND_ORIGIN ?? "http://localhost:3000"}/unsubscribed`);
+}
+
 export async function subscribeNewsletter(req: Request, res: Response) {
   const { email: address } = parse(subscribeSchema, req.body);
   const existing = await prisma.subscriber.findUnique({ where: { email: address } });
   if (!existing) {
     await prisma.subscriber.create({ data: { email: address, source: "newsletter" } });
-    void sendMail({ to: address, subject: "Welcome to Cindyrella", text: "Thanks for subscribing — you'll hear from us about new formulas and rituals." });
+    void sendMail({ to: address, subject: "Welcome to Cindyrella", text: `Thanks for subscribing — you'll hear from us about new formulas and rituals.\n\nNo longer want these emails? Unsubscribe: ${unsubscribeUrl(address)}` });
   }
   // Same answer whether or not they were already on the list.
   res.json({ ok: true });
@@ -63,13 +83,15 @@ export async function subscribePromo(req: Request, res: Response) {
         percentOff: PROMO_PERCENT,
         expiresAt: new Date(Date.now() + PROMO_VALID_DAYS * 24 * 60 * 60 * 1000),
         forEmail: address,
+        maxUses: 1,
       },
     });
   }
+  void notifyVoucher(address, voucher.code, voucher.description, voucher.expiresAt);
   void sendMail({
     to: address,
     subject: "Your Cindyrella welcome code",
-    text: `Use code ${voucher.code} for ${PROMO_PERCENT}% off your first order. It can be used once and expires on ${voucher.expiresAt?.toDateString()}.`,
+    text: `Use code ${voucher.code} for ${PROMO_PERCENT}% off your first order. It can be used once and expires on ${voucher.expiresAt?.toDateString()}.\n\nNo longer want these emails? Unsubscribe: ${unsubscribeUrl(address)}`,
   });
   // The code is only ever delivered by email.
   res.json({ ok: true });

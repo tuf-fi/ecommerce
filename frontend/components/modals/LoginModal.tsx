@@ -7,9 +7,31 @@ import Modal from "../ui/Modal";
 import { EASE } from "../ui/motion/constants";
 import { useStore } from "@/library/store";
 import { contactImage, newsletterImage } from "@/components/ui/images";
-import { useAsyncAction, wait } from "@/library/useAsyncAction";
+import { useAsyncAction } from "@/library/useAsyncAction";
 import { ApiError } from "@/library/api/client";
 import { customerLogin, customerRegister, otpRequest, otpVerify } from "@/library/api/auth";
+import { customerGoogleSignIn } from "@/library/api/customer";
+
+const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? "";
+
+type GoogleId = {
+    initialize: (o: { client_id: string; callback: (r: { credential: string }) => void }) => void;
+    prompt: (cb?: (n: { isNotDisplayed: () => boolean; isSkippedMoment: () => boolean }) => void) => void;
+};
+const googleId = () => (window as unknown as { google?: { accounts?: { id?: GoogleId } } }).google?.accounts?.id;
+
+// Google's sign-in script is only fetched when someone actually presses the button.
+function loadGoogleScript(): Promise<void> {
+    if (googleId()) return Promise.resolve();
+    return new Promise((resolve, reject) => {
+        const s = document.createElement("script");
+        s.src = "https://accounts.google.com/gsi/client";
+        s.async = true;
+        s.onload = () => resolve();
+        s.onerror = () => reject(new Error("load"));
+        document.head.appendChild(s);
+    });
+}
 
 type Mode = "login" | "signup" | "forgot";
 
@@ -43,9 +65,29 @@ function LoginContent({ onClose }: { onClose: () => void }) {
     });
 
     const [googleSubmitting, signUpWithGoogle] = useAsyncAction(async () => {
-        // TODO: real Google OAuth (e.g. NextAuth's Google provider); it must create a backend session, not just local state.
-        await wait();
-        showToast("error", "Google sign-in isn't available yet.");
+        if (!GOOGLE_CLIENT_ID) {
+            showToast("error", "Google sign-in isn't available yet.");
+            return;
+        }
+        try {
+            await loadGoogleScript();
+            const g = googleId();
+            if (!g) throw new Error("load");
+            // Google hands back a signed ID token; the server checks it with Google and starts the session.
+            g.initialize({
+                client_id: GOOGLE_CLIENT_ID,
+                callback: ({ credential }) => {
+                    customerGoogleSignIn(credential)
+                        .then(({ customer }) => signIn(customer))
+                        .catch((err) => showToast("error", err instanceof ApiError ? err.message : "Google sign-in failed. Please try again."));
+                },
+            });
+            g.prompt((n) => {
+                if (n.isNotDisplayed() || n.isSkippedMoment()) showToast("error", "Google sign-in was closed or blocked. Allow pop-ups and try again.");
+            });
+        } catch {
+            showToast("error", "Couldn't reach Google. Please try again.");
+        }
     });
 
     const imagePanel = (

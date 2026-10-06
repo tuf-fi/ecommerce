@@ -15,17 +15,22 @@ function secret(): string {
 }
 
 // Staff tokens carry the id of their AdminSession row as `jti`, which is what lets a session be revoked server-side.
-export function signToken(kind: TokenKind, id: number, sessionId?: string): string {
-  return jwt.sign({ kind }, secret(), { subject: String(id), expiresIn: SESSION_MAX_AGE_MS / 1000, ...(sessionId ? { jwtid: sessionId } : {}) });
+// Customer tokens also carry the customer's tokenVersion (`ver`); raising it on the server signs every device out.
+export function signToken(kind: TokenKind, id: number, sessionId?: string, version?: number): string {
+  return jwt.sign(version === undefined ? { kind } : { kind, ver: version }, secret(), {
+    subject: String(id),
+    expiresIn: SESSION_MAX_AGE_MS / 1000,
+    ...(sessionId ? { jwtid: sessionId } : {}),
+  });
 }
 
 // Returns the subject (and session id, if any), or null for any invalid/expired/wrong-kind token.
-export function readToken(kind: TokenKind, token: string | undefined): { id: number; sessionId?: string } | null {
+export function readToken(kind: TokenKind, token: string | undefined): { id: number; sessionId?: string; version: number } | null {
   if (!token) return null;
   try {
     const payload = jwt.verify(token, secret()) as jwt.JwtPayload;
     if (payload.kind !== kind || !payload.sub) return null;
-    return { id: Number(payload.sub), sessionId: payload.jti };
+    return { id: Number(payload.sub), sessionId: payload.jti, version: typeof payload.ver === "number" ? payload.ver : 0 };
   } catch {
     return null;
   }
@@ -54,8 +59,8 @@ const cookieOptions: CookieOptions = {
   path: "/",
 };
 
-export function setAuthCookie(res: Response, kind: TokenKind, id: number, sessionId?: string) {
-  res.cookie(COOKIE_NAMES[kind], signToken(kind, id, sessionId), { ...cookieOptions, maxAge: SESSION_MAX_AGE_MS });
+export function setAuthCookie(res: Response, kind: TokenKind, id: number, sessionId?: string, version?: number) {
+  res.cookie(COOKIE_NAMES[kind], signToken(kind, id, sessionId, version), { ...cookieOptions, maxAge: SESSION_MAX_AGE_MS });
 }
 
 export function clearAuthCookie(res: Response, kind: TokenKind) {

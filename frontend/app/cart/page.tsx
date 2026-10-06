@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -12,7 +12,7 @@ import PageIntro from "@/components/sections/PageIntro";
 import { PageIntroContent } from "@/library/content";
 import { useMounted } from "@/library/useMounted";
 import { ApiError } from "@/library/api/client";
-import { placeOrder } from "@/library/api/orders";
+import { checkCart, placeOrder, type CartCheckResult } from "@/library/api/orders";
 import { useProducts } from "@/library/productsStore";
 import Skeleton, { SkeletonGroup } from "@/components/ui/Skeleton";
 
@@ -29,11 +29,53 @@ export default function CartPage({ preview = false, introPreviewData }: { previe
     const realEntries = Object.entries(cart);
     const entries = realEntries;
     const cartCount = realCartCount;
-    const cartTotal = realCartTotal;
+    const [codeInput, setCodeInput] = useState("");
+    const [appliedCode, setAppliedCode] = useState("");
+    const [codeError, setCodeError] = useState("");
+    const [quote, setQuote] = useState<CartCheckResult | null>(null);
+    // The server works out the discount and shipping; until it answers, fall back to the plain items total.
+    const subtotal = quote?.subtotal ?? realCartTotal;
+    const discount = quote?.discount ?? 0;
+    const shippingFee = quote?.shippingFee ?? 0;
+    const cartTotal = quote ? quote.total : realCartTotal;
     const [removeKey, setRemoveKey] = useState<string | null>(null);
     const removeLineItem = removeKey !== null ? cart[removeKey] : null;
     const removeProduct = removeLineItem ? getProduct(removeLineItem.productId) : null;
     const mounted = useMounted();
+
+    // Re-quote whenever the bag or the code changes.
+    const quoteKey = JSON.stringify(realEntries.map(([, l]) => [l.productId, l.sizeId, l.qty]));
+    useEffect(() => {
+        if (preview || realEntries.length === 0) return;
+        const items = realEntries.map(([, l]) => ({ productId: l.productId, sizeId: l.sizeId === null ? null : Number(l.sizeId), qty: l.qty }));
+        if (items.some((i) => i.sizeId !== null && !Number.isInteger(i.sizeId))) return;
+        let alive = true;
+        checkCart(items, appliedCode || undefined)
+            .then((r) => {
+                if (!alive) return;
+                setQuote(r);
+                setCodeError(r.voucherError ?? "");
+                // A code the server rejected isn't kept, so it can't be sent with the order.
+                if (r.voucherError) setAppliedCode("");
+            })
+            .catch(() => alive && setQuote(null));
+        return () => {
+            alive = false;
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- quoteKey stands in for the cart entries
+    }, [quoteKey, appliedCode, preview]);
+
+    function applyCode() {
+        const code = codeInput.trim().toUpperCase();
+        if (!code) return;
+        if (!isLoggedIn) {
+            showToast("error", "Sign in to use a discount code.");
+            openModal("login");
+            return;
+        }
+        setCodeError("");
+        setAppliedCode(code);
+    }
 
     async function checkout() {
         if (preview || placing) return;
@@ -56,7 +98,7 @@ export default function CartPage({ preview = false, introPreviewData }: { previe
         setPlacing(true);
         try {
             // The server prices the order and takes the stock in one transaction; nothing here is trusted.
-            const { order } = await placeOrder({ items, address: checkoutAddress.text });
+            const { order } = await placeOrder({ items, address: checkoutAddress.text, voucherCode: appliedCode || undefined });
             clearCart();
             showToast("success", `Order ${order.no} placed.`);
             // Straight to the order, where the payment details and screenshot upload open automatically.
@@ -192,12 +234,37 @@ export default function CartPage({ preview = false, introPreviewData }: { previe
                         <div className="mb-5 font-mono text-[10px] uppercase tracking-[.16em] text-grey">Order Summary</div>
                         <div className="flex items-center justify-between text-[13px] text-grey">
                             <span>Subtotal · {cartCount} item{cartCount === 1 ? "" : "s"}</span>
-                            <span className="font-mono text-ink">₱{cartTotal.toLocaleString()}</span>
+                            <span className="font-mono text-ink">₱{subtotal.toLocaleString()}</span>
                         </div>
+                        {discount > 0 && (
+                            <div className="mt-2.5 flex items-center justify-between text-[13px] text-grey">
+                                <span>Discount · {appliedCode}</span>
+                                <span className="font-mono text-ink">−₱{discount.toLocaleString()}</span>
+                            </div>
+                        )}
                         <div className="mt-2.5 flex items-center justify-between text-[13px] text-grey">
                             <span>Shipping</span>
-                            <span className="font-mono text-ink">Calculated at checkout</span>
+                            <span className="font-mono text-ink">{!quote ? "—" : shippingFee > 0 ? `₱${shippingFee.toLocaleString()}` : "Free"}</span>
                         </div>
+                        {!preview && (
+                            <div className="mt-5">
+                                <div className="flex gap-2">
+                                    <input
+                                        value={codeInput}
+                                        onChange={(e) => setCodeInput(e.target.value)}
+                                        onKeyDown={(e) => e.key === "Enter" && applyCode()}
+                                        placeholder="Discount code"
+                                        aria-label="Discount code"
+                                        className="min-w-0 flex-1 border border-ink/15 px-3 py-2.5 font-mono text-[12.5px] uppercase text-ink outline-none focus:border-pink-btn"
+                                    />
+                                    <button onClick={applyCode} className="border border-ink/15 px-4 text-[12px] font-semibold uppercase tracking-wide text-ink transition hover:border-pink-btn hover:text-pink-dark">
+                                        Apply
+                                    </button>
+                                </div>
+                                {codeError && <p className="mt-1.5 text-[11.5px] text-alert">{codeError}</p>}
+                                {quote?.voucher && !codeError && <p className="mt-1.5 text-[11.5px] text-grey">{quote.voucher.description}</p>}
+                            </div>
+                        )}
 
                         {/* Below lg, Total/checkout live in the fixed mobile bar instead — this block is lg+ only.
                             In preview it always shows instead, since the fixed mobile bar is skipped entirely there. */}

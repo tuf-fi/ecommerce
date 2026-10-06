@@ -17,6 +17,8 @@ const SHAPES = {
   pageIntros: "object",
   // How customers pay (GCash/Maya numbers, bank details, instructions); edited in Admin → Settings → Payment Details.
   paymentInstructions: "object",
+  // Flat shipping fee and the order total above which shipping is free; edited in the same Settings page.
+  shipping: "object",
   navLinks: "array",
   footerShopLinks: "array",
   footerCompanyLinks: "array",
@@ -68,7 +70,7 @@ export async function getContent(req: Request, res: Response) {
 export async function saveContent(req: Request, res: Response) {
   const key = sectionKey(req);
   // Whoever can edit these can change where customers send their money, so it is limited to administrators.
-  if (key === "paymentInstructions" && req.staff?.role !== "ADMINISTRATOR") throw new HttpError(403, "Only administrators can change payment details");
+  if ((key === "paymentInstructions" || key === "shipping") && req.staff?.role !== "ADMINISTRATOR") throw new HttpError(403, "Only administrators can change payment and shipping details");
   const data: unknown = req.body?.data;
   const isArray = Array.isArray(data);
   if (data === null || typeof data !== "object" || isArray !== (SHAPES[key] === "array")) {

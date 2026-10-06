@@ -13,6 +13,8 @@ import { listOrderHistory, OrderHistoryEntry } from "@/library/api/orders";
 import ProofImage from "@/components/ui/ProofImage";
 import { PAYMENT_METHOD_LABEL, PaymentMethodId } from "@/library/api/payments";
 import { BTN_PRIMARY, FIELD_INPUT } from "@/components/admin/formClasses";
+import { useAdminStore } from "@/library/adminStore";
+import { isAdministrator } from "@/library/admin/permissions";
 
 const CANCELLED_STATUS: AdminOrderStatus = "Cancelled";
 
@@ -31,12 +33,23 @@ export default function OrderModal({
     onStatusChange: (orderNo: string, status: AdminOrderStatus) => void;
     onReviewPayment: (orderNo: string, proofId: number, input: { decision: "approve" } | { decision: "reject"; reason: string }) => Promise<boolean>;
 }) {
+    const { currentStaffMember, refundOrder } = useAdminStore();
+    const [refundOpen, setRefundOpen] = useState(false);
+    const [refundAmount, setRefundAmount] = useState("");
+    const [refundNote, setRefundNote] = useState("");
+    const [refunding, setRefunding] = useState(false);
+    // The refund just recorded, shown straight away in case the parent hasn't reloaded this order yet.
+    const [justRefunded, setJustRefunded] = useState<{ no: string; amount: number } | null>(null);
+
     // Stays mounted across order switches, so pending confirmation is cleared via render-time state adjustment when `order` changes.
     const [pendingCancel, setPendingCancel] = useState(false);
     const [prevOrderNo, setPrevOrderNo] = useState(order?.no);
     if (order?.no !== prevOrderNo) {
         setPrevOrderNo(order?.no);
         setPendingCancel(false);
+        setRefundOpen(false);
+        setRefundAmount("");
+        setRefundNote("");
     }
 
     const [rejecting, setRejecting] = useState<number | null>(null);
@@ -60,6 +73,7 @@ export default function OrderModal({
     }, [open, orderNo, orderStatus]);
 
     if (!order) return null;
+    const refunded = order.refund?.amount ?? (justRefunded?.no === order.no ? justRefunded.amount : 0);
 
     function handleStatusChange(next: AdminOrderStatus) {
         if (!order) return;
@@ -239,6 +253,64 @@ export default function OrderModal({
                     )}
                 </div>
 
+                <div className="border-t border-ink/10 px-8 py-6">
+                    <span className="mb-3 block font-mono text-[10px] tracking-[.14em] text-grey uppercase">Money</span>
+                    <div className="flex flex-col gap-1.5 text-[13px] text-grey">
+                        <div className="flex justify-between"><span>Items</span><span className="font-mono text-ink">₱{(order.subtotal ?? orderTotal(order)).toLocaleString()}</span></div>
+                        {(order.discount ?? 0) > 0 && (
+                            <div className="flex justify-between"><span>Discount{order.voucherCode ? ` · ${order.voucherCode}` : ""}</span><span className="font-mono text-ink">−₱{order.discount!.toLocaleString()}</span></div>
+                        )}
+                        <div className="flex justify-between"><span>Shipping</span><span className="font-mono text-ink">{(order.shippingFee ?? 0) > 0 ? `₱${order.shippingFee!.toLocaleString()}` : "Free"}</span></div>
+                    </div>
+
+                    {refunded ? (
+                        <p className="mt-4 border-l-2 border-pink-dark bg-pink-soft/40 px-3 py-2 text-[12.5px] text-ink">
+                            Refunded ₱{refunded.toLocaleString()}
+                            {order.refund ? ` on ${new Date(order.refund.at).toLocaleDateString([], { dateStyle: "medium" })}` : ""}
+                            {order.refund?.note ? ` — ${order.refund.note}` : ""}
+                        </p>
+                    ) : (
+                        order.paidAt && isAdministrator(currentStaffMember) && (
+                            refundOpen ? (
+                                <div className="mt-4">
+                                    <p className="mb-2 text-[12px] leading-relaxed text-grey">Send the money back yourself (GCash / bank), then record it here. This doesn&apos;t move any money.</p>
+                                    <input
+                                        type="number"
+                                        min={1}
+                                        max={orderTotal(order)}
+                                        value={refundAmount}
+                                        onChange={(e) => setRefundAmount(e.target.value)}
+                                        placeholder={`Amount (up to ₱${orderTotal(order).toLocaleString()})`}
+                                        aria-label="Refund amount"
+                                        className={`${FIELD_INPUT} mb-2`}
+                                    />
+                                    <input value={refundNote} onChange={(e) => setRefundNote(e.target.value)} maxLength={300} placeholder="Note (optional)" aria-label="Refund note" className={`${FIELD_INPUT} mb-2`} />
+                                    <div className="flex gap-2">
+                                        <button
+                                            disabled={refunding || !(Number(refundAmount) >= 1 && Number(refundAmount) <= orderTotal(order))}
+                                            onClick={async () => {
+                                                setRefunding(true);
+                                                const amount = Math.floor(Number(refundAmount));
+                                                if (await refundOrder(order.no, { amount, note: refundNote.trim() || undefined })) {
+                                                    setJustRefunded({ no: order.no, amount });
+                                                    setRefundOpen(false);
+                                                }
+                                                setRefunding(false);
+                                            }}
+                                            className={`flex-1 ${BTN_PRIMARY}`}
+                                        >
+                                            {refunding ? "Recording…" : "Record refund"}
+                                        </button>
+                                        <button onClick={() => setRefundOpen(false)} disabled={refunding} className="border border-ink/15 px-4 text-[12.5px] text-ink hover:bg-off">Cancel</button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <button onClick={() => setRefundOpen(true)} className="mt-4 border border-ink/15 px-4 py-2.5 text-[12.5px] text-ink transition hover:bg-off">Record a refund</button>
+                            )
+                        )
+                    )}
+                </div>
+
                 <div className="sticky bottom-0 flex justify-between border-t border-ink/10 bg-white px-8 py-5 text-[15px] font-semibold text-ink">
                     <span>Total</span>
                     <span>₱{orderTotal(order).toLocaleString()}</span>
@@ -248,7 +320,7 @@ export default function OrderModal({
             <ConfirmModal
                 open={pendingCancel}
                 title="Cancel this order?"
-                description={`Order ${order.no} will be marked Cancelled — this is visible to ${order.customer} and can't be undone from here.`}
+                description={`Order ${order.no} will be marked Cancelled — this is visible to ${order.customer} and can't be undone from here.${order.paidAt ? " It was already paid: cancelling does not send the money back, so record a refund afterwards." : ""}`}
                 confirmLabel="Cancel Order"
                 loadingLabel="Cancelling…"
                 cancelLabel="Keep Order"

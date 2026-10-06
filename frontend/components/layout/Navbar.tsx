@@ -10,6 +10,7 @@ import { SiteNavLink } from "@/library/admin/types";
 import { SECTION_ANCHOR_ID } from "@/library/admin/sections";
 import { EASE } from "../ui/motion/constants";
 import Tooltip from "../ui/Tooltip";
+import NotificationBell from "./NotificationBell";
 
 // Not CMS-managed — it duplicates the wordmark's scroll-to-top, not a section, so there's nothing for an admin to edit.
 const HOME_LABEL = "Home";
@@ -179,28 +180,30 @@ export default function Navbar(){
                         </Tooltip>
 
                         {accountOpen && isLoggedIn && (
-                            <div className="absolute right-0 top-full mt-2 w-60 border border-white/10 bg-navy py-2 text-white shadow-modal">
+                            <div className="absolute right-0 top-full mt-2 w-60 border border-ink/10 bg-white py-2 text-ink shadow-modal">
                                 <div className="px-4 py-3">
-                                    <div className="text-[13px] text-white">Hi, {customerName}</div>
+                                    <div className="text-[13px] text-ink">Hi, {customerName}</div>
                                 </div>
-                                <div className="my-1 border-t border-white/10" />
+                                <div className="my-1 border-t border-ink/10" />
                                 <button
                                     onClick={() => { setAccountOpen(false); router.push("/account"); }}
-                                    className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-[12.5px] transition hover:bg-white/5"
+                                    className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-[12.5px] transition hover:bg-ink/5"
                                 >
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="flex-none text-grey-light">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="flex-none text-grey">
                                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                                         <circle cx="12" cy="7" r="4" />
                                     </svg>
                                     View Profile
                                 </button>
-                                <div className="my-1 border-t border-white/10" />
-                                <button onClick={() => { setAccountOpen(false); signOut(); }} className="block w-full px-4 py-2.5 text-left text-[12.5px] text-pink transition hover:bg-white/5">
+                                <div className="my-1 border-t border-ink/10" />
+                                <button onClick={() => { setAccountOpen(false); signOut(); }} className="block w-full px-4 py-2.5 text-left text-[12.5px] text-pink-dark transition hover:bg-ink/5">
                                     Sign out
                                 </button>
                             </div>
                         )}
                     </div>
+
+                    {isLoggedIn && <NotificationBell />}
 
                     <Tooltip label="Wishlist">
                         <button

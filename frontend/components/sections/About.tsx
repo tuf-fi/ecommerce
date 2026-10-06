@@ -18,7 +18,7 @@ export default function AboutSection({
 
     return (
         <SectionContainer id={preview ? undefined : "about"} preview={preview}>
-            <SectionTitle num="01" title="About" />
+            <SectionTitle section="about" title="About" />
 
             <div className="flex flex-row gap-x-20">
                 <FadeIn delay={0.1} className="left-info flex flex-col gap-y-7">

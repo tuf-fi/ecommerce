@@ -16,7 +16,7 @@ export default function Moments(){
 
     return(
         <SectionContainer id="rituals">
-            <SectionTitle num="03" title="Rituals" />
+            <SectionTitle section="moments" title="Rituals" />
 
             <div className="grid grid-cols-2 gap-6">
                 {rituals.map((ritual, index) => (

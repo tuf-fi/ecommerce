@@ -80,7 +80,7 @@ export default function Testimonials() {
 
     return (
         <SectionContainer id="testimonials">
-            <SectionTitle num="08" title="Testimonials" />
+            <SectionTitle section="testimonials" title="Testimonials" />
 
             <RevealIn direction="bottom">
                 <FeaturedTestimonial pool={testimonials} />

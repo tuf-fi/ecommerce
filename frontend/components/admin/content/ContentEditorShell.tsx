@@ -75,6 +75,7 @@ export default function ContentEditorShell({
     previewScroll = "pane",
     featuredImage,
     meta,
+    guide,
     children,
 }: {
     /** Also doubles as the Live Preview bar's label (e.g. "Live Preview — Hero") now that the rail no longer repeats it in its own header. */
@@ -102,6 +103,8 @@ export default function ContentEditorShell({
     featuredImage?: React.ReactNode;
     /** Rendered in a "Details" panel card — secondary fields beside Publish rather than in the main form. Omit if unused. */
     meta?: React.ReactNode;
+    /** Rendered in a "Formatting Guide" panel card above everything else — instructions for the editor, not content. */
+    guide?: React.ReactNode;
     children: React.ReactNode;
 }) {
     const router = useRouter();
@@ -141,6 +144,8 @@ export default function ContentEditorShell({
     // Shared by both the desktop panel and the mobile stacked fallback below.
     const cards = (
         <>
+            {guide && <MetaBox label="Formatting Guide">{guide}</MetaBox>}
+            {meta && <MetaBox label="Details">{meta}</MetaBox>}
             {showSaveBar && (
                 <MetaBox label="Publish">
                     <div className="mb-3.5 flex items-center gap-2 font-mono text-[10.5px] tracking-[.06em] uppercase">
@@ -160,7 +165,6 @@ export default function ContentEditorShell({
             )}
             {featuredImage && <MetaBox label="Featured Image">{featuredImage}</MetaBox>}
             <MetaBox label="Content">{children}</MetaBox>
-            {meta && <MetaBox label="Details">{meta}</MetaBox>}
         </>
     );
 

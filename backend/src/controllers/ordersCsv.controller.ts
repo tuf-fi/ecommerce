@@ -47,10 +47,15 @@ export async function exportOrders(req: Request, res: Response) {
     Address: safeCell(o.shipAddress),
     Items: safeCell(o.items.map((i) => `${i.quantity} x ${i.productName}${i.size ? ` (${i.size.label})` : ""}`).join("; ")),
     "Item count": o.items.reduce((s, i) => s + i.quantity, 0),
+    Subtotal: o.subtotal || o.total,
+    Discount: o.discount,
+    "Voucher code": safeCell(o.voucherCode ?? ""),
+    Shipping: o.shippingFee,
     Total: o.total,
     Status: o.status.charAt(0) + o.status.slice(1).toLowerCase(),
     "Payment method": o.paymentMethod ?? "",
     "Paid on": o.paidAt ? o.paidAt.toISOString().slice(0, 10) : "",
+    "Refunded": o.refundAmount ?? "",
   }));
   res.setHeader("Content-Type", "text/csv; charset=utf-8");
   res.setHeader("Content-Disposition", `attachment; filename="orders-${new Date().toISOString().slice(0, 10)}.csv"`);

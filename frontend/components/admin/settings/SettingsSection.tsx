@@ -1,6 +1,6 @@
 import PageHeading from "@/components/ui/PageHeading";
 
-// Pass `aside` for a form/task needing an explanatory side note (240px-label/1fr-body grid); omit it for a self-explanatory list.
+// Pass `aside` for a form/task needing a short intro line under the heading; omit it for a self-explanatory list.
 export function SettingsSection({
     title,
     action,
@@ -16,9 +16,9 @@ export function SettingsSection({
         <section className="mb-12 last:mb-0">
             <PageHeading action={action}>{title}</PageHeading>
             {aside ? (
-                <div className="grid grid-cols-1 gap-12 lg:grid-cols-[240px_1fr]">
-                    <p className="max-w-[220px] text-[12.5px] leading-relaxed text-grey">{aside}</p>
-                    <div className="max-w-[420px]">{children}</div>
+                <div>
+                    <p className="mb-7 max-w-[56ch] text-[13px] leading-relaxed text-grey">{aside}</p>
+                    {children}
                 </div>
             ) : (
                 children

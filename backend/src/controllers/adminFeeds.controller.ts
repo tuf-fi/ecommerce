@@ -37,6 +37,40 @@ export async function listCustomers(req: Request, res: Response) {
   res.json({ total, page, pageSize, customers: rows.map((c) => ({ id: c.id, name: c.name, email: c.email, createdAt: c.createdAt.toISOString(), orders: c._count.orders })) });
 }
 
+// ---- newsletter subscribers and Contact-form messages ---------------------------------------------------------------------------
+
+const listQuery = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).default(50),
+  search: z.string().trim().max(100).optional(),
+});
+
+function parseList(req: Request) {
+  const q = listQuery.safeParse(req.query);
+  if (!q.success) throw new HttpError(400, q.error.issues[0]?.message ?? "Invalid request");
+  return q.data;
+}
+
+export async function listSubscribers(req: Request, res: Response) {
+  const { page, pageSize, search } = parseList(req);
+  const where = search ? { email: { contains: search, mode: "insensitive" as const } } : {};
+  const [total, rows] = await Promise.all([
+    prisma.subscriber.count({ where }),
+    prisma.subscriber.findMany({ where, orderBy: [{ createdAt: "desc" }, { id: "desc" }], skip: (page - 1) * pageSize, take: pageSize }),
+  ]);
+  res.json({ total, page, pageSize, subscribers: rows.map((s) => ({ id: s.id, email: s.email, source: s.source, createdAt: s.createdAt.toISOString() })) });
+}
+
+export async function listMessages(req: Request, res: Response) {
+  const { page, pageSize, search } = parseList(req);
+  const where = search ? { OR: [{ name: { contains: search, mode: "insensitive" as const } }, { email: { contains: search, mode: "insensitive" as const } }, { message: { contains: search, mode: "insensitive" as const } }] } : {};
+  const [total, rows] = await Promise.all([
+    prisma.contactMessage.count({ where }),
+    prisma.contactMessage.findMany({ where, orderBy: [{ createdAt: "desc" }, { id: "desc" }], skip: (page - 1) * pageSize, take: pageSize }),
+  ]);
+  res.json({ total, page, pageSize, messages: rows.map((m) => ({ id: m.id, name: m.name, email: m.email, message: m.message, createdAt: m.createdAt.toISOString() })) });
+}
+
 // ---- notifications --------------------------------------------------------------------------------------------------------
 
 type Item = { key: string; type: "order" | "inventory"; text: string; at: Date; ref?: string };
@@ -99,7 +133,8 @@ export async function myVouchers(req: Request, res: Response) {
   const customer = await prisma.customer.findUnique({ where: { id: req.customerId }, select: { email: true } });
   if (!customer) throw new HttpError(401, "Not signed in");
   const rows = await prisma.voucher.findMany({
-    where: { forEmail: customer.email, active: true, usedAt: null, OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] },
+    // Personal codes that haven't been used yet (any use ends a single-use code).
+    where: { forEmail: customer.email, active: true, redemptions: { none: {} }, OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] },
     orderBy: { id: "desc" },
   });
   res.json({ vouchers: rows.map((v) => ({ code: v.code, description: v.description, percentOff: v.percentOff, expiresAt: v.expiresAt ? v.expiresAt.toISOString() : null })) });

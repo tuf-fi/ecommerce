@@ -1,17 +1,17 @@
 import { StaffMember } from "./types";
 
 
-// "payments" (Settings → Payment Details) is administrators only, like "staff".
-export type AdminSection = "dashboard" | "inventory" | "orders" | "staff" | "content" | "settings" | "payments";
+// "payments" (Payment Details, Discount Codes, Audit Log) is administrators only, like "staff". "customers" covers the
+// newsletter subscribers and contact messages.
+export type AdminSection = "dashboard" | "inventory" | "orders" | "staff" | "content" | "customers" | "settings" | "payments";
 
 // Mirrors backend/src/lib/sections.ts — the server is what actually enforces this; this only hides menu items so people
 // aren't shown pages they'd be refused. Unrecognised access values get nothing (fail closed), same as the server.
 const ACCESS_SECTION_MAP: Record<string, AdminSection[]> = {
-    "Full access": ["inventory", "orders", "content"],
+    "Full access": ["inventory", "orders", "content", "customers"],
     "Inventory & orders only": ["inventory", "orders"],
     "Inventory only": ["inventory"],
     "Orders only": ["orders"],
-    Custom: [],
 };
 
 export function isAdministrator(staffMember: StaffMember | null): boolean {
@@ -39,6 +39,7 @@ export function sectionForPath(pathname: string): AdminSection | null {
     if (pathname.startsWith("/admin/orders")) return "orders";
     if (pathname.startsWith("/admin/content")) return "content";
     if (pathname.startsWith("/admin/staff")) return "staff";
-    if (pathname.startsWith("/admin/settings/payments")) return "payments";
+    if (pathname.startsWith("/admin/payments") || pathname.startsWith("/admin/discount-codes") || pathname.startsWith("/admin/audit-log")) return "payments";
+    if (pathname.startsWith("/admin/subscribers") || pathname.startsWith("/admin/messages")) return "customers";
     return null;
 }

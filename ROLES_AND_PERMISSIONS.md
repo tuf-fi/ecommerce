@@ -22,12 +22,15 @@ There are three kinds of people:
 | Approve / reject payment screenshots | yes | yes | yes | – | yes |
 | Export orders, import order status updates (CSV) | yes | yes | yes | – | yes |
 | Edit website content (text, images, pages, journal, promotions) | yes | yes | – | – | – |
-| See the customer list | yes | yes | – | – | – |
+| See the customer list, newsletter subscribers and Contact-form messages | yes | yes | – | – | – |
 | **Change Payment Details** (the accounts customers pay into) | **yes** | – | – | – | – |
 | **Staff page** (add, edit, deactivate, delete accounts) | **yes** | – | – | – | – |
 | **Audit log** (who changed what) | **yes** | – | – | – | – |
+| **Discount codes** (create, turn on/off) | **yes** | – | – | – | – |
+| **Shipping fee** (Payment Details page) | **yes** | – | – | – | – |
+| **Record a refund** on a paid order | **yes** | – | – | – | – |
 
-"Custom" access currently grants nothing beyond the Dashboard and the person's own settings (it was never given a definition), and any unrecognised access value is treated the same way.
+There is no "Custom" level any more. An account that still holds an unrecognised access value gets nothing beyond the Dashboard and the person's own settings until an administrator picks one of the four levels.
 
 ---
 
@@ -41,7 +44,10 @@ An administrator can do **everything** in the table above: every inventory, orde
 |---|---|
 | **Staff page** | See all staff accounts; add a person (name, email, role, access level, starting password); change their name, email, role, access level or photo; deactivate or reactivate them; set a new password for them; turn off their two-factor when they lose their phone and recovery codes; delete them |
 | **Payment Details** | Change the GCash / Maya / bank accounts and message that customers see when they pay. Every change is logged with the account numbers, so a swapped number can always be traced |
-| **Audit log** | Read the record of who changed what: products, staff accounts, site content (there is no screen for it yet; it is available from the API) |
+| **Audit log** | Audit Log (System section of the sidebar): read the record of who changed what (orders, products, staff accounts, discount codes, site content), newest first, filtered by type or id |
+| **Discount codes** | Discount Codes (Sales section): create percentage-off codes (optional last day and total-use limit) and turn them on or off |
+| **Shipping** | Set the flat shipping fee and an optional free-shipping amount (Payment Details → Shipping). Until it is set, shipping is free |
+| **Refunds** | Record that a paid order was refunded (amount and note, once per order, never more than the total). It doesn't move any money: you send it back yourself; the customer is emailed |
 
 ### Safeguards, which apply to administrators too
 
@@ -64,11 +70,10 @@ An administrator can do **everything** in the table above: every inventory, orde
 
 | Access level | Inventory | Orders | Site content | Customer list |
 |---|---|---|---|---|
-| **Full access** | yes | yes | yes | yes |
+| **Full access** | yes | yes | yes | yes (and subscribers, messages) |
 | **Inventory & orders only** | yes | yes | no | no |
 | **Inventory only** | yes | no | no | no |
 | **Orders only** | no | yes | no | no |
-| **Custom** | no | no | no | no |
 
 ### What each area includes
 
@@ -79,7 +84,7 @@ An administrator can do **everything** in the table above: every inventory, orde
   - **Approve or reject payment screenshots** and view the screenshots. Approving marks the order Paid.
   - **Export orders** as a CSV and **import order status updates** from a CSV (section 4).
 - **Site content:** edit the website text, images, pages, journal, promotions and so on. (Not the payment details; those are administrators only.)
-- **Customer list:** registered customers' names, emails and join dates.
+- **Customer list, subscribers and messages:** registered customers' names, emails and join dates; the newsletter subscriber list; messages sent from the Contact form (Customers section of the sidebar).
 
 ### What every signed-in staff member can always do
 
@@ -91,7 +96,7 @@ An administrator can do **everything** in the table above: every inventory, orde
 
 ## 4. Importing and exporting orders (administrators and anyone with Orders access)
 
-**Export** (Orders page → Export): downloads every order as a spreadsheet, or only the status you have filtered to. Columns: Order, Date, Customer, Email, Address, Items, Item count, Total, Status, Payment method, Paid on. Customer-typed text that begins with `=`, `+`, `-` or `@` is prefixed with an apostrophe so it can't run as a formula when opened in Excel. The older "Export CSV" in the bulk bar still exports just the rows you ticked.
+**Export** (Orders page → Export): downloads every order as a spreadsheet, or only the status you have filtered to. Columns: Order, Date, Customer, Email, Address, Items, Item count, Subtotal, Discount, Voucher code, Shipping, Total, Status, Payment method, Paid on, Refunded. Customer-typed text that begins with `=`, `+`, `-` or `@` is prefixed with an apostrophe so it can't run as a formula when opened in Excel. The older "Export CSV" in the bulk bar still exports just the rows you ticked.
 
 **Import** (Orders page → Import): updates the **status** of many orders at once, for example from a courier's sheet. The file needs two columns, `Order` and `Status`. You can export, change the Status column, and import that file back. Rules:
 - Each row follows exactly the same rules as changing a status by hand: allowed moves only, cancelling returns stock, and every change appears in the order's history as "Status import" with the person's name.
@@ -107,7 +112,7 @@ Shoppers use the public website, not the admin panel. A customer account is **co
 ### Visitors (not signed in) can
 
 - Browse the shop, product pages, reviews, rituals, the journal and the other pages, and see prices and stock levels.
-- Fill a bag and a wishlist. Both are saved only in that browser; nothing is stored on the server until checkout.
+- Fill a bag and a wishlist. Both are saved only in that browser until they sign in; at sign-in the wishlist is merged into their account.
 - Check that the items in a bag are in stock and see current prices (no account needed).
 - Create an account, sign in, and reset a forgotten password with a 6-digit code sent by email (code lasts 10 minutes, 5 wrong tries and it's void).
 - Subscribe to the newsletter, send a message through the Contact form, and claim the welcome code (one per email address).
@@ -122,8 +127,12 @@ Visitors **can't** place an order, write a review, or see any account page. Tryi
 | **Paying** | See the shop's payment details and total, and **upload a screenshot** of their transfer for an unpaid order (JPG, PNG or WEBP, up to 3 MB; one waiting at a time; up to 5 attempts per order). View their own screenshots. If one is rejected they see the reason and can upload another |
 | **Reviews** | Write one review per product (they don't have to have bought it). It appears straight away under "First L." |
 | **Account** | Change their name and profile photo, and change their password (they must enter the current one) |
-| **Delivery addresses** | Add, edit and remove addresses and pick one for checkout (saved in their browser for now) |
-| **Vouchers** | See their own unused, unexpired welcome codes (codes can't be applied at checkout yet) |
+| **Delivery addresses** | Add, edit and remove addresses (up to 10) and pick one for checkout. Saved on their account, so they appear on any device |
+| **Wishlist** | Saved on their account and available on any device |
+| **Discount codes** | Type a code in the cart; the server applies it and shows the discount. Each customer can use a given code once. They can also see their own unused, unexpired welcome codes under My Vouchers |
+| **Shipping** | See the shipping fee in the cart before ordering (free if the shop hasn't set one, or the order is over the free-shipping amount) |
+| **Emails** | Receive emails when an order is placed, changes status or is refunded, and a one-click unsubscribe link in newsletters and promotions (order emails aren't affected) |
+| **Sign-in** | Email and password, or Google (when the shop has set it up). "Sign out of all devices" on Change Password ends every login on every device |
 
 ### Customers can't
 

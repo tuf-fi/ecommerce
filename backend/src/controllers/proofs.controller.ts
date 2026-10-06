@@ -1,3 +1,4 @@
+import { notifyOrderStatus,notifyPaymentRejected } from "../services/customerNotifications.service";
 import type { Request, Response } from "express";
 import { z } from "zod";
 import { prisma } from "../lib/prisma";
@@ -126,8 +127,11 @@ export async function reviewProof(req: Request, res: Response) {
         details: { proofId: proof.id, reason: body.reason },
       });
     }
-    return { email: proof.order.shipEmail, total: proof.order.total };
+    return { email: proof.order.shipEmail, total: proof.order.total, customerId: proof.order.customerId };
   });
+
+  const ref = { customerId: result.customerId, number, total: result.total };
+  void (body.decision === "approve" ? notifyOrderStatus(ref, "PAID", false, true) : notifyPaymentRejected(ref, body.reason));
 
   void sendMail(
     body.decision === "approve"

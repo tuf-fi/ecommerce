@@ -19,6 +19,8 @@ export const authRouter = Router();
 authRouter.post("/customer/register", registerLimiter, auth.customerRegister);
 authRouter.post("/customer/login", loginByIpLimiter, loginLimiter, auth.customerLogin);
 authRouter.post("/customer/logout", auth.customerLogout);
+authRouter.post("/customer/logout-all", requireCustomer, auth.customerLogoutAll);
+authRouter.post("/customer/google", loginByIpLimiter, auth.customerGoogle);
 authRouter.get("/customer/session", requireCustomer, auth.customerSession);
 authRouter.patch("/customer/profile", requireCustomer, auth.customerUpdateProfile);
 authRouter.post("/customer/password", requireCustomer, accountSecurityLimiter, auth.customerChangePassword);

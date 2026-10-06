@@ -1,11 +1,28 @@
 import type { NextFunction, Request, Response } from "express";
 import { prisma } from "../lib/prisma";
-import { COOKIE_NAMES, readToken, verifyToken } from "../lib/jwt";
+import { COOKIE_NAMES, readToken } from "../lib/jwt";
 
-export function requireCustomer(req: Request, res: Response, next: NextFunction) {
-  const id = verifyToken("customer", req.cookies?.[COOKIE_NAMES.customer]);
+// A valid signature isn't enough: the token's version must still match the customer's current tokenVersion, so "sign out of all
+// devices", a password change or a reset really ends every older login. Tokens issued before versions existed count as 0.
+export async function resolveCustomerId(req: Request): Promise<number | null> {
+  const token = readToken("customer", req.cookies?.[COOKIE_NAMES.customer]);
+  if (!token) return null;
+  const customer = await prisma.customer.findUnique({ where: { id: token.id }, select: { tokenVersion: true } });
+  return customer && customer.tokenVersion === token.version ? token.id : null;
+}
+
+export async function requireCustomer(req: Request, res: Response, next: NextFunction) {
+  const id = await resolveCustomerId(req);
   if (id === null) return res.status(401).json({ error: "Not signed in" });
   req.customerId = id;
+  next();
+}
+
+// Like requireCustomer but never rejects: sets req.customerId when a valid customer cookie is present, so a page that
+// works for visitors can still tailor its answer for someone signed in (e.g. checking a voucher code).
+export async function softCustomer(req: Request, _res: Response, next: NextFunction) {
+  const id = await resolveCustomerId(req);
+  if (id !== null) req.customerId = id;
   next();
 }
 
@@ -47,7 +64,7 @@ export async function requireStaffOrCustomer(req: Request, res: Response, next: 
     req.sessionId = found.sessionId;
     return next();
   }
-  const id = verifyToken("customer", req.cookies?.[COOKIE_NAMES.customer]);
+  const id = await resolveCustomerId(req);
   if (id === null) return res.status(401).json({ error: "Not signed in" });
   req.customerId = id;
   next();

@@ -11,7 +11,7 @@ import { Toolbar, ToolbarFilters, FilterField } from "@/components/admin/Toolbar
 import StatusBadge, { BadgeTone } from "@/components/admin/StatusBadge";
 import { EmptyStateBlock } from "@/components/admin/EmptyState";
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 10;
 
 type SortOrder = "date-desc" | "date-asc";
 type TypeFilter = "all" | "in" | "out" | "adj";

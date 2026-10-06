@@ -356,7 +356,17 @@ Everything that was invented placeholder data was removed, except the shop's own
 - **Who:** anyone with Orders access (Full access, Inventory & orders only, Orders only) may export, import, view screenshots and **approve payments**. Tested with an Orders-only account (all allowed) and an Inventory-only account (all refused with 403).
 - The full who-can-do-what list is in `ROLES_AND_PERMISSIONS.md`.
 
+## Checkout extras, customer data, admin screens
+
+- **Vouchers at checkout:** `POST /cart/check` and `POST /orders` take an optional `voucherCode`. The code is claimed with one conditional UPDATE inside the order transaction (so a stock failure gives it back, and two simultaneous orders on one code can't both win); each customer can use a code once (`VoucherUse`); an unpaid cancellation releases it. Administrators manage codes at `/discount-codes`; customers list their own at `GET /vouchers/mine`.
+- **Shipping fee:** flat fee + optional free-over amount, stored as the admin-only `shipping` content section; free until set. Order total = subtotal − discount + shipping, all fixed on the order.
+- **Refunds:** `POST /orders/:no/refund` (administrators): once per order, never above the total, audit entry, customer email. Records only; nothing moves money.
+- **Addresses and wishlist on the server:** `/addresses` (max 10, one default) and `/wishlist` (`PUT/DELETE /:productId`, `POST /merge` at sign-in). The storefront loads them after sign-in and no longer keeps addresses in the browser.
+- **"Custom" access removed** from the dropdown and the server.
+- **Admin screens:** Settings → Discount Codes, Audit Log, Newsletter Subscribers, Contact Messages (`/audit-log`, `/subscribers`, `/contact-messages`); subscribers and messages need the new "customers" section (Full access or administrator).
+- **Extras:** unsubscribe link in marketing emails (HMAC token, `/newsletter/unsubscribe`, landing page `/unsubscribed`); order emails (placed, status change, refund) sent after commit; `POST /auth/customer/logout-all` (bumps `Customer.tokenVersion`); `POST /auth/customer/google` (verifies the Google ID token; needs `GOOGLE_CLIENT_ID`).
+- **Tested:** the API with real requests, including voucher races, stock-failure rollback, idempotent refunds, and sign-out-everywhere. The frontend type-checks and lints clean and the new pages load. **Not tested:** a real browser run-through, Google sign-in (no client id), real email delivery (no SMTP).
+
 ## Roadmap status
 Phases 0 to 8 are built and tested at the API level. The honest remaining work, in the order I'd do it:
 1. **Run it for real once:** a real payment-verification run-through (Phase 5), a Cloudinary account and SMTP credentials, and a browser pass through the customer and admin flows.
-3. **Voucher redemption at checkout, refunds, and a shipping fee.**

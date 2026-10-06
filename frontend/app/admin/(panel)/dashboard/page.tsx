@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useAdminStore, productStock, productStockStatus, daysUntilExpiry, isExpiringSoon, EXPIRY_WARNING_DAYS } from "@/library/adminStore";
-import { orderTotal, ordersPerDay, revenuePerDay } from "@/library/admin/orders";
+import { countsAsOrder, countsAsRevenue, orderTotal, ordersPerDay, revenuePerDay } from "@/library/admin/orders";
 import { canAccessSection } from "@/library/admin/permissions";
 import { newUsersInLastDays, signupTrend } from "@/library/admin/users";
 import { AdminOrder, AdminProduct } from "@/library/admin/types";
@@ -63,27 +63,29 @@ export default function AdminDashboardPage() {
     const { ordersToday, revenueToday, revenueDelta, revenuePositive, ordersDelta, ordersPositive } = useMemo(() => {
         const dates = [...new Set(orders.map((o) => o.date))].sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
         const [latestDate, prevDate] = dates;
-        const todays = orders.filter((o) => o.date === latestDate);
-        const revenueToday = todays.reduce((sum, o) => sum + orderTotal(o), 0);
+        const on = (date: string) => orders.filter((o) => o.date === date);
+        const revenueOn = (date: string) => on(date).filter(countsAsRevenue).reduce((sum, o) => sum + orderTotal(o), 0);
+        const countOn = (date: string) => on(date).filter(countsAsOrder).length;
+        const todaysCount = countOn(latestDate);
+        const revenueToday = revenueOn(latestDate);
 
         let revenueDelta: string | undefined;
         let revenuePositive = true;
         let ordersDelta: string | undefined;
         let ordersPositive = true;
         if (prevDate) {
-            const prevOrders = orders.filter((o) => o.date === prevDate);
-            const prevRevenue = prevOrders.reduce((sum, o) => sum + orderTotal(o), 0);
+            const prevRevenue = revenueOn(prevDate);
             if (prevRevenue > 0) {
                 const change = Math.round(((revenueToday - prevRevenue) / prevRevenue) * 100);
                 revenueDelta = `${change >= 0 ? "+" : ""}${change}% vs previous day`;
                 revenuePositive = change >= 0;
             }
-            const orderChange = todays.length - prevOrders.length;
+            const orderChange = todaysCount - countOn(prevDate);
             ordersDelta = `${orderChange >= 0 ? "+" : ""}${orderChange} vs previous day`;
             ordersPositive = orderChange >= 0;
         }
 
-        return { ordersToday: todays.length, revenueToday, revenueDelta, revenuePositive, ordersDelta, ordersPositive };
+        return { ordersToday: todaysCount, revenueToday, revenueDelta, revenuePositive, ordersDelta, ordersPositive };
     }, [orders]);
 
     const revenueTrend = useMemo(() => revenuePerDay(orders), [orders]);

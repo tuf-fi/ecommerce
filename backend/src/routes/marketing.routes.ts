@@ -6,5 +6,6 @@ import * as marketing from "../controllers/marketing.controller";
 export const marketingRouter = Router();
 
 marketingRouter.post("/newsletter/subscribe", formsLimiter, marketing.subscribeNewsletter);
+marketingRouter.get("/newsletter/unsubscribe", formsLimiter, marketing.unsubscribe);
 marketingRouter.post("/contact", formsLimiter, marketing.submitContact);
 marketingRouter.post("/promo/subscribe", formsLimiter, marketing.subscribePromo);

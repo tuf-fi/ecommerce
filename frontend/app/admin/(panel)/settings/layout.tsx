@@ -1,7 +1,9 @@
 "use client";
 
+import { useRef } from "react";
 import Link from "next/link";
-import { isAdministrator } from "@/library/admin/permissions";
+import { useScrollActiveIntoView } from "@/library/useScrollActiveIntoView";
+import { AdminSection, canAccessSection } from "@/library/admin/permissions";
 import { usePathname } from "next/navigation";
 import {
     SIDEBAR_WIDTH_COLLAPSED,
@@ -11,7 +13,7 @@ import {
     useAdminStore,
 } from "@/library/adminStore";
 
-type NavItem = { href: string; label: string; icon: React.ReactNode; adminOnly?: boolean };
+type NavItem = { href: string; label: string; icon: React.ReactNode; section?: AdminSection };
 
 const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
     {
@@ -39,22 +41,6 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
             },
         ],
     },
-    {
-        label: "Store",
-        items: [
-            {
-                href: "/admin/settings/payments",
-                label: "Payment Details",
-                adminOnly: true,
-                icon: (
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                        <rect x="3" y="6" width="18" height="12" rx="1.5" />
-                        <path d="M3 10h18M7 15h3" />
-                    </svg>
-                ),
-            },
-        ],
-    },
 ];
 
 export default function AdminSettingsLayout({ children }: { children: React.ReactNode }) {
@@ -62,8 +48,10 @@ export default function AdminSettingsLayout({ children }: { children: React.Reac
     const { sidebarCollapsed, currentStaffMember } = useAdminStore();
     const sidebarLeft = sidebarCollapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED;
     // Links to pages this account can't use aren't shown.
-    const groups = NAV_GROUPS.map((g) => ({ ...g, items: g.items.filter((i) => !i.adminOnly || isAdministrator(currentStaffMember)) })).filter((g) => g.items.length > 0);
+    const groups = NAV_GROUPS.map((g) => ({ ...g, items: g.items.filter((i) => !i.section || canAccessSection(currentStaffMember, i.section)) })).filter((g) => g.items.length > 0);
     const allItems = groups.flatMap((g) => g.items);
+    const asideRef = useRef<HTMLElement>(null);
+    useScrollActiveIntoView(asideRef, [pathname, allItems.length]);
 
     return (
         // Cancels the ancestor's responsive pt/px so this section can run flush to the true edges.
@@ -87,6 +75,7 @@ export default function AdminSettingsLayout({ children }: { children: React.Reac
             </nav>
 
             <aside
+                ref={asideRef}
                 className="thin-scrollbar fixed z-10 hidden overflow-y-auto border-r border-ink/10 bg-white transition-[left] duration-200 ease-in-out lg:block"
                 style={{ left: sidebarLeft, top: ADMIN_TOPBAR_HEIGHT, bottom: 0, width: SETTINGS_NAV_WIDTH }}
             >
@@ -103,6 +92,7 @@ export default function AdminSettingsLayout({ children }: { children: React.Reac
                                         <Link
                                             key={item.href}
                                             href={item.href}
+                                            aria-current={active ? "page" : undefined}
                                             className={`flex items-center gap-2.5 px-2.5 py-2 text-[12.5px] transition ${
                                                 active ? "bg-off font-semibold text-ink" : "text-grey hover:bg-off/70 hover:text-ink"
                                             }`}
