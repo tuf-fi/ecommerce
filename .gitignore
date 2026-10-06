@@ -28,6 +28,19 @@ Thumbs.db
 .vscode/
 .idea/
 
-# Backup copies of env files hold real secrets
-.env.bak
+# Secrets and credentials: env files (including backups and per-environment copies), keys and certificates
+.env.*
+!.env.example
 *.env.bak
+*.env.backup
+*.env.old
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+id_rsa*
+id_ed25519*
+credentials.json
+service-account*.json
+secrets/
