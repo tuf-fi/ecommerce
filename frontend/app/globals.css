@@ -64,19 +64,28 @@
    two-stop gradient with a visible "band" where it flattens out. */
 html {
   overflow-x: clip;
+  /* Keeps the scrollbar's space reserved so locking scroll (modals) doesn't widen the page. */
+  scrollbar-gutter: stable;
+}
+
+/* Radix's scroll lock zeroes the body's padding, which collapses the --gutter that full-bleed sections rely on. */
+html body[data-scroll-locked] {
+  padding-left: var(--gutter) !important;
+  padding-right: var(--gutter) !important;
+  margin-right: 0 !important;
 }
 
 body {
   position: relative;
   overflow-x: clip;
   background-color: var(--background);
+  /* Fixed-length wash (px, not % of page height) so a tall one-column mobile page doesn't stay blue for thousands of px. */
   background-image: linear-gradient(
     180deg,
-    var(--color-blue-soft) 0%,
-    color-mix(in srgb, var(--color-blue-soft) 55%, var(--color-smoke)) 16%,
-    color-mix(in srgb, var(--color-blue-soft) 22%, var(--color-smoke)) 30%,
-    color-mix(in srgb, var(--color-blue-soft) 8%, var(--color-smoke)) 42%,
-    var(--color-smoke) 55%
+    color-mix(in srgb, var(--color-blue-soft) 62%, var(--color-smoke)) 0,
+    color-mix(in srgb, var(--color-blue-soft) 34%, var(--color-smoke)) 420px,
+    color-mix(in srgb, var(--color-blue-soft) 12%, var(--color-smoke)) 840px,
+    var(--color-smoke) 1200px
   );
   color: var(--foreground);
   font-family: var(--font-inter), sans-serif;
