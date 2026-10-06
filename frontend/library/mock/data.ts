@@ -144,6 +144,51 @@ export const ORDERS: ApiOrder[] = [
 
 const FLOW: ApiOrder["status"][] = ["PAID", "SHIPPED", "DELIVERED"];
 
+// ---- Generated history so the dashboard charts have a quarter of activity to draw ---------------------------------------------
+
+const SHOPPERS: [name: string, email: string, address: string][] = [
+    ["Angela Cruz", "angela.cruz@example.com", "88 Rizal Ave, Makati City"],
+    ["Bea Lim", "bea.lim@example.com", "5 Orchid Lane, Cebu City"],
+    ["Carla Mendoza", "carla.m@example.com", "301 Mabini St, Davao City"],
+    ["Denise Tan", "denise.tan@example.com", "17 Sampaguita Rd, Pasig City"],
+    ["Elaine Go", "elaine.go@example.com", "42 Bonifacio St, Iloilo City"],
+    ["Faith Ramos", "faith.ramos@example.com", "9 Narra Ct, Baguio City"],
+    ["Grace Uy", "grace.uy@example.com", "63 Luna St, Cagayan de Oro"],
+    ["Jasmine Ong", "jasmine.ong@example.com", "150 Roxas Blvd, Pasay City"],
+    ["Kaye Dela Cruz", "kaye.dc@example.com", "34 Katipunan Ave, Quezon City"],
+    ["Lara Gomez", "lara.gomez@example.com", "8 Aguinaldo Hwy, Cavite"],
+    ["Maita Soriano", "maita.s@example.com", "71 Session Rd, Baguio City"],
+    ["Nina Valdez", "nina.valdez@example.com", "26 Ayala Ave, Makati City"],
+];
+
+// A small deterministic generator, so the numbers are the same on every load.
+let seed = 7;
+const rand = () => ((seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff);
+const pick = <T,>(list: T[]) => list[Math.floor(rand() * list.length)];
+
+const SINCE_MIDNIGHT = Math.max(30, Math.floor((NOW - new Date().setHours(0, 0, 0, 0)) / 60_000));
+
+function generatedOrders(): ApiOrder[] {
+    const out: ApiOrder[] = [];
+    let n = 2000;
+    // 90 days back; busier lately, and always several orders today and yesterday for the "vs previous day" cards.
+    for (let d = 0; d < 90; d++) {
+        const count = d === 0 ? 3 : d === 1 ? 5 : Math.max(0, Math.round(2.4 - d / 45 + rand() * 2.2 - 0.8));
+        for (let k = 0; k < count; k++) {
+            const minutes = d === 0 ? 5 + Math.floor(rand() * (SINCE_MIDNIGHT - 10)) : SINCE_MIDNIGHT + (d - 1) * DAY + 30 + Math.floor(rand() * (DAY - 60));
+            const [name, email, address] = pick(SHOPPERS);
+            const lines: Line[] = [[pick(PRODUCTS.filter((x) => x.sizes.length === 0)).id, 1 + Math.floor(rand() * 2)]];
+            if (rand() < 0.35) lines.push([pick(PRODUCTS.filter((x) => x.sizes.length === 0)).id, 1]);
+            const status: ApiOrder["status"] = d === 0 ? (k === 0 ? "PENDING" : "PAID") : d < 3 ? pick(["PAID", "SHIPPED", "SHIPPED"] as const) : rand() < 0.07 ? "CANCELLED" : "DELIVERED";
+            out.push(buildOrder(`LM-${++n}`, status, name, email, address, lines, minutes));
+        }
+    }
+    return out;
+}
+
+ORDERS.push(...generatedOrders());
+ORDERS.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+
 export function historyFor(o: ApiOrder): OrderHistoryEntry[] {
     const placed = new Date(o.createdAt).getTime();
     const staff = { type: "STAFF" as const, id: 1, name: "Cindy Reyes" };
@@ -170,6 +215,14 @@ export const CUSTOMERS = [
     { id: 6, name: "Elaine Go", email: "elaine.go@example.com", createdAt: ago(DAY * 22), orders: 1 },
     { id: 7, name: "Faith Ramos", email: "faith.ramos@example.com", createdAt: ago(DAY * 17), orders: 1 },
     { id: 8, name: "Grace Uy", email: "grace.uy@example.com", createdAt: ago(DAY * 9), orders: 1 },
+    ...["Kaye Dela Cruz", "Lara Gomez", "Maita Soriano", "Nina Valdez", "Olive Garcia", "Pia Navarro", "Quin Salazar", "Rhea Domingo", "Sam Ilagan", "Tessa Uy", "Vina Cortez", "Wendy Abad"].map((name, i) => ({
+        id: 9 + i,
+        name,
+        email: `${name.toLowerCase().replace(/[^a-z]+/g, ".")}@example.com`,
+        // Spread over the last two weeks, a few today and yesterday.
+        createdAt: ago([30, 200, 1500, 2000, 4000, 5500, 8000, 10000, 12000, 15000, 18000, 20000][i]),
+        orders: 1,
+    })),
 ];
 
 export const STAFF = [
