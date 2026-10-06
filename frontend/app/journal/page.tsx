@@ -20,7 +20,7 @@ export default function JournalIndexPage() {
     if (!mounted) return <JournalSkeleton />;
 
     return (
-        <div className="-mx-[var(--gutter)] w-[calc(100%+var(--gutter)*2)] min-h-screen bg-white px-8 pt-25 pb-20">
+        <div className="-mx-[var(--gutter)] w-[calc(100%+var(--gutter)*2)] min-h-screen bg-white px-[var(--gutter)] pt-25 pb-20">
             <PageIntro pageKey="journal" />
 
             {!featured ? (
@@ -86,7 +86,7 @@ export default function JournalIndexPage() {
 
 function JournalSkeleton() {
     return (
-        <div className="-mx-[var(--gutter)] w-[calc(100%+var(--gutter)*2)] min-h-screen bg-white px-8 pt-25 pb-20">
+        <div className="-mx-[var(--gutter)] w-[calc(100%+var(--gutter)*2)] min-h-screen bg-white px-[var(--gutter)] pt-25 pb-20">
             <SkeletonGroup>
                 <Skeleton className="mt-3 h-[34px] w-[70%] max-w-[520px] sm:h-[42px]" />
                 <Skeleton className="mt-3 mb-11 h-[34px] w-[45%] max-w-[340px] sm:h-[42px]" />

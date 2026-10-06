@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { BlogPost } from "@/library/admin/types";
@@ -11,12 +12,31 @@ const WORDS_PER_MINUTE = 200;
 export default function JournalArticle({ post, preview = false }: { post: BlogPost; preview?: boolean }) {
     const { showToast } = useStore();
 
+    const [copied, setCopied] = useState(false);
+
+    useEffect(() => {
+        if (!copied) return;
+        const t = setTimeout(() => setCopied(false), 2000);
+        return () => clearTimeout(t);
+    }, [copied]);
+
     function handleShare() {
         navigator.clipboard
             .writeText(typeof window !== "undefined" ? window.location.href : "")
-            .then(() => showToast("success", "Link copied."))
+            .then(() => setCopied(true))
             .catch(() => showToast("error", "Couldn't copy the link."));
     }
+
+    const copyLabel = copied ? (
+        <span className="inline-flex items-center gap-1.5">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 6 9 17l-5-5" />
+            </svg>
+            Copied
+        </span>
+    ) : (
+        "Copy link"
+    );
 
     const wordCount = (post.content || "").trim().split(/\s+/).filter(Boolean).length;
     const readMins = Math.max(1, Math.round(wordCount / WORDS_PER_MINUTE));
@@ -60,7 +80,7 @@ export default function JournalArticle({ post, preview = false }: { post: BlogPo
                         <Image src={post.image} alt={post.title} fill priority sizes="100vw" className="object-cover" />
                     )}
                     <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent" />
-                    <div className="absolute inset-x-0 bottom-0 px-8 pb-10 md:px-16 md:pb-12">
+                    <div className="absolute inset-x-0 bottom-0 px-[var(--gutter)] pb-10 md:px-16 md:pb-12">
                         <span className="font-mono text-[11px] uppercase tracking-[.16em] text-white/70">{post.date}</span>
                         <h1 className="mt-3 max-w-[820px] text-[clamp(28px,4.2vw,50px)] font-medium leading-[1.1] text-white">
                             {post.title || "Untitled post"}
@@ -83,9 +103,9 @@ export default function JournalArticle({ post, preview = false }: { post: BlogPo
                     </Link>
                     <button
                         onClick={handleShare}
-                        className="text-[12px] font-medium text-grey transition-colors hover:text-pink-dark lg:hidden"
+                        className={`text-[12px] font-medium transition-colors lg:hidden ${copied ? "text-success-dark" : "text-grey hover:text-pink-dark"}`}
                     >
-                        Copy link
+                        {copyLabel}
                     </button>
                 </div>
 
@@ -119,9 +139,9 @@ export default function JournalArticle({ post, preview = false }: { post: BlogPo
                             <span className="block font-mono text-[10px] uppercase tracking-[.16em] text-grey">Share</span>
                             <button
                                 onClick={handleShare}
-                                className="mt-1.5 text-[13px] text-ink underline decoration-ink/20 underline-offset-2 transition-colors hover:text-pink-dark hover:decoration-pink-dark/40"
+                                className={`mt-1.5 text-[13px] transition-colors ${copied ? "text-success-dark" : "text-ink underline decoration-ink/20 underline-offset-2 hover:text-pink-dark hover:decoration-pink-dark/40"}`}
                             >
-                                Copy link
+                                {copyLabel}
                             </button>
                         </div>
                     </aside>

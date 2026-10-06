@@ -26,7 +26,7 @@ export default function HelpSupportPage() {
                             <div className="text-[12px] text-grey">hello@cindyrella.ph</div>
                         </div>
                     </div>
-                    <span className="flex-none text-grey transition group-hover:text-pink-dark">↗</span>
+                    <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="flex-none text-grey transition group-hover:text-pink-dark"><path d="M7 17 17 7M8 7h9v9" /></svg>
                 </a>
                 <a
                     href="tel:+639170000000"
@@ -43,7 +43,7 @@ export default function HelpSupportPage() {
                             <div className="text-[12px] text-grey">+63 917 000 0000</div>
                         </div>
                     </div>
-                    <span className="flex-none text-grey transition group-hover:text-pink-dark">↗</span>
+                    <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="flex-none text-grey transition group-hover:text-pink-dark"><path d="M7 17 17 7M8 7h9v9" /></svg>
                 </a>
             </div>
 
