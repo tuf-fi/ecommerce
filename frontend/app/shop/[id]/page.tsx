@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useParams } from "next/navigation";
 import { useStore } from "@/library/store";
 import { PRODUCTS, getProduct, cheapestSizeId, Product } from "@/library/products";
+import PriceTag from "@/components/ui/PriceTag";
 import type { Review } from "@/library/reviews";
 import { listProductReviews } from "@/library/api/reviews";
 import StarRating from "@/components/ui/StarRating";
@@ -69,7 +70,7 @@ function ProductPageContent({ product }: { product: Product }) {
     const isWished = wishlist.includes(product.id);
     const related = PRODUCTS.filter((p) => p.category === product.category && p.id !== product.id).slice(0, 3);
     const selectedSize = product.sizes?.find((s) => s.id === selectedSizeId);
-    const displayPrice = selectedSize ? selectedSize.price : product.price;
+    const priceSource = selectedSize ?? product;
     const outOfStock = !!selectedSize && selectedSize.stock <= 0;
 
     const total = reviews.length;
@@ -118,7 +119,7 @@ function ProductPageContent({ product }: { product: Product }) {
                     <button
                         aria-label="Toggle wishlist"
                         onClick={() => toggleWishlist(product.id)}
-                        className={`absolute top-4 left-4 flex h-11 w-11 items-center justify-center border transition hover:border-pink-btn hover:bg-pink-btn hover:text-white ${
+                        className={`absolute top-4 right-4 flex h-11 w-11 items-center justify-center border transition hover:border-pink-btn hover:bg-pink-btn hover:text-white ${
                             isWished ? "border-pink-btn bg-pink-btn text-white" : "border-ink/10 bg-white/90 text-ink"
                         }`}
                     >
@@ -149,7 +150,7 @@ function ProductPageContent({ product }: { product: Product }) {
                             <span className="text-[11px] text-pink-dark underline underline-offset-2">Write a review</span>
                         </button>
 
-                        <div className="font-mono text-lg text-ink">₱{displayPrice.toLocaleString()}</div>
+                        <PriceTag price={priceSource.price} salePrice={priceSource.salePrice} className="block font-mono text-lg text-ink" />
 
                         <p className="mt-2 max-w-[440px] text-sm leading-relaxed text-grey">{product.desc}</p>
                     </div>
@@ -235,7 +236,10 @@ function ProductPageContent({ product }: { product: Product }) {
                                 const pct = total ? (count / total) * 100 : 0;
                                 return (
                                     <div key={n} className="flex items-center gap-2.5">
-                                        <span className="w-7 flex-none font-mono text-[11px] text-grey">{n}★</span>
+                                        <span className="w-7 flex-none font-mono text-[11px] text-grey">
+                                            {n}
+                                            <span className="text-gold">★</span>
+                                        </span>
                                         <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-off">
                                             <span className="block h-full rounded-full bg-gold" style={{ width: `${pct}%` }} />
                                         </span>

@@ -3,10 +3,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import StarRating from "./StarRating";
+import PriceTag from "./PriceTag";
 import { useStore } from "@/library/store";
 import { Product, cheapestSizeId } from "@/library/products";
 
-export default function Card({ product, size = "default" }: { product: Product; size?: "default" | "large" }) {
+export default function Card({ product, size = "default", dense = false }: { product: Product; size?: "default" | "large"; dense?: boolean }) {
     const { wishlist, toggleWishlist, addToCart } = useStore();
     const isWished = wishlist.includes(product.id);
     const large = size === "large";
@@ -38,7 +39,7 @@ export default function Card({ product, size = "default" }: { product: Product; 
                             toggleWishlist(product.id);
                         }
                     }}
-                    className={`absolute top-3 right-3 flex h-11 w-11 items-center justify-center border transition hover:border-pink-btn hover:bg-pink-btn hover:text-white ${
+                    className={`absolute ${dense ? "top-2 right-2 h-10 w-10 sm:top-3 sm:right-3 sm:h-11 sm:w-11" : "top-3 right-3 h-11 w-11"} flex items-center justify-center border transition hover:border-pink-btn hover:bg-pink-btn hover:text-white ${
                         isWished ? "border-pink-btn bg-pink-btn text-white" : "border-white/40 bg-white/80 text-ink"
                     }`}
                 >
@@ -48,16 +49,16 @@ export default function Card({ product, size = "default" }: { product: Product; 
                 </span>
             </div>
 
-            <div className={`flex flex-1 flex-col gap-2 ${large ? "p-6 sm:p-7" : "p-5"}`}>
+            <div className={`flex flex-1 flex-col ${dense ? "gap-1.5 sm:gap-2" : "gap-2"} ${dense ? (large ? "p-3 sm:p-7" : "p-3 sm:p-5") : large ? "p-6 sm:p-7" : "p-5"}`}>
                 <span className={`font-mono uppercase tracking-[.16em] text-grey ${large ? "text-[11px]" : "text-[10px]"}`}>{product.category}</span>
                 <span
-                    className={`text-left font-medium leading-snug text-ink transition-colors group-hover:text-pink-dark ${large ? "text-[22px] sm:text-[26px]" : "text-[16.5px]"}`}
+                    className={`text-left font-medium leading-snug text-ink transition-colors group-hover:text-pink-dark ${large ? (dense ? "text-[14px] sm:text-[26px]" : "text-[22px] sm:text-[26px]") : dense ? "text-[14px] sm:text-[16.5px]" : "text-[16.5px]"}`}
                 >
                     {product.title}
                 </span>
-                <StarRating rating={product.rating} count={product.count} />
-                <div className="mt-auto flex flex-wrap items-center justify-between gap-x-3 gap-y-2.5 pt-3">
-                    <span className={`font-mono text-ink ${large ? "text-[15px]" : "text-[13px]"}`}>₱{product.price.toLocaleString()}</span>
+                <StarRating rating={product.rating} count={product.count} stack={dense} />
+                <div className={`mt-auto flex pt-3 ${dense ? "flex-col items-stretch gap-2 pt-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-x-3 sm:gap-y-2.5 sm:pt-3" : "flex-wrap items-center justify-between gap-x-3 gap-y-2.5"}`}>
+                    <PriceTag price={product.price} salePrice={product.salePrice} className={`font-mono text-ink ${large ? "text-[15px]" : "text-[13px]"}`} />
                     <button
                         onClick={(e) => {
                             e.preventDefault();
@@ -65,7 +66,7 @@ export default function Card({ product, size = "default" }: { product: Product; 
                             handleAddToBag();
                         }}
                         className={`border border-ink/15 font-semibold uppercase tracking-wide text-ink transition hover:border-pink-btn hover:bg-pink-btn hover:text-white ${
-                            large ? "px-5 py-2.5 text-[12.5px]" : "px-4 py-2 text-[11.5px]"
+                            dense ? "w-full px-2 py-2.5 text-[10.5px] sm:w-auto sm:px-4 sm:py-2 sm:text-[11.5px]" : large ? "px-5 py-2.5 text-[12.5px]" : "px-4 py-2 text-[11.5px]"
                         }`}
                     >
                         Add to Bag

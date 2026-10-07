@@ -24,10 +24,10 @@ function nonNegativeNumber(value: string): number {
 
 const EDITABLE_CATEGORIES = CATEGORIES.filter((c) => c !== "All");
 
-type SizeRow = { id: string; label: string; price: string; stock: string };
+type SizeRow = { id: string; label: string; price: string; salePrice: string; stock: string };
 
 function newSizeRow(): SizeRow {
-    return { id: `s${Date.now()}${Math.floor(Math.random() * 1000)}`, label: "", price: "", stock: "" };
+    return { id: `s${Date.now()}${Math.floor(Math.random() * 1000)}`, label: "", price: "", salePrice: "", stock: "" };
 }
 
 // Mounted only while open, so fields init fresh from `product` with no reset effect needed.
@@ -48,6 +48,7 @@ export default function ProductModal({
     const [category, setCategory] = useState<string>(product?.category ?? EDITABLE_CATEGORIES[0]);
     const [sku, setSku] = useState(product?.sku ?? "");
     const [price, setPrice] = useState(product ? String(product.price) : "");
+    const [salePrice, setSalePrice] = useState(product?.salePrice != null && !product.sizes?.length ? String(product.salePrice) : "");
     const [stock, setStock] = useState(product ? String(product.stock) : "");
     const [reorderThreshold, setReorderThreshold] = useState(
         product?.reorderThreshold != null ? String(product.reorderThreshold) : ""
@@ -55,7 +56,7 @@ export default function ProductModal({
     const [expiry, setExpiry] = useState(product?.expiry ?? "");
     const [photo, setPhoto] = useState<string | null>(null);
     const [sizes, setSizes] = useState<SizeRow[]>(
-        () => product?.sizes?.map((s) => ({ id: s.id, label: s.label, price: String(s.price), stock: String(s.stock) })) ?? []
+        () => product?.sizes?.map((s) => ({ id: s.id, label: s.label, price: String(s.price), salePrice: s.salePrice != null ? String(s.salePrice) : "", stock: String(s.stock) })) ?? []
     );
     const hasSizes = sizes.length > 0;
 
@@ -75,7 +76,7 @@ export default function ProductModal({
     const [errors, setErrors] = useState<{ name?: string; sku?: string }>({});
     const [confirmCloseOpen, setConfirmCloseOpen] = useState(false);
 
-    const isDirty = useIsDirty({ name, category, sku, price, stock, reorderThreshold, expiry, photo, sizes });
+    const isDirty = useIsDirty({ name, category, sku, price, salePrice, stock, reorderThreshold, expiry, photo, sizes });
 
     function requestClose() {
         if (isDirty) setConfirmCloseOpen(true);
@@ -86,7 +87,7 @@ export default function ProductModal({
         setSizes((rows) => [...rows, newSizeRow()]);
     }
 
-    function updateSizeRow(index: number, field: "label" | "price" | "stock", value: string) {
+    function updateSizeRow(index: number, field: "label" | "price" | "salePrice" | "stock", value: string) {
         setSizes((rows) => rows.map((r, i) => (i === index ? { ...r, [field]: value } : r)));
     }
 
@@ -117,11 +118,21 @@ export default function ProductModal({
             toast.error("Fix the highlighted fields before saving.");
             return;
         }
+        const saleProblem = hasSizes
+            ? sizes.some((s) => s.label.trim() && s.salePrice.trim() && nonNegativeNumber(s.salePrice) >= nonNegativeNumber(s.price))
+            : salePrice.trim() !== "" && nonNegativeNumber(salePrice) >= nonNegativeNumber(price);
+        if (saleProblem) {
+            toast.error("A discounted price must be lower than the regular price.");
+            return;
+        }
         setErrors({});
 
         const parsedSizes: ProductSize[] = sizes
             .filter((s) => s.label.trim())
-            .map((s) => ({ id: s.id, label: s.label.trim(), price: nonNegativeNumber(s.price), stock: nonNegativeNumber(s.stock) }));
+            .map((s) => ({ id: s.id, label: s.label.trim(), price: nonNegativeNumber(s.price),
+                ...(s.salePrice.trim() ? { salePrice: nonNegativeNumber(s.salePrice) } : {}),
+                stock: nonNegativeNumber(s.stock),
+            }));
 
         const saved = await onSave(
             {
@@ -129,6 +140,7 @@ export default function ProductModal({
                 sku: trimmedSku || `LM-${Math.floor(1000 + Math.random() * 9000)}`,
                 category,
                 price: parsedSizes.length ? Math.min(...parsedSizes.map((s) => s.price)) : nonNegativeNumber(price),
+                salePrice: parsedSizes.length || !salePrice.trim() ? undefined : nonNegativeNumber(salePrice),
                 stock: parsedSizes.length ? parsedSizes.reduce((sum, s) => sum + s.stock, 0) : nonNegativeNumber(stock),
                 expiry: expiry || null,
                 image: photo ?? product?.image ?? CATEGORY_DEFAULT_IMAGE[category] ?? DEFAULT_PRODUCT_IMAGE,
@@ -231,6 +243,19 @@ export default function ProductModal({
                         />
                     </div>
                     <div>
+                        <label htmlFor="product-sale-price" className={FIELD_LABEL}>Discounted Price (₱)</label>
+                        <input
+                            id="product-sale-price"
+                            type="number"
+                            min={0}
+                            value={salePrice}
+                            onChange={(e) => setSalePrice(e.target.value)}
+                            placeholder="None"
+                            disabled={hasSizes}
+                            className={`${FIELD_INPUT} disabled:cursor-not-allowed disabled:opacity-50`}
+                        />
+                    </div>
+                    <div>
                         <label htmlFor="product-stock" className={FIELD_LABEL}>Stock</label>
                         <input
                             id="product-stock"
@@ -244,7 +269,7 @@ export default function ProductModal({
                         />
                     </div>
                 </div>
-                {hasSizes && <p className="mb-4 text-[11.5px] text-grey">Price and stock are set per size below.</p>}
+                {hasSizes && <p className="mb-4 text-[11.5px] text-grey">Price, discounted price and stock are set per size below. Leave a discounted price empty for no discount.</p>}
 
                 {stockDelta !== 0 && (
                     <div className="mb-4">
@@ -289,7 +314,7 @@ export default function ProductModal({
                     ) : (
                         <div className="flex flex-col gap-2">
                             {sizes.map((s, i) => (
-                                <div key={s.id} className="grid grid-cols-[1fr_84px_72px_auto] items-center gap-2">
+                                <div key={s.id} className="grid grid-cols-[1fr_76px_76px_64px_auto] items-center gap-2">
                                     <input
                                         value={s.label}
                                         onChange={(e) => updateSizeRow(i, "label", e.target.value)}
@@ -304,6 +329,15 @@ export default function ProductModal({
                                         onChange={(e) => updateSizeRow(i, "price", e.target.value)}
                                         placeholder="Price"
                                         aria-label={`Size ${i + 1} price`}
+                                        className={FIELD_INPUT}
+                                    />
+                                    <input
+                                        type="number"
+                                        min={0}
+                                        value={s.salePrice}
+                                        onChange={(e) => updateSizeRow(i, "salePrice", e.target.value)}
+                                        placeholder="Sale"
+                                        aria-label={`Size ${i + 1} discounted price`}
                                         className={FIELD_INPUT}
                                     />
                                     <input

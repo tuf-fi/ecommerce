@@ -7,7 +7,7 @@ import SectionContainer from "../ui/Section";
 import SectionTitle from "../ui/SectionTitle";
 import RevealIn from "../ui/motion/RevealIn";
 import { FILTER_SELECT } from "../ui/SearchField";
-import { CATEGORIES, PRODUCTS } from "@/library/products";
+import { CATEGORIES, PRODUCTS, currentPrice } from "@/library/products";
 import { useContent } from "@/library/content";
 
 const PREVIEW_COUNT = 12;
@@ -26,9 +26,9 @@ export default function Catalogue() {
     const filtered = useMemo(() => {
         let list = PRODUCTS;
         if (category !== "All") list = list.filter((p) => p.category === category);
-        if (priceBucket === "under") list = list.filter((p) => p.price < 1500);
-        else if (priceBucket === "mid") list = list.filter((p) => p.price >= 1500 && p.price <= 2500);
-        else if (priceBucket === "over") list = list.filter((p) => p.price > 2500);
+        if (priceBucket === "under") list = list.filter((p) => currentPrice(p) < 1500);
+        else if (priceBucket === "mid") list = list.filter((p) => currentPrice(p) >= 1500 && currentPrice(p) <= 2500);
+        else if (priceBucket === "over") list = list.filter((p) => currentPrice(p) > 2500);
         if (minRating > 0) list = list.filter((p) => p.rating >= minRating);
         return list;
     }, [category, priceBucket, minRating]);
@@ -78,7 +78,7 @@ export default function Catalogue() {
                     <p className="max-w-[280px] text-[13px] leading-relaxed text-grey">No products match these filters.</p>
                 </div>
             ) : (
-                <div id="catalogTop" className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                <div id="catalogTop" className="grid grid-cols-2 gap-3 sm:gap-5 md:grid-cols-3 lg:grid-cols-4">
                     {visible.map((product, index) => {
                         // Lead tile gets extra weight, matching BestSellers/Journal/Moments.
                         const featured = index === 0;
@@ -90,7 +90,7 @@ export default function Catalogue() {
                                 delay={Math.floor(index / 4) * 0.12 + (index % 4) * 0.08}
                                 className={featured ? "sm:col-span-2 sm:row-span-2" : undefined}
                             >
-                                <Card product={product} size={featured ? "large" : "default"} />
+                                <Card product={product} size={featured ? "large" : "default"} dense />
                             </RevealIn>
                         );
                     })}

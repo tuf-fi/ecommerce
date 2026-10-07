@@ -1,4 +1,4 @@
-export type OrderStatus = "To Pay" | "To Ship" | "To Receive" | "Completed" | "Cancelled" | "Return Refund";
+export type OrderStatus = "To Ship" | "To Receive" | "Completed" | "Cancelled" | "Return Refund";
 
 // none: nothing sent yet · review: a screenshot is waiting for staff · rejected: the last one was refused · approved: verified
 export type PaymentState = "none" | "review" | "rejected" | "approved";
@@ -30,6 +30,8 @@ export type Order = {
     // Every line on the order; `product`/`productId`/`qty` above summarise it for the list row.
     items?: OrderLine[];
     payment?: { state: PaymentState; rejectReason: string | null };
+    // True while the server still has the order unpaid (its payment screenshot is being checked, or needs redoing).
+    awaitingPayment?: boolean;
     // The money breakdown fixed when the order was placed (total = subtotal - discount + shippingFee).
     subtotal?: number;
     discount?: number;
@@ -39,4 +41,4 @@ export type Order = {
     refund?: { at: string; amount: number; note: string | null };
 };
 
-export const ORDER_STATUS_TABS = ["All", "To Pay", "To Ship", "To Receive", "Completed", "Cancelled", "Return Refund"] as const;
+export const ORDER_STATUS_TABS = ["All", "To Ship", "To Receive", "Completed", "Cancelled", "Return Refund"] as const;

@@ -231,16 +231,37 @@ export default function AccountShell({ children }: { children: React.ReactNode }
 function AccountShellSkeleton() {
     return (
         <div className="-mx-[var(--gutter)] w-[calc(100%+var(--gutter)*2)] pt-[var(--navbar-h,68px)]">
-            <SkeletonGroup className="grid min-h-[calc(100vh-var(--navbar-h,68px)-var(--promo-h,0px))] grid-cols-1 grid-rows-[auto_1fr] lg:grid-rows-none border-t border-ink/10 bg-white lg:grid-cols-[260px_1fr]">
-                <div className="border-b border-ink/10 px-[var(--gutter)] pt-5 pb-4 lg:border-r lg:border-b-0 lg:px-6 lg:pt-10">
-                    <div className="mb-4 flex items-center gap-3 border-b border-ink/10 pb-4">
-                        <Skeleton className="h-10 w-10 flex-none rounded-full" />
-                        <Skeleton className="h-[13px] w-32" />
+            <SkeletonGroup className="shadow-glow grid min-h-[calc(100vh-var(--navbar-h,68px)-var(--promo-h,0px))] grid-cols-1 grid-rows-[auto_1fr] lg:grid-rows-none border-t border-ink/10 bg-white lg:grid-cols-[260px_1fr]">
+                <div className="border-b border-ink/10 px-[var(--gutter)] pt-5 pb-0 lg:border-r lg:border-b-0 lg:px-6 lg:pt-10 lg:pb-6">
+                    <div className="mb-1 flex items-center justify-between gap-3 border-b border-ink/10 pb-4 lg:mb-4">
+                        <div className="flex h-10 min-w-0 flex-1 items-center gap-3">
+                            <Skeleton className="h-10 w-10 flex-none rounded-full" />
+                            <Skeleton className="h-[13px] w-32" />
+                        </div>
+                        <Skeleton tone="soft" className="mr-2 h-3 w-14 flex-none lg:hidden" />
                     </div>
-                    <div className="flex gap-2 overflow-hidden lg:flex-col lg:gap-3">
-                        {Array.from({ length: 6 }).map((_, i) => (
-                            <Skeleton key={i} tone="soft" className="h-4 w-28 flex-none lg:w-full" />
+
+                    <div className="flex flex-row gap-1 overflow-hidden lg:flex-col lg:gap-4">
+                        {[5, 1, 3].map((count, g) => (
+                            <div key={g} className="flex flex-none flex-row gap-1 lg:block">
+                                <div className="mb-1 hidden h-4 items-center px-2.5 lg:flex">
+                                    <Skeleton tone="faint" className="h-[10px] w-14" />
+                                </div>
+                                <div className="flex flex-row gap-1 lg:flex-col lg:gap-px">
+                                    {Array.from({ length: count }).map((_, i) => (
+                                        <div key={i} className="flex h-[42px] flex-none items-center gap-2.5 px-3 lg:h-7 lg:pr-2.5">
+                                            <Skeleton tone="soft" className="h-4 w-4 flex-none" />
+                                            <Skeleton tone="soft" className="h-3 w-20 lg:w-24" />
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
                         ))}
+                    </div>
+
+                    <div className="mt-4 hidden h-7 items-center gap-2.5 px-2.5 lg:flex">
+                        <Skeleton tone="soft" className="h-4 w-4 flex-none" />
+                        <Skeleton tone="soft" className="h-3 w-16" />
                     </div>
                 </div>
                 <div className="min-w-0 px-[var(--gutter)] py-8 sm:px-8 lg:px-10 lg:py-10">

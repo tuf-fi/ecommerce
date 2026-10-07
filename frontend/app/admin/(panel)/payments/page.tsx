@@ -73,15 +73,7 @@ export default function PaymentDetailsSettingsPage() {
         }
     }
 
-    if (!draft) {
-        return (
-            <SkeletonGroup>
-                <Skeleton className="mb-6 h-[18px] w-40" />
-                <Skeleton className="mb-3 h-24 w-full" />
-                <Skeleton className="h-24 w-full" />
-            </SkeletonGroup>
-        );
-    }
+    if (!draft) return <PaymentsSkeleton />;
 
     return (
         <>
@@ -179,5 +171,53 @@ export default function PaymentDetailsSettingsPage() {
             </form>
         </SettingsSection>
         </>
+    );
+}
+
+function PaymentsSkeleton() {
+    return (
+        <SkeletonGroup>
+            <div className="mb-12">
+                <div className="mb-6 flex h-10 items-center border-b border-ink/10 pb-4">
+                    <Skeleton className="h-[18px] w-40" />
+                </div>
+                <Skeleton tone="soft" className="mb-7 h-4 w-96 max-w-full" />
+                <div className="border border-ink/10">
+                    <div className="p-6 sm:p-7">
+                        <Skeleton tone="outline" className="h-[94px] w-full" />
+                    </div>
+                    {Array.from({ length: 3 }).map((_, i) => (
+                        <div key={i} className="grid gap-x-5 gap-y-4 border-t border-ink/10 p-6 sm:p-7 lg:grid-cols-[150px_repeat(3,minmax(0,1fr))]">
+                            <div className="lg:pt-6">
+                                <Skeleton className="h-[14px] w-20" />
+                                <Skeleton tone="soft" className="mt-1.5 h-[10.5px] w-14" />
+                            </div>
+                            <Skeleton tone="outline" className="h-[68px] w-full" />
+                            <Skeleton tone="outline" className="h-[68px] w-full" />
+                            <Skeleton tone="outline" className="h-[68px] w-full" />
+                        </div>
+                    ))}
+                    <div className="flex justify-end border-t border-ink/10 px-6 py-4 sm:px-7">
+                        <Skeleton tone="outline" className="h-[45px] w-[200px]" />
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div className="mb-6 flex h-10 items-center border-b border-ink/10 pb-4">
+                    <Skeleton className="h-[18px] w-24" />
+                </div>
+                <Skeleton tone="soft" className="mb-7 h-4 w-96 max-w-full" />
+                <div className="border border-ink/10">
+                    <div className="grid gap-5 p-6 sm:grid-cols-2 sm:p-7">
+                        <Skeleton tone="outline" className="h-[68px] w-full" />
+                        <Skeleton tone="outline" className="h-[68px] w-full" />
+                    </div>
+                    <div className="flex justify-end border-t border-ink/10 px-6 py-4 sm:px-7">
+                        <Skeleton tone="outline" className="h-[45px] w-[168px]" />
+                    </div>
+                </div>
+            </div>
+        </SkeletonGroup>
     );
 }

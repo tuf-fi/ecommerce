@@ -406,7 +406,7 @@ function DashboardSkeleton() {
                     </div>
                     <div className="grid grid-cols-1 divide-y divide-ink/10 lg:grid-cols-3 lg:divide-x lg:divide-y-0">
                         {Array.from({ length: 3 }).map((_, i) => (
-                            <div key={i} className="flex items-center justify-between gap-4 px-6 py-5">
+                            <div key={i} className="flex h-[84px] items-center justify-between gap-4 px-6">
                                 <div>
                                     <Skeleton className="h-[10.5px] w-20" />
                                     <Skeleton className="mt-2 h-[22px] w-10" />

@@ -35,14 +35,14 @@ const p = (
 export const PRODUCTS: ApiProduct[] = [
     p(1, "SRM-RET-30", "Overnight Retinol Serum", "Serum", 1450, 42, 4.8, 126, "/products/overnight-retinol-serum.jpg", "A gentle 0.3% encapsulated retinol that smooths texture and fine lines while you sleep, without the flaking.", ["fine-lines", "texture"], {
         sizes: [
-            { id: 101, label: "15 ml", price: 1450, stock: 18 },
+            { id: 101, label: "15 ml", price: 1450, salePrice: 1250, stock: 18 },
             { id: 102, label: "30 ml", price: 2400, stock: 24 },
         ],
         expiry: "2027-08-01",
     }),
     p(2, "SRM-VTC-30", "Vitamin C Brightening Drop", "Serum", 1280, 6, 4.7, 98, "/products/vitamin-c-brightening-drop.jpg", "Stabilised 10% vitamin C with ferulic acid for a visibly brighter, more even complexion.", ["dullness"], { expiry: "2026-12-15", reorderThreshold: 10 }),
     p(3, "TRT-NIA-30", "Niacinamide Pore Refiner", "Treatment", 980, 58, 4.6, 74, "/products/niacinamide-pore-refiner.jpg", "5% niacinamide with zinc to tighten the look of pores and keep shine in check.", ["breakouts", "texture"], { expiry: "2027-05-20" }),
-    p(4, "MST-QGC-50", "Quiet Glow Gel Cream", "Moisturizer", 1190, 33, 4.9, 211, "/products/quiet-glow-gel-cream.jpg", "A weightless gel-cream that hydrates for 24 hours and leaves a soft, lit-from-within finish.", ["dryness", "dullness"], { expiry: "2027-02-10" }),
+    p(4, "MST-QGC-50", "Quiet Glow Gel Cream", "Moisturizer", 1190, 33, 4.9, 211, "/products/quiet-glow-gel-cream.jpg", "A weightless gel-cream that hydrates for 24 hours and leaves a soft, lit-from-within finish.", ["dryness", "dullness"], { expiry: "2027-02-10", salePrice: 990 }),
     p(5, "MST-BRC-50", "Barrier Repair Cream", "Moisturizer", 1350, 0, 4.9, 187, "/products/barrier-repair-cream.jpg", "Ceramides, cholesterol and fatty acids to rebuild a stressed, reactive skin barrier.", ["dryness", "redness"], { expiry: "2027-03-30" }),
     p(6, "TRT-CSB-30", "Ceramide Sleep Balm", "Treatment", 890, 21, 4.5, 52, "/products/ceramide-sleep-balm.jpg", "A rich overnight balm that seals in moisture and wakes you up with plump, calm skin.", ["dryness", "redness"], { expiry: "2026-11-30" }),
     p(7, "BDY-RMW-250", "Rice Milk Body Wash", "Body", 620, 64, 4.4, 39, "/products/rice-milk-body-wash.jpg", "A creamy, low-foam cleanser with rice milk that leaves skin soft instead of stripped.", ["dryness"], {

@@ -8,6 +8,7 @@ import Modal from "../ui/Modal";
 import { EASE } from "../ui/motion/constants";
 import { useStore } from "@/library/store";
 import { PRODUCTS } from "@/library/products";
+import PriceTag from "@/components/ui/PriceTag";
 
 const QUIZ_QUESTIONS = [
     {
@@ -233,7 +234,7 @@ function Results({ answers, onOpenProduct, onDone, onRetake }: { answers: string
                         <span className="min-w-0 flex-1">
                             <span className="block font-mono text-[10px] tracking-[.14em] text-grey uppercase">{p.category}</span>
                             <span className="block truncate text-[14px] font-medium text-ink">{p.title}</span>
-                            <span className="block font-mono text-[12px] text-grey">₱{p.price.toLocaleString()}</span>
+                            <PriceTag price={p.price} salePrice={p.salePrice} className="block font-mono text-[12px] text-grey" />
                         </span>
                         <span className="-translate-x-1 text-ink/50 opacity-0 transition duration-200 group-hover:translate-x-0 group-hover:opacity-100">{ARROW}</span>
                     </motion.button>

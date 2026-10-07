@@ -3,12 +3,12 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { EASE } from "@/components/ui/motion/constants";
 import { useStore } from "@/library/store";
 import type { CustomerNotification } from "@/library/api/customer";
 import { NotificationIcon } from "@/components/account/notificationUi";
 
 const VISIBLE_MS = 5000;
+
 const FADE_S = 1.5;
 
 function Popup({ n }: { n: CustomerNotification }) {
@@ -34,13 +34,12 @@ function Popup({ n }: { n: CustomerNotification }) {
 
     return (
         <motion.div
-            layout
-            initial={{ opacity: 0, x: 80 }}
-            animate={{ opacity: fading ? 0 : 1, x: 0 }}
-            exit={{ opacity: 0, x: 40, transition: { duration: 0.2 } }}
-            transition={fading ? { opacity: { duration: FADE_S, ease: "linear" } } : { duration: 0.4, ease: EASE }}
+            initial={false}
+            animate={{ opacity: fading ? 0 : 1 }}
+            exit={{ opacity: 0, transition: { duration: 0.25 } }}
+            transition={fading ? { opacity: { duration: FADE_S, ease: "linear" } } : { duration: 0.25 }}
             role="status"
-            className="pointer-events-auto relative w-[min(360px,calc(100vw-2rem))] border border-ink/10 bg-white shadow-modal"
+            className="notif-in pointer-events-auto relative w-full border border-ink/10 bg-white shadow-modal sm:w-[360px]"
         >
             <button onClick={open} className="flex w-full gap-3 py-4 pr-11 pl-4 text-left transition hover:bg-off/60">
                 <span className="mt-0.5 flex h-8 w-8 flex-none items-center justify-center rounded-full border border-ink/10 text-ink">
@@ -68,7 +67,7 @@ export default function NotificationToaster() {
     const { liveNotifications } = useStore();
 
     return (
-        <div aria-live="polite" className="pointer-events-none fixed right-4 bottom-4 z-[90] flex flex-col items-end gap-3">
+        <div aria-live="polite" className="pointer-events-none fixed inset-x-3 top-3 z-[90] flex flex-col items-stretch gap-3 sm:inset-x-auto sm:top-auto sm:right-4 sm:bottom-4 sm:items-end">
             <AnimatePresence initial={false}>
                 {liveNotifications.map((n) => (
                     <Popup key={n.id} n={n} />

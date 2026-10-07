@@ -59,37 +59,43 @@ function ContentPageSkeleton() {
         <SkeletonGroup>
             <div className="mb-6 flex gap-x-7 overflow-hidden border-b border-ink/10 pb-2.5 sm:mb-8 sm:flex-wrap sm:gap-y-2">
                 {TABS.map((t) => (
-                    <Skeleton key={t.key} className="h-[11px] w-16 flex-none" />
-                ))}
-            </div>
-
-            <div className="mb-5 flex items-center justify-between">
-                <Skeleton className="h-[15px] w-32" />
-                <Skeleton tone="soft" className="h-[11px] w-44" />
-            </div>
-
-            <div className="space-y-8">
-                {Array.from({ length: 2 }).map((_, g) => (
-                    <div key={g}>
-                        <Skeleton tone="soft" className="mb-2 h-[10px] w-28" />
-                        <div className="overflow-hidden border border-ink/10 bg-white">
-                            <div className="flex items-center gap-4 border-b border-ink/10 bg-off/50 px-3 py-3.5 sm:gap-6 sm:px-5">
-                                <Skeleton className="h-[10px] w-14" />
-                                <Skeleton className="ml-auto hidden h-[10px] w-20 md:block" />
-                                <Skeleton className="ml-auto h-[10px] w-12 md:ml-0" />
-                                <Skeleton className="h-[10px] w-6" />
-                            </div>
-                            {Array.from({ length: 3 }).map((_, r) => (
-                                <div key={r} className="flex items-center gap-4 border-b border-ink/10 px-3 py-3.5 last:border-b-0 sm:gap-6 sm:px-5">
-                                    <Skeleton className="h-[13.5px] w-32" />
-                                    <Skeleton tone="soft" className="ml-auto hidden h-[12px] w-16 md:block" />
-                                    <Skeleton tone="outline" className="ml-auto h-4 w-8 md:ml-0" />
-                                    <Skeleton tone="soft" className="h-[14px] w-6" />
-                                </div>
-                            ))}
-                        </div>
+                    <div key={t.key} className="flex h-[16.5px] flex-none items-center">
+                        <Skeleton className="h-[11px] w-16" />
                     </div>
                 ))}
+            </div>
+
+            <div className="flex flex-col border border-ink/10 bg-white sm:flex-row">
+                <div className="flex flex-none divide-x divide-ink/10 overflow-hidden border-b border-ink/10 sm:w-64 sm:flex-col sm:divide-x-0 sm:divide-y sm:border-r sm:border-b-0">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                        <div key={i} className="flex-none px-4 py-3.5 sm:px-5 sm:py-4">
+                            <Skeleton className="h-[13.5px] w-28" />
+                            <Skeleton tone="soft" className="mt-1.5 hidden h-[11px] w-32 sm:block" />
+                        </div>
+                    ))}
+                </div>
+
+                <div className="min-w-0 flex-1 p-4 sm:p-7">
+                    <div className="mb-5">
+                        <Skeleton className="h-[15px] w-44" />
+                        <Skeleton tone="soft" className="mt-2 h-3 w-80 max-w-full" />
+                    </div>
+                    <div className="overflow-hidden border border-ink/10 bg-white shadow-card">
+                        <div className="flex items-center gap-4 border-b border-ink/10 bg-off/50 px-3 py-3.5 sm:gap-6 sm:px-5">
+                            <Skeleton tone="soft" className="h-[10px] w-14" />
+                            <Skeleton tone="soft" className="ml-auto hidden h-[10px] w-20 md:block" />
+                            <Skeleton tone="soft" className="ml-auto h-[10px] w-12 md:ml-0" />
+                        </div>
+                        {Array.from({ length: 6 }).map((_, r) => (
+                            <div key={r} className="flex items-center gap-4 border-b border-ink/10 px-3 py-3.5 last:border-b-0 sm:gap-6 sm:px-5">
+                                <Skeleton className="h-[13.5px] w-32" />
+                                <Skeleton tone="soft" className="ml-auto hidden h-3 w-16 md:block" />
+                                <Skeleton tone="outline" className="ml-auto h-6 w-11 rounded-pill md:ml-0" />
+                                <Skeleton tone="outline" className="h-11 w-11 rounded-full" />
+                            </div>
+                        ))}
+                    </div>
+                </div>
             </div>
         </SkeletonGroup>
     );

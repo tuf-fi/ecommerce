@@ -7,7 +7,8 @@ import SectionTitle from "@/components/ui/SectionTitle";
 import StarRating from "@/components/ui/StarRating";
 import { useContent } from "@/library/content";
 import { useStore } from "@/library/store";
-import { getProduct, cheapestSizeId, Product } from "@/library/products";
+import { getProduct, cheapestSizeId, currentPrice, Product } from "@/library/products";
+import PriceTag from "@/components/ui/PriceTag";
 import { useMounted } from "@/library/useMounted";
 import Skeleton, { SkeletonGroup } from "@/components/ui/Skeleton";
 
@@ -34,7 +35,7 @@ export default function RitualPage() {
     }
 
     const products = ritual.productIds.map((pid) => getProduct(pid)).filter((p): p is Product => p !== undefined);
-    const totalPrice = products.reduce((sum, p) => sum + p.price, 0);
+    const totalPrice = products.reduce((sum, p) => sum + currentPrice(p), 0);
 
     function handleAddAllToBag() {
         for (const product of products) {
@@ -118,7 +119,7 @@ export default function RitualPage() {
                             {products.map((product, i) => {
                                 const isWished = wishlist.includes(product.id);
                                 return (
-                                    <div key={product.id} id={`step-${product.id}`} className="grid scroll-mt-24 grid-cols-1 gap-y-5 py-8 first:pt-8 sm:grid-cols-[200px_minmax(0,1fr)] sm:gap-x-8 sm:gap-y-0 sm:py-10 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-x-10">
+                                                                        <div key={product.id} id={`step-${product.id}`} className="grid scroll-mt-24 grid-cols-1 gap-y-5 py-8 first:pt-8 sm:grid-cols-[200px_minmax(0,1fr)] sm:gap-x-8 sm:gap-y-0 sm:py-10 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-x-10">
                                         <Link
                                             href={`/shop/${product.id}`}
                                             className="group relative block aspect-square w-full self-start overflow-hidden border border-ink/10"
@@ -149,7 +150,7 @@ export default function RitualPage() {
                                             <p className="mt-3 line-clamp-3 max-w-[460px] text-[13.5px] leading-relaxed text-grey">{product.desc}</p>
 
                                             <div className="mt-5 flex flex-wrap items-center justify-between gap-x-4 gap-y-3 border-t border-ink/10 pt-4 sm:mt-auto">
-                                                <span className="font-mono text-[15px] text-ink">₱{product.price.toLocaleString()}</span>
+                                                <PriceTag price={product.price} salePrice={product.salePrice} className="font-mono text-[15px] text-ink" />
                                                 <div className="flex items-center gap-2">
                                                     <button
                                                         aria-label="Toggle wishlist"
@@ -195,10 +196,12 @@ function RitualSkeleton() {
                 </div>
 
                 <div className="mx-auto max-w-[680px] pt-8 md:pt-10">
-                    <Skeleton className="h-[12.5px] w-24" />
+                    <div className="flex min-h-11 items-center">
+                        <Skeleton className="h-[12.5px] w-24" />
+                    </div>
                 </div>
 
-                <div className="mx-auto mt-6 mb-14 max-w-[680px]">
+                <div className="mx-auto mt-4 mb-14 max-w-[680px]">
                     <Skeleton tone="outline" className="h-[52px] w-full" />
                 </div>
 
@@ -206,19 +209,22 @@ function RitualSkeleton() {
                     <div className="flex flex-col gap-7">
                         <div>
                             <Skeleton className="h-[10.5px] w-20" />
-                            <Skeleton className="mt-2 h-[30px] w-28" />
-                            <Skeleton tone="soft" className="mt-2 h-3 w-32" />
+                            <Skeleton className="mt-2 h-[34px] w-28" />
+                            <Skeleton tone="soft" className="mt-1.5 h-3 w-32" />
                         </div>
-                        <div className="flex flex-col gap-2.5 border-y border-ink/10 py-2.5">
+                        <div className="flex flex-col divide-y divide-ink/10 border-y border-ink/10">
                             {Array.from({ length: 3 }).map((_, i) => (
-                                <Skeleton key={i} className="h-4 w-full" />
+                                <div key={i} className="flex items-center gap-3 py-2.5">
+                                    <Skeleton tone="outline" className="h-7 w-7 flex-none" />
+                                    <Skeleton className="h-[13px] w-3/5" />
+                                </div>
                             ))}
                         </div>
                         <Skeleton tone="outline" className="h-[46px] w-full" />
                     </div>
 
                     <div>
-                        <div className="mb-11 flex items-center gap-x-5">
+                        <div className="mb-8 flex items-center gap-x-4 sm:gap-x-5 md:mb-11">
                             <Skeleton className="h-[10.5px] w-3" />
                             <Skeleton className="h-[10.5px] w-32" />
                             <span className="h-px flex-1 bg-grey-light/40" />
@@ -226,15 +232,21 @@ function RitualSkeleton() {
 
                         <div className="flex flex-col divide-y divide-ink/10 border-t border-ink/10">
                             {Array.from({ length: 3 }).map((_, i) => (
-                                <div key={i} className="flex gap-6 py-8 first:pt-0">
-                                    <Skeleton tone="faint" className="aspect-[4/5] w-[140px] flex-none" />
-                                    <div className="flex flex-1 flex-col gap-2">
+                                <div key={i} className="grid grid-cols-1 gap-y-5 py-8 first:pt-8 sm:grid-cols-[200px_minmax(0,1fr)] sm:gap-x-8 sm:gap-y-0 sm:py-10 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-x-10">
+                                    <Skeleton tone="faint" className="aspect-square w-full self-start border border-ink/10" />
+                                    <div className="flex min-w-0 flex-col">
                                         <Skeleton className="h-[10px] w-16" />
-                                        <Skeleton className="h-[16.5px] w-3/5" />
-                                        <Skeleton tone="soft" className="h-3 w-24" />
-                                        <div className="mt-3 flex items-center gap-4">
-                                            <Skeleton className="h-3 w-12" />
-                                            <Skeleton tone="outline" className="h-8 w-24" />
+                                        <Skeleton className="mt-1.5 h-[20px] w-3/5" />
+                                        <Skeleton tone="soft" className="mt-2 h-[14px] w-24" />
+                                        <Skeleton tone="soft" className="mt-3 h-3 w-full max-w-[460px]" />
+                                        <Skeleton tone="soft" className="mt-1.5 h-3 w-4/5 max-w-[460px]" />
+                                        <Skeleton tone="soft" className="mt-1.5 h-3 w-3/5 max-w-[460px]" />
+                                        <div className="mt-5 flex items-center justify-between gap-4 border-t border-ink/10 pt-4 sm:mt-auto">
+                                            <Skeleton className="h-[15px] w-14" />
+                                            <div className="flex items-center gap-2">
+                                                <Skeleton tone="outline" className="h-11 w-11" />
+                                                <Skeleton tone="outline" className="h-11 w-28" />
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

@@ -41,3 +41,28 @@ export function SkeletonTable({ rows = 6, cols = 4 }: { rows?: number; cols?: nu
         </SkeletonGroup>
     );
 }
+
+// Mirrors admin Toolbar: right-aligned action buttons row, then labelled filter fields. Pass width classes per piece.
+export function SkeletonToolbar({ actions = [], filters }: { actions?: string[]; filters: string[] }) {
+    return (
+        <div className="mb-5">
+            {actions.length > 0 && (
+                <div className="mb-4 flex flex-wrap items-center justify-end gap-2.5">
+                    {actions.map((w, i) => (
+                        <Skeleton key={i} tone="outline" className={`h-11 ${w}`} />
+                    ))}
+                </div>
+            )}
+            <div className="flex w-full flex-wrap items-end gap-4">
+                {filters.map((w, i) => (
+                    <div key={i} className={`flex flex-col gap-1.5 ${w}`}>
+                        <div className="flex h-[15px] items-center">
+                            <Skeleton tone="soft" className="h-[10px] w-12" />
+                        </div>
+                        <Skeleton tone="outline" className="h-11 w-full" />
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}

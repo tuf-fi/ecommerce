@@ -16,6 +16,7 @@ import {
     productStock,
     productStockStatus,
     productPriceRange,
+    productSalePrice,
     isExpiringSoon,
     daysUntilExpiry,
     EXPIRY_WARNING_DAYS,
@@ -271,7 +272,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
                     expiry: next.expiry,
                     reorderThreshold: next.reorderThreshold ?? null,
                     version: old.version,
-                    ...(sizes.length ? { sizes: sizesPayload(sizes) } : { price: next.price, sizes: [] }),
+                    ...(sizes.length ? { sizes: sizesPayload(sizes) } : { price: next.price, salePrice: next.salePrice ?? null, sizes: [] }),
                 };
                 const image = persistableImage(next.image);
                 if (image && image !== old.image) payload.image = image;
@@ -342,7 +343,12 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
             let failed = 0;
             for (const p of applied) {
                 try {
-                    if (adjust.setPrice !== undefined) await updateProductDetails(p.id, { price: Math.max(0, adjust.setPrice), version: p.version });
+                    if (adjust.setPrice !== undefined) {
+                        const price = Math.max(0, adjust.setPrice);
+                        // A discount at or above the new regular price would be rejected, so it is dropped.
+                        const dropSale = p.salePrice != null && p.salePrice >= price;
+                        await updateProductDetails(p.id, { price, ...(dropSale ? { salePrice: null } : {}), version: p.version });
+                    }
                     if (adjust.stockDelta !== undefined) {
                         // Floored at zero, matching the old behaviour of clamping instead of erroring.
                         const delta = Math.max(adjust.stockDelta, -p.stock);
@@ -673,4 +679,4 @@ export function useAdminStore() {
     return ctx;
 }
 
-export { stockStatus, productStock, productStockStatus, productPriceRange, isExpiringSoon, daysUntilExpiry, EXPIRY_WARNING_DAYS };
+export { stockStatus, productStock, productStockStatus, productPriceRange, productSalePrice, isExpiringSoon, daysUntilExpiry, EXPIRY_WARNING_DAYS };

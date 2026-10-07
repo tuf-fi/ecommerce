@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import SectionContainer from "../ui/Section";
 import SectionTitle from "../ui/SectionTitle";
-import RevealIn from "../ui/motion/RevealIn";
 import { EASE } from "../ui/motion/constants";
 import { useContent } from "@/library/content";
 import { Testimonial } from "@/library/admin/types";
@@ -82,9 +81,7 @@ export default function Testimonials() {
         <SectionContainer id="testimonials">
             <SectionTitle section="testimonials" title="Testimonials" />
 
-            <RevealIn direction="bottom">
-                <FeaturedTestimonial pool={testimonials} />
-            </RevealIn>
+            <FeaturedTestimonial pool={testimonials} />
         </SectionContainer>
     );
 }

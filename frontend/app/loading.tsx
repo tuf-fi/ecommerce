@@ -10,7 +10,7 @@ export default function Loading() {
                     <Skeleton className="mt-3 h-[34px] w-[45%] max-w-[340px] sm:h-[42px]" />
                 </div>
 
-                <div className="mb-8 flex items-center gap-x-5 md:mb-11">
+                <div className="mb-8 flex items-center gap-x-4 sm:gap-x-5 md:mb-11">
                     <Skeleton className="h-[10.5px] w-3" />
                     <Skeleton className="h-[10.5px] w-24" />
                     <span className="h-px flex-1 bg-grey-light/40" />

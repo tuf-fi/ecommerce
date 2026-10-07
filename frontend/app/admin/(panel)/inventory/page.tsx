@@ -4,7 +4,7 @@ import { useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { toast } from "sonner";
-import { useAdminStore, productStock, productStockStatus, productPriceRange, isExpiringSoon, daysUntilExpiry } from "@/library/adminStore";
+import { useAdminStore, productStock, productStockStatus, productPriceRange, productSalePrice, isExpiringSoon, daysUntilExpiry } from "@/library/adminStore";
 import { CATEGORIES } from "@/library/products";
 import { CATEGORY_DEFAULT_IMAGE, DEFAULT_PRODUCT_IMAGE } from "@/library/admin/products";
 import { AdminProduct } from "@/library/admin/types";
@@ -23,7 +23,7 @@ import BulkActionBar from "@/components/admin/BulkActionBar";
 import { BTN_ADD, BTN_SECONDARY, ICON_BTN, ICON_BTN_DANGER, FILTER_SELECT, BTN_BULK_PRIMARY, BTN_BULK_DANGER, BTN_BULK_SECONDARY } from "@/components/admin/formClasses";
 import { toCsv, parseCsv, downloadCsv } from "@/library/admin/csv";
 import { useMounted } from "@/library/useMounted";
-import Skeleton, { SkeletonGroup } from "@/components/ui/Skeleton";
+import Skeleton, { SkeletonGroup, SkeletonToolbar } from "@/components/ui/Skeleton";
 import ListPanel from "@/components/admin/ListPanel";
 import { EmptyStateRow } from "@/components/admin/EmptyState";
 import { EditIcon, TrashIcon, ImportIcon, ExportIcon } from "@/components/admin/icons";
@@ -143,6 +143,7 @@ export default function InventoryPage() {
             { header: "Category", value: (p) => p.category },
             { header: "Price Min", value: (p) => productPriceRange(p).min },
             { header: "Price Max", value: (p) => productPriceRange(p).max },
+            { header: "Sale Price", value: (p) => productSalePrice(p) ?? "" },
             { header: "Stock", value: (p) => productStock(p) },
             { header: "Status", value: (p) => productStockStatus(p) },
         ];
@@ -179,6 +180,8 @@ export default function InventoryPage() {
                 priceMin: header.indexOf("price min"),
                 stock: header.indexOf("stock"),
             };
+            // Optional: leave empty (or omit the column) for no discount.
+            const saleCol = header.indexOf("sale price");
             const missingCols = Object.entries(colIndex)
                 .filter(([, idx]) => idx === -1)
                 .map(([key]) => key);
@@ -197,18 +200,22 @@ export default function InventoryPage() {
                 const category = CATEGORIES.find((c) => c.toLowerCase() === categoryRaw?.toLowerCase());
                 const price = Number(row[colIndex.priceMin]);
                 const stock = Number(row[colIndex.stock]);
+                const saleRaw = saleCol === -1 ? "" : row[saleCol]?.trim();
+                const salePrice = saleRaw ? Number(saleRaw) : undefined;
                 if (!name) return skipped.push(`Row ${rowNum}: missing product name.`);
                 if (!sku) return skipped.push(`Row ${rowNum}: missing SKU.`);
                 if (existingSkus.has(sku.toLowerCase())) return skipped.push(`Row ${rowNum}: SKU "${sku}" already exists.`);
                 if (!category) return skipped.push(`Row ${rowNum}: unrecognized category "${categoryRaw}".`);
                 if (!Number.isFinite(price) || price <= 0) return skipped.push(`Row ${rowNum}: invalid price.`);
                 if (!Number.isFinite(stock) || stock < 0) return skipped.push(`Row ${rowNum}: invalid stock.`);
+                if (salePrice !== undefined && (!Number.isFinite(salePrice) || salePrice < 0 || salePrice >= price)) return skipped.push(`Row ${rowNum}: sale price must be lower than the price.`);
                 existingSkus.add(sku.toLowerCase());
                 toImport.push({
                     name,
                     sku,
                     category,
                     price,
+                    salePrice,
                     stock,
                     expiry: null,
                     image: CATEGORY_DEFAULT_IMAGE[category] ?? DEFAULT_PRODUCT_IMAGE,
@@ -330,6 +337,7 @@ export default function InventoryPage() {
                             {paged.map((p) => {
                                 const status = productStockStatus(p);
                                 const { min, max } = productPriceRange(p);
+                                const sale = productSalePrice(p);
                                 return (
                                     <tr
                                         key={p.id}
@@ -368,6 +376,11 @@ export default function InventoryPage() {
                                         <td className="border-b border-ink/10 px-5 py-3.5 text-[13px] text-ink">{p.category}</td>
                                         <td className="border-b border-ink/10 px-5 py-3.5 font-mono text-[12.5px] text-ink">
                                             {min === max ? `₱${min.toLocaleString()}` : `₱${min.toLocaleString()}–₱${max.toLocaleString()}`}
+                                            {sale !== null && (
+                                                <span className="mt-0.5 block text-[11px] text-pink-dark">
+                                                    {p.sizes?.length ? "Sale from" : "Sale"} ₱{sale.toLocaleString()}
+                                                </span>
+                                            )}
                                         </td>
                                         <td className="border-b border-ink/10 px-5 py-3.5 font-mono text-[12.5px] text-ink">{productStock(p)}</td>
                                         <td className="border-b border-ink/10 px-5 py-3.5">
@@ -463,18 +476,7 @@ export default function InventoryPage() {
 function InventorySkeleton() {
     return (
         <SkeletonGroup>
-            <div className="mb-10 flex flex-wrap items-end justify-between gap-x-8 gap-y-5 border-b border-ink/10 pb-6">
-                <div className="flex flex-1 flex-wrap items-end gap-4">
-                    <Skeleton tone="outline" className="h-11 flex-1 min-w-[200px]" />
-                    <Skeleton tone="outline" className="h-11 w-44" />
-                    <Skeleton tone="outline" className="h-11 w-52" />
-                </div>
-                <div className="flex flex-none items-center gap-2.5">
-                    <Skeleton tone="outline" className="h-11 w-28" />
-                    <Skeleton tone="outline" className="h-11 w-28" />
-                    <Skeleton tone="outline" className="h-11 w-36" />
-                </div>
-            </div>
+            <SkeletonToolbar actions={["w-28", "w-28", "w-36"]} filters={["min-w-[200px] flex-1", "w-full flex-none sm:w-[150px]", "w-full flex-none sm:w-[180px]"]} />
 
             <div className="overflow-hidden border border-ink/10 bg-white shadow-card">
                 <div className="border-b border-ink/10 bg-off/50 px-5 py-3.5">

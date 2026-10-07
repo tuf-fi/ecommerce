@@ -5,11 +5,10 @@ import { useParams, useRouter } from "next/navigation";
 import { useContent } from "@/library/content";
 import { BlogPost, BlogStatus } from "@/library/admin/types";
 import JournalArticle from "@/components/sections/JournalArticle";
-import ContentEditorShell, { ContentNotFound } from "@/components/admin/content/ContentEditorShell";
+import ContentEditorShell, { ContentEditorSkeleton, ContentNotFound } from "@/components/admin/content/ContentEditorShell";
 import { FIELD_INPUT, FIELD_INPUT_INVALID, FIELD_LABEL, FIELD_ERROR } from "@/components/admin/formClasses";
 import { useAsyncAction, wait } from "@/library/useAsyncAction";
 import { useMounted } from "@/library/useMounted";
-import Skeleton, { SkeletonGroup } from "@/components/ui/Skeleton";
 import { validateAndReadImage } from "@/library/image-upload";
 import { toast } from "sonner";
 
@@ -184,73 +183,14 @@ export default function BlogEditorPage() {
 
 function BlogEditorSkeleton() {
     return (
-        <SkeletonGroup>
-            <div className="mb-6 flex items-center justify-between gap-4">
-                <Skeleton className="h-[12.5px] w-28" />
-            </div>
-
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
-                <div className="overflow-hidden border border-ink/10 bg-white">
-                    <div className="border-b border-ink/10 px-7 py-5">
-                        <Skeleton className="h-[18px] w-24" />
-                    </div>
-                    <div className="border-b border-ink/10">
-                        <div className="flex items-center justify-between gap-3 border-b border-ink/10 px-5 py-3.5">
-                            <Skeleton tone="soft" className="h-[10.5px] w-40" />
-                            <div className="flex items-center gap-1">
-                                <Skeleton tone="soft" className="h-6 w-6" />
-                                <Skeleton tone="soft" className="h-6 w-6" />
-                                <Skeleton tone="soft" className="h-6 w-6" />
-                            </div>
-                        </div>
-                        <Skeleton tone="faint" className="h-64 w-full" />
-                    </div>
-
-                    <div className="px-7 py-7">
-                        <div className="mb-4">
-                            <Skeleton tone="soft" className="mb-1.5 h-[10.5px] w-10" />
-                            <Skeleton tone="outline" className="h-11 w-full" />
-                        </div>
-                        <div className="mb-4">
-                            <Skeleton tone="soft" className="mb-1.5 h-[10.5px] w-14" />
-                            <Skeleton tone="outline" className="h-24 w-full" />
-                        </div>
-                        <div>
-                            <Skeleton tone="soft" className="mb-1.5 h-[10.5px] w-9" />
-                            <Skeleton tone="outline" className="h-52 w-full" />
-                        </div>
-                    </div>
-                </div>
-
-                <div className="flex flex-col gap-5">
-                    <div className="overflow-hidden border border-ink/10 bg-white">
-                        <div className="border-b border-ink/10 bg-off/50 px-4 py-2.5">
-                            <Skeleton tone="soft" className="h-[10px] w-14" />
-                        </div>
-                        <div className="p-4">
-                            <Skeleton tone="soft" className="mb-3.5 h-[10.5px] w-20" />
-                            <Skeleton tone="outline" className="h-11 w-full" />
-                        </div>
-                    </div>
-                    <div className="overflow-hidden border border-ink/10 bg-white">
-                        <div className="border-b border-ink/10 bg-off/50 px-4 py-2.5">
-                            <Skeleton tone="soft" className="h-[10px] w-24" />
-                        </div>
-                        <div className="p-4">
-                            <Skeleton tone="faint" className="aspect-video w-full" />
-                        </div>
-                    </div>
-                    <div className="overflow-hidden border border-ink/10 bg-white">
-                        <div className="border-b border-ink/10 bg-off/50 px-4 py-2.5">
-                            <Skeleton tone="soft" className="h-[10px] w-14" />
-                        </div>
-                        <div className="p-4">
-                            <Skeleton tone="soft" className="mb-1.5 h-[10.5px] w-12" />
-                            <Skeleton tone="outline" className="h-11 w-full" />
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </SkeletonGroup>
+        <ContentEditorSkeleton
+            meta="field"
+            image
+            fields={[
+                { labelWidth: "w-10", height: "h-[46px]" },
+                { labelWidth: "w-14", height: "h-[117px]" },
+                { labelWidth: "w-9", height: "h-[254px]" },
+            ]}
+        />
     );
 }

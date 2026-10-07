@@ -19,7 +19,7 @@ export const STOCK_REASON_LABEL: Record<StockReason, string> = {
     RETURN: "Return",
 };
 
-type ApiSize = { id: number; label: string; price: number; stock: number; reorderThreshold?: number | null };
+type ApiSize = { id: number; label: string; price: number; salePrice?: number | null; stock: number; reorderThreshold?: number | null };
 
 export type ApiProduct = {
     id: number;
@@ -28,6 +28,7 @@ export type ApiProduct = {
     category: string;
     description: string;
     price: number;
+    salePrice?: number | null;
     stock: number;
     rating: number;
     ratingCount: number;
@@ -64,13 +65,14 @@ export function toProduct(p: ApiProduct): Product {
         category: p.category,
         title: p.name,
         price: p.price,
+        salePrice: p.salePrice ?? undefined,
         stock: p.stock,
         rating: p.rating,
         count: p.ratingCount,
         desc: p.description,
         image: imageFor(p),
         variant: VARIANTS[p.id % VARIANTS.length],
-        sizes: p.sizes.length ? p.sizes.map((s) => ({ id: String(s.id), label: s.label, price: s.price, stock: s.stock })) : undefined,
+        sizes: p.sizes.length ? p.sizes.map((s) => ({ id: String(s.id), label: s.label, price: s.price, salePrice: s.salePrice ?? undefined, stock: s.stock })) : undefined,
         concerns: p.concerns.length ? p.concerns : undefined,
     };
 }
@@ -82,10 +84,11 @@ export function toAdminProduct(p: ApiProduct): AdminProduct {
         sku: p.sku,
         category: p.category,
         price: p.price,
+        salePrice: p.salePrice ?? undefined,
         stock: p.stock,
         expiry: p.expiry ?? null,
         image: imageFor(p),
-        sizes: p.sizes.length ? p.sizes.map((s) => ({ id: String(s.id), label: s.label, price: s.price, stock: s.stock })) : undefined,
+        sizes: p.sizes.length ? p.sizes.map((s) => ({ id: String(s.id), label: s.label, price: s.price, salePrice: s.salePrice ?? undefined, stock: s.stock })) : undefined,
         reorderThreshold: p.reorderThreshold ?? undefined,
         version: p.version,
     };
@@ -135,13 +138,14 @@ export type ProductPayload = {
     sku?: string;
     category?: string;
     price?: number;
+    salePrice?: number | null;
     stock?: number;
     expiry?: string | null;
     image?: string | null;
     reorderThreshold?: number | null;
     // Required when editing an existing product.
     version?: number;
-    sizes?: { id?: number; label: string; price: number; stock?: number; reorderThreshold?: number | null }[];
+    sizes?: { id?: number; label: string; price: number; salePrice?: number | null; stock?: number; reorderThreshold?: number | null }[];
 };
 
 const send = (method: string, body?: unknown): RequestInit => ({ method, body: body === undefined ? undefined : JSON.stringify(body) });

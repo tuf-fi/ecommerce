@@ -17,7 +17,7 @@ import type { StaffPatch } from "@/library/api/admin";
 import StaffViewModal from "@/components/admin/modals/StaffViewModal";
 import { BTN_ADD, ICON_BTN, ICON_BTN_DANGER, FILTER_SELECT, BTN_BULK_DANGER } from "@/components/admin/formClasses";
 import { useMounted } from "@/library/useMounted";
-import Skeleton, { SkeletonGroup } from "@/components/ui/Skeleton";
+import Skeleton, { SkeletonGroup, SkeletonToolbar } from "@/components/ui/Skeleton";
 import ListPanel from "@/components/admin/ListPanel";
 import { EmptyStateRow } from "@/components/admin/EmptyState";
 import { EditIcon, TrashIcon } from "@/components/admin/icons";
@@ -335,16 +335,7 @@ export default function StaffPage() {
 function StaffSkeleton() {
     return (
         <SkeletonGroup>
-            <div className="mb-10 flex flex-wrap items-end justify-between gap-x-8 gap-y-5 border-b border-ink/10 pb-6">
-                <div className="flex flex-1 flex-wrap items-end gap-4">
-                    <Skeleton tone="outline" className="h-11 flex-1 min-w-[220px]" />
-                    <Skeleton tone="outline" className="h-11 w-44" />
-                    <Skeleton tone="outline" className="h-11 w-52" />
-                </div>
-                <div className="flex flex-none">
-                    <Skeleton tone="outline" className="h-11 w-32" />
-                </div>
-            </div>
+            <SkeletonToolbar actions={["w-32"]} filters={["min-w-[220px] flex-1", "w-full flex-none sm:w-[150px]", "w-full flex-none sm:w-[180px]"]} />
 
             <div className="overflow-hidden border border-ink/10 bg-white shadow-card">
                 <div className="border-b border-ink/10 bg-off/50 px-5 py-3.5">
@@ -363,8 +354,8 @@ function StaffSkeleton() {
                             <Skeleton className="h-3 w-24" />
                         </div>
                         <div className="flex items-center gap-1.5">
-                            <Skeleton tone="outline" className="h-8 w-8 rounded-full" />
-                            <Skeleton tone="outline" className="h-8 w-8 rounded-full" />
+                            <Skeleton tone="outline" className="h-11 w-11 rounded-full" />
+                            <Skeleton tone="outline" className="h-11 w-11 rounded-full" />
                         </div>
                     </div>
                 ))}

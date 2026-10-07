@@ -54,6 +54,13 @@ export function isExpiringSoon(expiry: string | null): boolean {
     return days !== null && days >= 0 && days <= EXPIRY_WARNING_DAYS;
 }
 
+// The lowest discounted price across a product's sizes (or its own), or null when nothing is on sale.
+export function productSalePrice(product: AdminProduct): number | null {
+    if (!product.sizes?.length) return product.salePrice != null && product.salePrice < product.price ? product.salePrice : null;
+    if (!product.sizes.some((s) => s.salePrice != null && s.salePrice < s.price)) return null;
+    return Math.min(...product.sizes.map((s) => (s.salePrice != null && s.salePrice < s.price ? s.salePrice : s.price)));
+}
+
 // Price range across a product's sizes — both equal `price` when it has none.
 export function productPriceRange(product: AdminProduct): { min: number; max: number } {
     if (!product.sizes?.length) return { min: product.price, max: product.price };

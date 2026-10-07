@@ -61,7 +61,7 @@ export default function ReviewModal({
                             type="button"
                             aria-label={`${n} star${n > 1 ? "s" : ""}`}
                             onClick={() => setRating(n)}
-                            className={`p-1 text-xl ${n <= rating ? "text-gold" : "text-ink/15"}`}
+                            className={`p-1 text-xl ${n <= rating ? "text-gold" : "text-gold/25"}`}
                         >
                             ★
                         </button>

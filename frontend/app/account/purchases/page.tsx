@@ -33,7 +33,7 @@ function formatDate(iso: string) {
 
 // An unpaid order's button follows its payment screenshot: nothing to do while staff are checking it.
 function primaryAction(o: Order): string | null {
-    if (o.status === "To Pay") {
+    if (o.awaitingPayment) {
         if (o.payment?.state === "review") return null;
         return o.payment?.state === "rejected" ? "Upload New Screenshot" : "Pay Now";
     }
@@ -41,7 +41,6 @@ function primaryAction(o: Order): string | null {
 }
 
 const PRIMARY_ACTION: Record<OrderStatus, string | null> = {
-    "To Pay": "Pay Now",
     "To Ship": "Track Package",
     "To Receive": "Confirm Receipt",
     Completed: "Buy Again",
@@ -50,7 +49,6 @@ const PRIMARY_ACTION: Record<OrderStatus, string | null> = {
 };
 
 const STATUS_DOT: Record<OrderStatus, string> = {
-    "To Pay": "bg-pink-dark",
     "To Ship": "bg-navy",
     "To Receive": "bg-navy",
     Completed: "bg-success",
@@ -125,14 +123,8 @@ function OrderTracker({ order, compact = false }: { order: Order; compact?: bool
                     return (
                         <div key={s} className="relative z-10 flex flex-1 flex-col items-center gap-2 text-center">
                             <div className={`relative flex items-center justify-center ${dotSize}`}>
-                                {!compact && isNext && (
-                                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-navy/25" />
-                                )}
                                 <div
-                                    className={`relative flex items-center justify-center rounded-full border text-[11px] transition-all duration-500 ease-out ${dotSize} ${
-                                        mounted ? "scale-100" : "scale-50"
-                                    } ${done ? "border-success bg-success text-white" : isNext ? "border-navy/40 bg-white text-navy/50" : "border-ink/15 bg-white text-ink/25"}`}
-                                    style={{ transitionDelay: mounted ? `${i * 100}ms` : "0ms" }}
+                                    className={`relative flex items-center justify-center rounded-full border text-[11px] ${dotSize} ${done ? "border-success bg-success text-white" : isNext ? "border-navy/40 bg-white text-navy/50" : "border-ink/15 bg-white text-ink/25"}`}
                                 >
                                     {done ? (
                                         <svg width={compact ? 8 : 10} height={compact ? 8 : 10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
@@ -212,7 +204,7 @@ export default function PurchasesPage() {
         if (!no) return;
         window.history.replaceState(null, "", window.location.pathname);
         // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time reaction to the URL once the orders have loaded
-        if (orders[no]?.status === "To Pay") setPayOrderNo(no);
+        if (orders[no]?.awaitingPayment) setPayOrderNo(no);
     }, [ordersLoaded, orders]);
 
     const orderNos = useMemo(() => Object.keys(orders), [orders]);
@@ -473,7 +465,7 @@ export default function PurchasesPage() {
                                         <p className="font-mono text-[15px] font-semibold text-ink">₱{o.total.toLocaleString()}</p>
                                     </div>
                                     <div className="ml-auto flex flex-wrap items-center justify-end gap-x-5 gap-y-2">
-                                        {o.status === "To Pay" && (
+                                        {o.awaitingPayment && (
                                             <button
                                                 onClick={() => setCancelNo(selectedOrderNo)}
                                                 className="text-[12.5px] text-grey underline underline-offset-2 transition hover:text-ink"
@@ -547,7 +539,7 @@ function PurchasesSkeleton() {
 
                 <div className="flex flex-col divide-y divide-ink/10 border-b border-ink/10">
                     {Array.from({ length: 4 }).map((_, i) => (
-                        <div key={i} className="px-3 py-4">
+                        <div key={i} className="-mx-3 px-3 py-4">
                             <div className="mb-3 flex items-center justify-between gap-4">
                                 <Skeleton className="h-[11px] w-40" />
                                 <Skeleton className="h-[11px] w-20" />
@@ -561,18 +553,15 @@ function PurchasesSkeleton() {
                                         <Skeleton tone="soft" className="h-[10px] w-20" />
                                     </div>
                                 </div>
-                                <div className="sm:ml-auto sm:text-right">
-                                    <Skeleton tone="soft" className="mb-1.5 h-[11px] w-20 sm:ml-auto" />
-                                    <Skeleton className="h-[14px] w-16 sm:ml-auto" />
+                                <div className="flex items-center justify-between sm:block sm:text-right">
+                                    <Skeleton tone="soft" className="h-[11px] w-12 sm:hidden" />
+                                    <div>
+                                        <Skeleton tone="soft" className="mb-1.5 h-[11px] w-20 sm:ml-auto" />
+                                        <Skeleton className="h-[14px] w-16 sm:ml-auto" />
+                                    </div>
                                 </div>
                                 <Skeleton tone="outline" className="h-8 w-28 sm:ml-auto" />
                             </div>
-
-                            {(i === 1 || i === 2) && (
-                                <div className="mt-3 border-t border-ink/10 pt-3">
-                                    <Skeleton tone="soft" className="h-3 w-48" />
-                                </div>
-                            )}
                         </div>
                     ))}
                 </div>

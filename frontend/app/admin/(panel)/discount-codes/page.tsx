@@ -129,7 +129,7 @@ export default function DiscountCodesPage() {
             </div>
 
             {!codes ? (
-                <SkeletonTable rows={6} cols={4} />
+                <SkeletonTable rows={6} cols={6} />
             ) : codes.length === 0 ? (
                 <p className="text-[13px] text-grey">No codes yet.</p>
             ) : (

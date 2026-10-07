@@ -59,6 +59,11 @@ function pageOf<T>(items: T[], params: URLSearchParams) {
 
 function syncProduct(p: ApiProduct): ApiProduct {
     if (p.sizes.length) p.stock = p.sizes.reduce((s, z) => s + z.stock, 0);
+    if (p.sizes.length) {
+        const live = (z: { price: number; salePrice?: number | null }) => (z.salePrice != null && z.salePrice < z.price ? z.salePrice : z.price);
+        p.price = Math.min(...p.sizes.map((z) => z.price));
+        p.salePrice = p.sizes.some((z) => live(z) < z.price) ? Math.min(...p.sizes.map(live)) : null;
+    }
     return p;
 }
 
@@ -67,7 +72,8 @@ function checkCart(body: { items: { productId: number; sizeId: number | null; qt
         const prod = state.products.find((p) => p.id === line.productId);
         const size = prod?.sizes.find((s) => s.id === line.sizeId);
         const available = size ? size.stock : prod?.stock ?? 0;
-        const unitPrice = size ? size.price : prod?.price ?? 0;
+        const base = size ?? prod;
+        const unitPrice = base ? (base.salePrice != null && base.salePrice < base.price ? base.salePrice : base.price) : 0;
         return {
             productId: line.productId,
             sizeId: line.sizeId,
@@ -195,9 +201,9 @@ const routes: Route[] = [
     ["POST", /^\/products$/, ({ body }) => {
         const product: ApiProduct = syncProduct({
             id: nextId(), sku: body.sku ?? `SKU-${state.seq}`, name: body.name ?? "New product", category: body.category ?? "Serum", description: "",
-            price: body.price ?? 0, stock: body.stock ?? 0, rating: 0, ratingCount: 0, image: body.image ?? null, concerns: [], expiry: body.expiry ?? null,
+            price: body.price ?? 0, salePrice: body.salePrice ?? null, stock: body.stock ?? 0, rating: 0, ratingCount: 0, image: body.image ?? null, concerns: [], expiry: body.expiry ?? null,
             reorderThreshold: body.reorderThreshold ?? null, version: 1,
-            sizes: (body.sizes ?? []).map((s: { label: string; price: number; stock?: number }) => ({ id: nextId(), label: s.label, price: s.price, stock: s.stock ?? 0 })),
+            sizes: (body.sizes ?? []).map((s: { label: string; price: number; salePrice?: number | null; stock?: number }) => ({ id: nextId(), label: s.label, price: s.price, salePrice: s.salePrice ?? null, stock: s.stock ?? 0 })),
         });
         state.products.push(product);
         return { product };
@@ -207,7 +213,7 @@ const routes: Route[] = [
         if (i < 0) throw notFound();
         const { sizes, ...rest } = body;
         const next = bump({ ...state.products[i], ...rest });
-        if (sizes) next.sizes = sizes.map((s: { id?: number; label: string; price: number; stock?: number }) => ({ id: s.id ?? nextId(), label: s.label, price: s.price, stock: s.stock ?? 0 }));
+        if (sizes) next.sizes = sizes.map((s: { id?: number; label: string; price: number; salePrice?: number | null; stock?: number }) => ({ id: s.id ?? nextId(), label: s.label, price: s.price, salePrice: s.salePrice ?? null, stock: s.stock ?? 0 }));
         state.products[i] = syncProduct(next);
         return { product: state.products[i] };
     }],
