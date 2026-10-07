@@ -10,6 +10,7 @@ import { STAGGER } from "../ui/motion/constants";
 import { useStore } from "@/library/store";
 import { useContent } from "@/library/content";
 import { getProduct, cheapestSizeId } from "@/library/products";
+import PriceTag from "@/components/ui/PriceTag";
 
 const layout = [
     { id: 1, aspect: "aspect-[4/5]", cols: "md:grid-cols-[2fr_3fr]", imageFirst: true, overlap: "", align: "md:items-center", dir: "left" },
@@ -98,7 +99,7 @@ export default function BestSellers(){
                                         <StarRating rating={product.rating} count={product.count} />
                                     </div>
                                     <div className={`flex items-center gap-4 ${row.imageFirst ? "" : "lg:justify-end"}`}>
-                                        <span className="font-mono text-sm text-ink">₱{product.price.toLocaleString()}</span>
+                                        <PriceTag price={product.price} salePrice={product.salePrice} className="font-mono text-sm text-ink" />
                                         <button
                                             onClick={(e) => {
                                                 e.preventDefault();

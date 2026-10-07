@@ -15,6 +15,10 @@ import NotificationBell from "./NotificationBell";
 // Not CMS-managed — it duplicates the wordmark's scroll-to-top, not a section, so there's nothing for an admin to edit.
 const HOME_LABEL = "Home";
 
+function unlockBodyScroll() {
+    document.body.style.overflow = "";
+}
+
 export default function Navbar(){
     const [scrolled, setScrolled] = useState(false);
     const [accountOpen, setAccountOpen] = useState(false);
@@ -123,7 +127,7 @@ export default function Navbar(){
     // The page is scroll-locked while the menu is open; release it first or the smooth scroll below is swallowed.
     function closeMenuForScroll() {
         setMenuOpen(false);
-        document.body.style.overflow = "";
+        unlockBodyScroll();
     }
 
     function handleNavClick(link: SiteNavLink) {

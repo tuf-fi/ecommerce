@@ -92,6 +92,8 @@ model Product {
   category         String
   description      String          @default("")
   price            Int
+  // Discounted rate set by an admin; null (or not below `price`) means no discount.
+  salePrice        Int?
   // Used only when the product has no sizes; otherwise stock lives on ProductSize.
   stock            Int             @default(0)
   // Falls back to the app-wide default when null.
@@ -118,6 +120,7 @@ model ProductSize {
   product          Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
   label            String
   price            Int
+  salePrice        Int?
   stock            Int             @default(0)
   reorderThreshold Int?
   movements        StockMovement[]

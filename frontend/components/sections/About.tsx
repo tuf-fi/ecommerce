@@ -2,8 +2,6 @@
 
 import SectionTitle from "../ui/SectionTitle";
 import SectionContainer from "../ui/Section";
-import FadeIn from "../ui/motion/FadeIn";
-import TypeReveal from "../ui/motion/TypeReveal";
 import { AboutContent, useContent } from "@/library/content";
 
 // preview mode drops the scroll-anchor id and full-bleed margin; previewData carries the editor's unsaved draft.
@@ -21,7 +19,7 @@ export default function AboutSection({
             <SectionTitle section="about" title="About" />
 
             <div className="flex flex-col gap-y-10 lg:flex-row lg:gap-x-20">
-                <FadeIn delay={0.1} className="left-info grid grid-cols-2 gap-x-6 gap-y-7 sm:grid-cols-3 lg:flex lg:flex-none lg:flex-col">
+                <div className="left-info grid grid-cols-2 gap-x-6 gap-y-7 sm:grid-cols-3 lg:flex lg:flex-none lg:flex-col">
                     <div className="info flex flex-col">
                         <span className="text-[10px] uppercase tracking-[.16em] text-grey">Founder</span>
                         <span className="text-[13px]">{about.founder}</span>
@@ -36,15 +34,13 @@ export default function AboutSection({
                         <span className="text-[10px] uppercase tracking-[.16em] text-grey">Focus</span>
                         <span className="text-[13px]">{about.focus}</span>
                     </div>
-                </FadeIn>
+                </div>
 
                 <div className="right-info min-w-0 flex-1 text-[clamp(20px,2.3vw,28px)]">
-                    <TypeReveal
-                        segments={[
-                            { text: about.lead, className: "italic pink-highlight" },
-                            { text: ` ${about.body}` },
-                        ]}
-                    />
+                    <p>
+                        <span className="italic pink-highlight">{about.lead}</span>
+                        <span>{` ${about.body}`}</span>
+                    </p>
                 </div>
             </div>
         </SectionContainer>

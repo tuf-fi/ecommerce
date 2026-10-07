@@ -64,6 +64,20 @@ export function FactCell({
     );
 }
 
+// Plain "Label: value" lines, for the few facts a view modal leads with.
+export function DetailList({ items }: { items: { label: string; value: React.ReactNode; tone?: "default" | "alert" | "warning" }[] }) {
+    return (
+        <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-3 border-b border-ink/10 px-5 py-5 text-[13.5px] sm:px-8">
+            {items.map((it) => (
+                <div key={it.label} className="contents">
+                    <dt className="text-grey">{it.label}:</dt>
+                    <dd className={`min-w-0 break-words ${it.tone === "alert" ? "text-alert" : it.tone === "warning" ? "text-amber-dark" : "text-ink"}`}>{it.value}</dd>
+                </div>
+            ))}
+        </dl>
+    );
+}
+
 export function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
     return (
         <div className="flex items-start justify-between gap-4 border-b border-ink/10 py-3.5 sm:gap-6 last:border-0">
@@ -77,14 +91,14 @@ export function DetailBody({ children }: { children: React.ReactNode }) {
     return <div className="px-5 sm:px-8 pt-5 pb-7">{children}</div>;
 }
 
-export type SizeRowData = { id: string; label: string; price: number; stock: number; tone?: "default" | "alert" | "warning" };
+export type SizeRowData = { id: string; label: string; price: number; salePrice?: number; stock: number; tone?: "default" | "alert" | "warning" };
 
 export function SizeTable({ sizes }: { sizes: SizeRowData[] }) {
     return (
         <div className="border border-ink/10">
             <div className="flex gap-4 border-b border-ink/10 bg-off/60 px-4 py-2.5">
                 <span className="flex-1 font-mono text-[10px] uppercase tracking-[.14em] text-grey">Size</span>
-                <span className="w-16 flex-none text-right font-mono text-[10px] uppercase tracking-[.14em] text-grey">Price</span>
+                <span className="w-20 flex-none text-right font-mono text-[10px] uppercase tracking-[.14em] text-grey">Price</span>
                 <span className="w-14 flex-none text-right font-mono text-[10px] uppercase tracking-[.14em] text-grey">Stock</span>
             </div>
             {sizes.map((s, i) => {
@@ -95,7 +109,16 @@ export function SizeTable({ sizes }: { sizes: SizeRowData[] }) {
                         className={`flex items-center gap-4 px-4 py-2.5 ${i < sizes.length - 1 ? "border-b border-ink/10" : ""}`}
                     >
                         <span className="flex-1 truncate text-[13px] text-ink">{s.label}</span>
-                        <span className="w-16 flex-none text-right font-mono text-[12.5px] text-ink">₱{s.price.toLocaleString()}</span>
+                        <span className="w-20 flex-none text-right font-mono text-[12.5px] text-ink">
+                            {s.salePrice != null && s.salePrice < s.price ? (
+                                <>
+                                    <span className="text-pink-dark">₱{s.salePrice.toLocaleString()}</span>
+                                    <s className="ml-1 text-[11px] text-grey/70">₱{s.price.toLocaleString()}</s>
+                                </>
+                            ) : (
+                                <>₱{s.price.toLocaleString()}</>
+                            )}
+                        </span>
                         <span className={`w-14 flex-none text-right font-mono text-[12.5px] ${toneClass}`}>{s.stock}</span>
                     </div>
                 );

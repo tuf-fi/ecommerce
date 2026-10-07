@@ -126,29 +126,41 @@ function AccountProfileSkeleton() {
                     <Skeleton className="h-[18px] w-44" />
                 </div>
 
-                <div className="max-w-[500px]">
-                    <div className="mb-8 flex items-start gap-5">
-                        <div className="flex w-20 flex-none flex-col items-center gap-1.5">
-                            <Skeleton tone="soft" className="h-16 w-16 flex-none rounded-full" />
-                            <Skeleton className="h-[11px] w-16" />
-                            <Skeleton tone="soft" className="h-[10px] w-20" />
-                        </div>
-                        <div className="min-w-0 flex-1 pt-2">
-                            <Skeleton className="mb-1.5 h-[10.5px] w-20" />
-                            <Skeleton tone="outline" className="h-11 w-full" />
-                            <Skeleton tone="soft" className="mt-1.5 h-3 w-40" />
+                <div className="max-w-[520px]">
+                    <div className="mb-10 flex items-center gap-6">
+                        <Skeleton tone="soft" className="h-24 w-24 flex-none rounded-full" />
+                        <div>
+                            <Skeleton tone="outline" className="h-[34px] w-28" />
+                            <Skeleton tone="soft" className="mt-2 h-[11px] w-44" />
                         </div>
                     </div>
 
-                    <div className="mb-6 border-t border-ink/10 pt-5">
-                        <Skeleton className="mb-1.5 h-[10.5px] w-28" />
-                        <div className="flex items-center justify-between gap-4">
-                            <Skeleton className="h-3 w-44" />
-                            <Skeleton tone="soft" className="h-3 w-40" />
+                    <div className="mb-8">
+                        <div className="mb-1 flex h-4 items-center">
+                            <Skeleton className="h-[11px] w-20" />
+                        </div>
+                        <div className="flex h-[45px] items-center border-b border-ink/10 px-0.5">
+                            <Skeleton className="h-4 w-40" />
+                        </div>
+                        <div className="mt-2 flex h-4 items-center">
+                            <Skeleton tone="soft" className="h-3 w-48" />
                         </div>
                     </div>
 
-                    <Skeleton tone="outline" className="h-11 w-40" />
+                    <div className="mb-10">
+                        <div className="mb-1 flex h-4 items-center">
+                            <Skeleton className="h-[11px] w-28" />
+                        </div>
+                        <div className="flex h-[45px] items-center justify-between gap-3 border-b border-ink/10 px-0.5">
+                            <Skeleton className="h-4 w-52" />
+                            <Skeleton tone="soft" className="h-[14px] w-[14px] flex-none" />
+                        </div>
+                        <div className="mt-2 flex h-4 items-center">
+                            <Skeleton tone="soft" className="h-3 w-44" />
+                        </div>
+                    </div>
+
+                    <Skeleton tone="outline" className="h-12 w-40" />
                 </div>
             </SkeletonGroup>
         </div>

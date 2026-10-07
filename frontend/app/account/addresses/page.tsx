@@ -267,16 +267,29 @@ function AddressesSkeleton() {
                             <div className="flex items-start gap-4 p-5 pb-4 sm:p-6 sm:pb-5">
                                 <Skeleton tone="soft" className="h-10 w-10 flex-none rounded-full" />
                                 <div className="min-w-0 flex-1">
-                                    <Skeleton className="mb-2.5 h-[15px] w-24" />
-                                    <Skeleton tone="soft" className="h-3 w-full max-w-[280px]" />
+                                    <div className="flex items-center gap-2.5">
+                                        <Skeleton className="h-[15px] w-24" />
+                                        {i === 0 && <Skeleton tone="soft" className="h-5 w-16 rounded-pill" />}
+                                    </div>
+                                    <Skeleton tone="soft" className="mt-2.5 h-3 w-full max-w-[280px]" />
                                     <Skeleton tone="soft" className="mt-2 h-3 w-2/3 max-w-[200px]" />
                                 </div>
+                                <div className="-mt-2.5 -mr-2.5 flex flex-none items-center">
+                                    {Array.from({ length: 2 }).map((_, b) => (
+                                        <span key={b} className="flex h-11 w-11 items-center justify-center">
+                                            <Skeleton tone="soft" className="h-[15px] w-[15px]" />
+                                        </span>
+                                    ))}
+                                </div>
                             </div>
-                            <div className="flex min-h-[3.25rem] items-center border-t border-ink/10 px-5 py-3 sm:px-6">
+                            <div className="mt-auto flex min-h-[3.25rem] items-center gap-5 border-t border-ink/10 px-5 py-3 sm:px-6">
                                 <Skeleton tone="soft" className="h-3 w-28" />
+                                {i !== 0 && <Skeleton tone="soft" className="h-3 w-24" />}
                             </div>
                         </div>
                     ))}
+
+                    <Skeleton tone="faint" className="min-h-[9.5rem] border border-dashed border-ink/20" />
                 </div>
             </SkeletonGroup>
         </div>

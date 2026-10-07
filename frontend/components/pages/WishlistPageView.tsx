@@ -100,9 +100,9 @@ export default function WishlistPageView({ preview = false, introPreviewData }: 
                         </div>
                     ) : (
                         <>
-                            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                            <div className="grid grid-cols-2 gap-3 sm:gap-5 md:grid-cols-3 lg:grid-cols-4">
                                 {paged.map((product) => (
-                                    <Card key={product.id} product={product} />
+                                    <Card key={product.id} product={product} dense />
                                 ))}
                             </div>
 
@@ -124,28 +124,28 @@ function WishlistSkeleton({ preview = false }: { preview?: boolean } = {}) {
                     <Skeleton className="mt-3 h-[34px] w-[45%] max-w-[340px] sm:h-[42px]" />
                 </div>
 
-                <div className="mb-11 flex items-center gap-x-5">
+                <div className="mb-8 flex items-center gap-x-4 sm:gap-x-5 md:mb-11">
                     <Skeleton className="h-[10.5px] w-3" />
                     <Skeleton className="h-[10.5px] w-16" />
                     <span className="h-px flex-1 bg-grey-light/40" />
                 </div>
 
-                <div className="mb-8 flex flex-wrap items-center gap-3">
-                    <Skeleton tone="outline" className="h-10 w-64" />
-                    <Skeleton tone="outline" className="h-10 w-40" />
+                <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+                    <Skeleton tone="outline" className="h-11 w-full sm:max-w-[360px] sm:flex-1" />
+                    <Skeleton tone="outline" className="h-11 w-full sm:w-44" />
                 </div>
 
-                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                <div className="grid grid-cols-2 gap-3 sm:gap-5 md:grid-cols-3 lg:grid-cols-4">
                     {Array.from({ length: 8 }).map((_, i) => (
                         <div key={i} className="flex flex-col border border-ink/10">
                             <Skeleton tone="faint" className="aspect-[4/5] w-full" />
-                            <div className="flex flex-col gap-2 p-5">
+                            <div className="flex flex-col gap-1.5 p-3 sm:gap-2 sm:p-5">
                                 <Skeleton className="h-[10px] w-16" />
-                                <Skeleton className="h-[16.5px] w-4/5" />
-                                <Skeleton tone="soft" className="h-3 w-24" />
-                                <div className="mt-2 flex items-center justify-between">
-                                    <Skeleton className="h-3 w-12" />
-                                    <Skeleton tone="outline" className="h-8 w-24" />
+                                <Skeleton className="h-[14px] w-4/5 sm:h-[16.5px]" />
+                                <Skeleton tone="soft" className="mb-2 h-[14px] w-24" />
+                                <div className="flex flex-col items-stretch gap-2 pt-2 sm:flex-row sm:items-center sm:justify-between sm:gap-x-3 sm:pt-3">
+                                    <Skeleton className="h-[13px] w-12" />
+                                    <Skeleton tone="outline" className="h-[37px] w-full sm:h-[35px] sm:w-24" />
                                 </div>
                             </div>
                         </div>

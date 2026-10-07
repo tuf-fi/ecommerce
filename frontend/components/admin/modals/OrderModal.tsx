@@ -5,9 +5,8 @@ import Image from "next/image";
 import Modal from "@/components/ui/Modal";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import { ORDER_STATUSES } from "@/components/admin/orderStatus";
-import { DetailRow, DetailBody, FactRow, FactCell } from "@/components/admin/modals/ViewModalLayout";
 import { AdminOrder, AdminOrderStatus } from "@/library/admin/types";
-import { getProduct } from "@/library/products";
+import { getProduct, currentPrice } from "@/library/products";
 import { orderTotal } from "@/library/admin/orders";
 import { listOrderHistory, OrderHistoryEntry } from "@/library/api/orders";
 import ProofImage from "@/components/ui/ProofImage";
@@ -108,13 +107,14 @@ export default function OrderModal({
                     </select>
                 </div>
 
-                <FactRow>
-                    <FactCell label="Customer" value={order.customer} />
-                    <FactCell label="Email" value={<span className="font-mono">{order.email}</span>} />
-                </FactRow>
-                <DetailBody>
-                    <DetailRow label="Address" value={order.address} />
-                </DetailBody>
+                <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-3 border-b border-ink/10 px-5 py-5 text-[13.5px] sm:px-8">
+                    <dt className="text-grey">Customer:</dt>
+                    <dd className="min-w-0 break-words text-ink">{order.customer}</dd>
+                    <dt className="text-grey">Email:</dt>
+                    <dd className="min-w-0 break-all text-ink">{order.email}</dd>
+                    <dt className="text-grey">Address:</dt>
+                    <dd className="min-w-0 break-words text-ink">{order.address}</dd>
+                </dl>
 
                 <div className="border-t border-ink/10 px-5 sm:px-8 py-6">
                     <span className="mb-3 block font-mono text-[10px] tracking-[.14em] text-grey uppercase">Items</span>
@@ -124,7 +124,7 @@ export default function OrderModal({
                             // Orders carry a name/price snapshot; the live catalogue is only a fallback and for the thumbnail.
                             const name = line.name ?? product?.title;
                             if (!name) return null;
-                            const unitPrice = line.unitPrice ?? product?.price ?? 0;
+                            const unitPrice = line.unitPrice ?? (product ? currentPrice(product) : 0);
                             return (
                                 <div key={`${line.productId}-${name}`} className="flex items-center gap-3">
                                     <div className="relative h-11 w-11 flex-none overflow-hidden border border-ink/10">

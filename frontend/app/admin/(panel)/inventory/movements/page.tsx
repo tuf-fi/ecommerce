@@ -141,18 +141,28 @@ export default function StockMovementsPage() {
 function StockMovementsSkeleton() {
     return (
         <SkeletonGroup>
-            <div className="mb-10 flex flex-wrap items-end justify-between gap-x-8 gap-y-5 border-b border-ink/10 pb-6">
-                <div className="flex flex-1 flex-col gap-1.5">
-                    <Skeleton tone="soft" className="h-[10px] w-14" />
-                    <div className="flex h-11 items-center gap-4">
+            <div className="mb-5 flex w-full flex-wrap items-end gap-4">
+                <div className="flex w-full flex-none flex-col gap-1.5 sm:w-36">
+                    <div className="flex h-[15px] items-center">
+                        <Skeleton tone="soft" className="h-[10px] w-12" />
+                    </div>
+                    <Skeleton tone="outline" className="h-11 w-full" />
+                </div>
+                <div className="flex w-full flex-none flex-col gap-1.5 sm:w-44">
+                    <div className="flex h-[15px] items-center">
+                        <Skeleton tone="soft" className="h-[10px] w-12" />
+                    </div>
+                    <Skeleton tone="outline" className="h-11 w-full" />
+                </div>
+                <div className="ml-auto flex flex-none flex-col gap-1.5">
+                    <div className="flex h-[15px] items-center">
+                        <Skeleton tone="soft" className="h-[10px] w-12" />
+                    </div>
+                    <div className="flex min-h-11 flex-wrap items-center gap-x-4 gap-y-1.5">
                         <Skeleton tone="soft" className="h-[19px] w-16" />
                         <Skeleton tone="soft" className="h-[19px] w-20" />
                         <Skeleton tone="soft" className="h-[19px] w-20" />
                     </div>
-                </div>
-                <div className="flex flex-none flex-wrap items-end gap-4">
-                    <Skeleton tone="outline" className="h-11 w-36" />
-                    <Skeleton tone="outline" className="h-11 w-44" />
                 </div>
             </div>
 

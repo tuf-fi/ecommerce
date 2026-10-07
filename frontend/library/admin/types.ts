@@ -9,6 +9,8 @@ export type AdminProduct = {
     sku: string;
     category: string;
     price: number;
+    // Discounted rate for an unsized product; for a sized one it is derived from the sizes' own `salePrice`.
+    salePrice?: number;
     stock: number;
     expiry: string | null;
     image: StaticImageData | string;

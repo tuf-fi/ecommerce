@@ -15,6 +15,17 @@ const DEFAULT_LOW_STOCK = 8;
 const include = { sizes: { orderBy: { id: "asc" } } } satisfies Prisma.ProductInclude;
 type ProductWithSizes = Prisma.ProductGetPayload<{ include: typeof include }>;
 
+// A discount only counts while it is below the regular price.
+function activeSale(x: { price: number; salePrice: number | null }): number | null {
+  return x.salePrice !== null && x.salePrice < x.price ? x.salePrice : null;
+}
+
+// The cheapest price a sized product starts from, when at least one size is discounted.
+function lowestSale(sizes: { price: number; salePrice: number | null }[]): number | null {
+  if (!sizes.some((s) => activeSale(s) !== null)) return null;
+  return Math.min(...sizes.map((s) => activeSale(s) ?? s.price));
+}
+
 function serialize(p: ProductWithSizes, admin: boolean) {
   const hasSizes = p.sizes.length > 0;
   return {
@@ -24,6 +35,8 @@ function serialize(p: ProductWithSizes, admin: boolean) {
     category: p.category,
     description: p.description,
     price: hasSizes ? Math.min(...p.sizes.map((s) => s.price)) : p.price,
+    // Lowest discounted rate across the product (or its sizes), or null when nothing is discounted.
+    salePrice: hasSizes ? lowestSale(p.sizes) : activeSale(p),
     stock: hasSizes ? p.sizes.reduce((sum, s) => sum + s.stock, 0) : p.stock,
     rating: p.rating,
     ratingCount: p.ratingCount,
@@ -33,6 +46,7 @@ function serialize(p: ProductWithSizes, admin: boolean) {
       id: s.id,
       label: s.label,
       price: s.price,
+      salePrice: activeSale(s),
       stock: s.stock,
       ...(admin ? { reorderThreshold: s.reorderThreshold } : {}),
     })),
@@ -68,6 +82,7 @@ const sizeInput = z.object({
   id: z.number().int().positive().optional(),
   label: z.string().trim().min(1).max(40),
   price: nonNegInt,
+  salePrice: nonNegInt.nullable().optional(),
   // Initial stock for a brand-new size only; existing sizes change through stock-adjustment.
   stock: nonNegInt.optional(),
   reorderThreshold: nonNegInt.nullable().optional(),
@@ -78,6 +93,7 @@ const productFields = {
   category: z.string().trim().min(1).max(60),
   description: z.string().max(5000),
   price: nonNegInt,
+  salePrice: nonNegInt.nullable(),
   reorderThreshold: nonNegInt.nullable(),
   expiry: z
     .string()
@@ -93,6 +109,7 @@ const createSchema = z.object({
   sku: z.string().trim().min(1).max(60).optional(),
   description: productFields.description.default(""),
   price: productFields.price.default(0),
+  salePrice: productFields.salePrice.optional(),
   stock: nonNegInt.default(0),
   reorderThreshold: productFields.reorderThreshold.optional(),
   expiry: productFields.expiry.optional(),
@@ -110,6 +127,10 @@ const adjustSchema = z.object({
   reason: z.enum(["RESTOCK", "CORRECTION", "DAMAGED", "EXPIRED", "RETURN"]),
   note: z.string().trim().max(500).optional(),
 });
+
+function assertValidSale(label: string, price: number, salePrice: number | null | undefined) {
+  if (salePrice != null && salePrice >= price) throw new HttpError(400, `${label}: the discounted price must be lower than the regular price`);
+}
 
 function assertUniqueLabels(sizes: { label: string }[]) {
   const seen = new Set<string>();
@@ -146,6 +167,8 @@ export async function getProduct(req: Request, res: Response) {
 export async function createProduct(req: Request, res: Response) {
   const d = parseBody(createSchema, req.body);
   assertUniqueLabels(d.sizes);
+  if (d.sizes.length) d.sizes.forEach((s) => assertValidSale(`Size "${s.label}"`, s.price, s.salePrice));
+  else assertValidSale("Product", d.price, d.salePrice);
   const staffId = req.staff!.id;
 
   const product = await prisma.$transaction(async (tx) => {
@@ -156,13 +179,14 @@ export async function createProduct(req: Request, res: Response) {
         category: d.category,
         description: d.description,
         price: d.sizes.length ? Math.min(...d.sizes.map((s) => s.price)) : d.price,
+        salePrice: d.sizes.length ? null : (d.salePrice ?? null),
         stock: d.sizes.length ? 0 : d.stock,
         reorderThreshold: d.reorderThreshold ?? null,
         expiry: d.expiry ? new Date(d.expiry) : null,
         image: d.image ?? null,
         concerns: d.concerns,
         sizes: {
-          create: d.sizes.map((s) => ({ label: s.label, price: s.price, stock: s.stock ?? 0, reorderThreshold: s.reorderThreshold ?? null })),
+          create: d.sizes.map((s) => ({ label: s.label, price: s.price, salePrice: s.salePrice ?? null, stock: s.stock ?? 0, reorderThreshold: s.reorderThreshold ?? null })),
         },
       },
       include,
@@ -212,6 +236,7 @@ export async function updateProduct(req: Request, res: Response) {
     if (d.category !== undefined) track("category", existing.category, d.category);
     if (d.description !== undefined && d.description !== existing.description) changes.description = "edited";
     if (d.price !== undefined) track("price", existing.price, d.price);
+    if (d.salePrice !== undefined) track("salePrice", existing.salePrice, d.salePrice);
     if (d.reorderThreshold !== undefined) track("reorderThreshold", existing.reorderThreshold, d.reorderThreshold);
     if (d.expiry !== undefined) track("expiry", existing.expiry ? existing.expiry.toISOString().slice(0, 10) : null, d.expiry);
     if (d.image !== undefined) track("image", existing.image, d.image);
@@ -220,6 +245,8 @@ export async function updateProduct(req: Request, res: Response) {
     if (d.category !== undefined) data.category = d.category;
     if (d.description !== undefined) data.description = d.description;
     if (d.price !== undefined) data.price = d.price;
+    if (d.salePrice !== undefined) data.salePrice = d.salePrice;
+    if (d.salePrice != null || d.price !== undefined) assertValidSale("Product", d.price ?? existing.price, d.salePrice !== undefined ? d.salePrice : existing.salePrice);
     if (d.reorderThreshold !== undefined) data.reorderThreshold = d.reorderThreshold;
     if (d.expiry !== undefined) data.expiry = d.expiry ? new Date(d.expiry) : null;
     if (d.image !== undefined) data.image = d.image;
@@ -227,8 +254,10 @@ export async function updateProduct(req: Request, res: Response) {
 
     if (d.sizes) {
       const existingIds = new Set(existing.sizes.map((s) => s.id));
-      const sizeSummary = (list: { label: string; price: number }[]) => list.map((s) => `${s.label}@${s.price}`).sort();
+      const sizeSummary = (list: { label: string; price: number; salePrice?: number | null }[]) =>
+        list.map((s) => `${s.label}@${s.price}${s.salePrice != null ? `->${s.salePrice}` : ""}`).sort();
       track("sizes", sizeSummary(existing.sizes), sizeSummary(d.sizes));
+      d.sizes.forEach((s) => assertValidSale(`Size "${s.label}"`, s.price, s.salePrice));
       const keep = new Set(d.sizes.filter((s) => s.id !== undefined).map((s) => s.id!));
       for (const s of d.sizes) {
         if (s.id !== undefined && !existingIds.has(s.id)) throw new HttpError(400, `Size ${s.id} does not belong to this product`);
@@ -244,11 +273,11 @@ export async function updateProduct(req: Request, res: Response) {
         if (s.id !== undefined) {
           await tx.productSize.update({
             where: { id: s.id },
-            data: { label: s.label, price: s.price, ...(s.reorderThreshold !== undefined ? { reorderThreshold: s.reorderThreshold } : {}) },
+            data: { label: s.label, price: s.price, salePrice: s.salePrice ?? null, ...(s.reorderThreshold !== undefined ? { reorderThreshold: s.reorderThreshold } : {}) },
           });
         } else {
           const added = await tx.productSize.create({
-            data: { productId: id, label: s.label, price: s.price, stock: s.stock ?? 0, reorderThreshold: s.reorderThreshold ?? null },
+            data: { productId: id, label: s.label, price: s.price, salePrice: s.salePrice ?? null, stock: s.stock ?? 0, reorderThreshold: s.reorderThreshold ?? null },
           });
           if (added.stock > 0) {
             await tx.stockMovement.create({
@@ -264,7 +293,10 @@ export async function updateProduct(req: Request, res: Response) {
         });
         data.stock = 0;
       }
-      if (d.sizes.length > 0) data.price = Math.min(...d.sizes.map((s) => s.price));
+      if (d.sizes.length > 0) {
+        data.price = Math.min(...d.sizes.map((s) => s.price));
+        data.salePrice = null;
+      }
     }
 
     await tx.product.update({ where: { id }, data });
@@ -359,6 +391,7 @@ export async function exportCsv(_req: Request, res: Response) {
       Category: s.category,
       "Price Min": Math.min(...prices),
       "Price Max": Math.max(...prices),
+      "Sale Price": s.salePrice ?? "",
       Stock: s.stock,
       Status: worstStatus(p),
     };
@@ -395,15 +428,18 @@ export async function importCsv(req: Request, res: Response) {
     const category = CATEGORIES.find((c) => c.toLowerCase() === row["category"]?.toLowerCase());
     const price = Number(row["price min"]);
     const stock = Number(row["stock"]);
+    const saleRaw = row["sale price"]?.trim();
+    const salePrice = saleRaw ? Number(saleRaw) : null;
     if (!name) { skipped.push(`Row ${n}: missing product name.`); continue; }
     if (!sku) { skipped.push(`Row ${n}: missing SKU.`); continue; }
     if (taken.has(sku.toLowerCase())) { skipped.push(`Row ${n}: SKU "${sku}" already exists.`); continue; }
     if (!category) { skipped.push(`Row ${n}: unrecognized category "${row["category"]}".`); continue; }
     if (!Number.isInteger(price) || price <= 0) { skipped.push(`Row ${n}: invalid price.`); continue; }
     if (!Number.isInteger(stock) || stock < 0) { skipped.push(`Row ${n}: invalid stock.`); continue; }
+    if (salePrice !== null && (!Number.isInteger(salePrice) || salePrice < 0 || salePrice >= price)) { skipped.push(`Row ${n}: sale price must be lower than the price.`); continue; }
     taken.add(sku.toLowerCase());
     await prisma.$transaction(async (tx) => {
-      const p = await tx.product.create({ data: { sku, name, category, price, stock: 0 } });
+      const p = await tx.product.create({ data: { sku, name, category, price, salePrice, stock: 0 } });
       if (stock > 0) await adjustStockTx(tx, { productId: p.id, delta: stock, reason: "IMPORT", note: "CSV import", staffId });
     });
     created++;

@@ -44,6 +44,11 @@ type PricedLine = {
   available: number;
 };
 
+// What a customer pays: the discounted rate when one is set and actually lower than the regular price.
+function effectivePrice(x: { price: number; salePrice: number | null }): number {
+  return x.salePrice !== null && x.salePrice < x.price ? x.salePrice : x.price;
+}
+
 // Prices and availability always come from the database, never from the client.
 async function priceLines(db: Prisma.TransactionClient | typeof prisma, lines: CartLineInput[]): Promise<PricedLine[]> {
   const merged = new Map<string, { productId: number; sizeId: number | null; qty: number }>();
@@ -67,10 +72,10 @@ async function priceLines(db: Prisma.TransactionClient | typeof prisma, lines: C
       if (product.sizes.length > 0) {
         const size = product.sizes.find((s) => s.id === l.sizeId);
         if (!size) throw new HttpError(400, `Choose a size for "${product.name}"`);
-        return { ...l, name: product.name, sizeLabel: size.label, unitPrice: size.price, available: size.stock };
+        return { ...l, name: product.name, sizeLabel: size.label, unitPrice: effectivePrice(size), available: size.stock };
       }
       if (l.sizeId !== null) throw new HttpError(400, `"${product.name}" has no sizes`);
-      return { ...l, name: product.name, sizeLabel: null, unitPrice: product.price, available: product.stock };
+      return { ...l, name: product.name, sizeLabel: null, unitPrice: effectivePrice(product), available: product.stock };
     });
 }
 

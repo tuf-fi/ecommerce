@@ -20,7 +20,7 @@ import { ImportIcon, ExportIcon } from "@/components/admin/icons";
 import { downloadOrdersCsv } from "@/library/api/orders";
 import { toCsv, downloadCsv } from "@/library/admin/csv";
 import { useMounted } from "@/library/useMounted";
-import Skeleton, { SkeletonGroup } from "@/components/ui/Skeleton";
+import Skeleton, { SkeletonGroup, SkeletonToolbar } from "@/components/ui/Skeleton";
 import ListPanel from "@/components/admin/ListPanel";
 import { EmptyStateRow } from "@/components/admin/EmptyState";
 import StatTile, { STAT_TONE_CLASSES, STAT_TONE_SHADOW, StatTileTone } from "@/components/admin/StatTile";
@@ -349,13 +349,7 @@ function OrdersSkeleton() {
                 })}
             </div>
 
-            <div className="mb-10 flex flex-wrap items-end justify-between gap-x-8 gap-y-5 border-b border-ink/10 pb-6">
-                <div className="flex flex-1 flex-wrap items-end gap-4">
-                    <Skeleton tone="outline" className="h-11 flex-1 min-w-[240px]" />
-                    <Skeleton tone="outline" className="h-11 w-[160px]" />
-                    <Skeleton tone="outline" className="h-11 w-[190px]" />
-                </div>
-            </div>
+            <SkeletonToolbar actions={["w-28", "w-28"]} filters={["min-w-[240px] flex-1", "w-full flex-none sm:w-[160px]", "w-full flex-none sm:w-[190px]"]} />
 
             <div className="overflow-hidden border border-ink/10 bg-white shadow-card">
                 <div className="border-b border-ink/10 bg-off/50 px-5 py-3.5">

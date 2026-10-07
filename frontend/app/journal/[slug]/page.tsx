@@ -112,7 +112,7 @@ function JournalPostSkeleton() {
                     </div>
                 </div>
 
-                <div className="pt-12 mx-auto max-w-[900px]">
+                <div className="mx-auto max-w-[900px] pt-10">
                     <div className="mb-8 flex items-center justify-between">
                         <Skeleton className="h-[12.5px] w-16" />
                     </div>
@@ -145,7 +145,7 @@ function JournalPostSkeleton() {
                 </div>
 
                 <div className="mx-auto mt-24 max-w-[1100px] border-t border-ink/10 pt-14">
-                    <div className="mb-11 flex items-center gap-x-5">
+                    <div className="mb-8 flex items-center gap-x-4 sm:gap-x-5 md:mb-11">
                         <Skeleton className="h-[10.5px] w-3" />
                         <Skeleton className="h-[10.5px] w-40" />
                         <span className="h-px flex-1 bg-grey-light/40" />

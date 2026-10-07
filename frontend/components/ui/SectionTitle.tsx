@@ -9,6 +9,9 @@ import { SECTION_KEYS, SectionKey } from "@/library/admin/sections";
 const UNNUMBERED: SectionKey[] = ["hero", "philosophy", "newsletter"];
 
 // Pass `section` on the homepage to number by visible position; `num` is the fixed label for standalone pages.
+// The rule draws in only on the home sections that animate; everywhere else it is static.
+const ANIMATED: SectionKey[] = ["bestSellers", "moments", "glossary", "catalogue", "journal"];
+
 export default function SectionTitle({ num, section, title, action }: { num?: string; section?: SectionKey; title: string; action?: React.ReactNode }) {
     const { sectionVisibility } = useContent();
     const label = section
@@ -19,13 +22,17 @@ export default function SectionTitle({ num, section, title, action }: { num?: st
         <div className="flex flex-row items-center gap-x-4 uppercase mb-8 sm:gap-x-5 md:mb-11">
             <span className="font-mono text-[10.5px] text-grey">{label}</span>
             <span className="font-mono text-[10.5px] tracking-[.16em] text-ink">{title}</span>
-            <motion.span
-                className="h-px flex-1 origin-left bg-gradient-to-r from-grey-light to-transparent"
-                initial={{ scaleX: 0 }}
-                whileInView={{ scaleX: 1 }}
-                viewport={VIEWPORT}
-                transition={{ duration: 0.9, delay: BASE_DELAY, ease: EASE }}
-            ></motion.span>
+            {section && ANIMATED.includes(section) ? (
+                <motion.span
+                    className="h-px flex-1 origin-left bg-gradient-to-r from-grey-light to-transparent"
+                    initial={{ scaleX: 0 }}
+                    whileInView={{ scaleX: 1 }}
+                    viewport={VIEWPORT}
+                    transition={{ duration: 0.9, delay: BASE_DELAY, ease: EASE }}
+                ></motion.span>
+            ) : (
+                <span className="h-px flex-1 bg-gradient-to-r from-grey-light to-transparent"></span>
+            )}
             {action}
         </div>
     );

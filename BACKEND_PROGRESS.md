@@ -92,6 +92,7 @@ A release-candidate `prisma init` left these in `backend/`: `.agents/`, `.claude
 - Stock changes only through `services/stock.service.ts` (`adjustStockTx`). The decrement is one conditional UPDATE inside a transaction, and it writes a `StockMovement` in the same transaction. Verified: two concurrent `-4` on a stock of 5 gave one 200 and one 409. Phase 4 checkout should call `adjustStockTx` with its own transaction.
 - `PATCH` never touches stock. Every adjustment needs a reason (RESTOCK, CORRECTION, DAMAGED, EXPIRED, RETURN; SALE and IMPORT are system-only). This replaces the old guess-from-diff behaviour.
 - Responses derive `price` (cheapest size) and `stock` (sum of sizes) for products with sizes.
+- Discounted rate: optional `salePrice` on `Product` and `ProductSize` (migration `sale_price`). It only counts when below `price`; the API returns it as `salePrice` (the lowest across sizes at product level), `priceLines` charges it at checkout, and the CSV export/import has an optional `Sale Price` column.
 - Validation uses zod. Images must be a path or http(s) URL, and base64 is rejected. Deleting a product with orders returns 409. Lists and logs are paginated (page size at most 100).
 - Schema additions: `Product.rating` and `ratingCount`, denormalized; Phase 7 should update them when a review is created.
 - Seed: `npm run seed-products` loads the 24 mock products from `prisma/seed-products.json` with their original ids. It is idempotent and never overwrites live stock. Images were copied to `frontend/public/products/`.

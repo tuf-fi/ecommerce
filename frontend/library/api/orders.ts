@@ -121,7 +121,8 @@ export const setOrderStatus = (no: string, status: AdminOrderStatus) =>
 
 // Customer-facing wording for each server status.
 const CUSTOMER_STATUS: Record<ApiOrderStatus, OrderStatus> = {
-    PENDING: "To Pay",
+    // Payment is sent at checkout, so an order awaiting staff approval reads as "To Ship" rather than a separate "To Pay" step.
+    PENDING: "To Ship",
     PAID: "To Ship",
     SHIPPED: "To Receive",
     DELIVERED: "Completed",
@@ -129,7 +130,7 @@ const CUSTOMER_STATUS: Record<ApiOrderStatus, OrderStatus> = {
 };
 
 const TRACKER: Record<ApiOrderStatus, { steps: string[]; current: number; eta: string }> = {
-    PENDING: { steps: ["Placed", "Payment"], current: 0, eta: "Send your payment, then upload a screenshot (unpaid orders are released after 24 hours)" },
+    PENDING: { steps: ["Placed", "Payment"], current: 0, eta: "Upload your payment screenshot (unpaid orders are released after 24 hours)" },
     PAID: { steps: ["Placed", "Paid", "Shipped", "Delivered"], current: 1, eta: "Preparing for shipment" },
     SHIPPED: { steps: ["Placed", "Paid", "Shipped", "Delivered"], current: 2, eta: "On its way" },
     DELIVERED: { steps: ["Placed", "Paid", "Shipped", "Delivered"], current: 3, eta: "Delivered" },
@@ -162,6 +163,7 @@ export function toCustomerOrder(o: ApiOrder): Order {
         date: o.createdAt.slice(0, 10),
         items: lines,
         payment: { state: o.payment.state, rejectReason: o.payment.proofs[0]?.rejectReason ?? null },
+        awaitingPayment: o.status === "PENDING",
         subtotal: o.subtotal,
         discount: o.discount,
         shippingFee: o.shippingFee,

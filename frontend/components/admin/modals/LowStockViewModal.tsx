@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import Modal from "@/components/ui/Modal";
 import StatusBadge from "@/components/admin/StatusBadge";
-import { ViewHeader, DetailBody, FactRow, FactCell, SectionLabel, SizeTable } from "@/components/admin/modals/ViewModalLayout";
+import { ViewHeader, DetailBody, DetailList, SectionLabel, SizeTable } from "@/components/admin/modals/ViewModalLayout";
 import { AdminProduct } from "@/library/admin/types";
 import { productStock, productStockStatus, productPriceRange, useAdminStore } from "@/library/adminStore";
 import { canAccessSection } from "@/library/admin/permissions";
@@ -48,10 +48,12 @@ export default function LowStockViewModal({
                     </div>
                 }
             />
-            <FactRow>
-                <FactCell label="Stock left" size="lg" tone={status === "out" ? "alert" : "warning"} value={`${productStock(product)} units`} />
-                <FactCell label="Price" size="lg" value={min === max ? `₱${min.toLocaleString()}` : `₱${min.toLocaleString()}–₱${max.toLocaleString()}`} />
-            </FactRow>
+            <DetailList
+                items={[
+                    { label: "Stock left", value: `${productStock(product)} units`, tone: status === "out" ? "alert" : "warning" },
+                    { label: "Price", value: min === max ? `₱${min.toLocaleString()}` : `₱${min.toLocaleString()}–₱${max.toLocaleString()}` },
+                ]}
+            />
             {product.sizes && product.sizes.length > 0 && (
                 <DetailBody>
                     <SectionLabel label="Sizes" />
@@ -62,6 +64,7 @@ export default function LowStockViewModal({
                                 id: s.id,
                                 label: s.label,
                                 price: s.price,
+                                salePrice: s.salePrice,
                                 stock: s.stock,
                                 tone: sizeStatus === "out" ? "alert" : sizeStatus === "low" ? "warning" : "default",
                             };

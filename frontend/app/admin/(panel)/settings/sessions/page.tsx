@@ -6,7 +6,7 @@ import { SettingsSection } from "@/components/admin/settings/SettingsSection";
 import { BTN_HEADER_ACTION, TABLE_HEAD_ROW, TABLE_TD, TABLE_TH } from "@/components/admin/formClasses";
 import ListPanel from "@/components/admin/ListPanel";
 import { useMounted } from "@/library/useMounted";
-import Skeleton, { SkeletonGroup } from "@/components/ui/Skeleton";
+import Skeleton, { SkeletonGroup, SkeletonTable } from "@/components/ui/Skeleton";
 import { ApiError } from "@/library/api/client";
 import { AdminSessionInfo, listAdminSessions, revokeAdminSession, revokeOtherAdminSessions } from "@/library/api/auth";
 
@@ -125,7 +125,7 @@ function SessionsSettingsSkeleton() {
                 <Skeleton className="h-[18px] w-36" />
                 <Skeleton tone="outline" className="h-[33px] w-48" />
             </div>
-            <Skeleton tone="outline" className="h-[150px] w-full" />
+            <SkeletonTable rows={3} cols={5} />
         </SkeletonGroup>
     );
 }

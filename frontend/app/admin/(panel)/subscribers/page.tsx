@@ -49,7 +49,7 @@ export default function SubscribersPage() {
             {error ? (
                 <p className="text-[13px] text-alert">{error}</p>
             ) : !result ? (
-                <SkeletonTable rows={6} cols={4} />
+                <SkeletonTable rows={6} cols={3} />
             ) : result.items.length === 0 ? (
                 <p className="text-[13px] text-grey">{search ? "No subscribers match that." : "No subscribers yet."}</p>
             ) : (

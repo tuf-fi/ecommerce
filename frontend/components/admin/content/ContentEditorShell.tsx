@@ -8,6 +8,7 @@ import LivePreviewPane from "@/components/admin/LivePreviewPane";
 import Tooltip from "@/components/ui/Tooltip";
 import { BTN_PRIMARY } from "@/components/admin/formClasses";
 import { CONTENT_PANEL_WIDTH_COLLAPSED, CONTENT_PANEL_WIDTH_EXPANDED } from "@/library/adminStore";
+import Skeleton, { SkeletonGroup } from "@/components/ui/Skeleton";
 
 // The WordPress "metabox" unit — every named box in the panel (Publish, Featured Image, Details) is one of these.
 // Flat by design (no shadow-card): this rail sits directly beside the live preview, and the direction contract
@@ -273,5 +274,109 @@ export function ContentNotFound({ message, backLabel, backHref }: { message: str
                 {backLabel}
             </Link>
         </div>
+    );
+}
+
+function SkeletonMetaBox({ labelWidth, children }: { labelWidth: string; children: React.ReactNode }) {
+    return (
+        <div className="shrink-0 overflow-hidden border border-ink/10 bg-white">
+            <div className="flex h-9 items-center border-b border-ink/10 bg-off/50 px-4">
+                <Skeleton tone="soft" className={`h-[10px] ${labelWidth}`} />
+            </div>
+            <div className="p-4">{children}</div>
+        </div>
+    );
+}
+
+function SkeletonField({ labelWidth, height }: { labelWidth: string; height: string }) {
+    return (
+        <div className="mb-4 last:mb-0">
+            <div className="mb-1.5 flex h-[16.5px] items-center">
+                <Skeleton tone="soft" className={`h-[10.5px] ${labelWidth}`} />
+            </div>
+            <Skeleton tone="outline" className={`w-full ${height}`} />
+        </div>
+    );
+}
+
+// Mirrors ContentEditorShell's layout while content loads: preview column + rail at `lg`+, stacked below. Pass what the real editor renders.
+export function ContentEditorSkeleton({
+    meta,
+    image = false,
+    guide = false,
+    fields,
+}: {
+    meta?: "field" | "toggle";
+    image?: boolean;
+    guide?: boolean;
+    /** One entry per Content field: label width + input height classes. */
+    fields: { labelWidth: string; height: string }[];
+}) {
+    const cards = (
+        <>
+            {guide && (
+                <SkeletonMetaBox labelWidth="w-24">
+                    <Skeleton tone="faint" className="h-28 w-full" />
+                </SkeletonMetaBox>
+            )}
+            {meta && (
+                <SkeletonMetaBox labelWidth="w-12">
+                    {meta === "field" ? (
+                        <SkeletonField labelWidth="w-12" height="h-[46px]" />
+                    ) : (
+                        <div className="flex items-center justify-between">
+                            <Skeleton className="h-[13px] w-28" />
+                            <Skeleton tone="outline" className="h-6 w-11 rounded-pill" />
+                        </div>
+                    )}
+                </SkeletonMetaBox>
+            )}
+            <SkeletonMetaBox labelWidth="w-14">
+                <Skeleton tone="soft" className="mb-3.5 h-[10.5px] w-24" />
+                <Skeleton tone="outline" className="h-[46px] w-full" />
+            </SkeletonMetaBox>
+            {image && (
+                <SkeletonMetaBox labelWidth="w-24">
+                    <Skeleton tone="faint" className="aspect-video w-full" />
+                </SkeletonMetaBox>
+            )}
+            <SkeletonMetaBox labelWidth="w-14">
+                {fields.map((f, i) => (
+                    <SkeletonField key={i} labelWidth={f.labelWidth} height={f.height} />
+                ))}
+            </SkeletonMetaBox>
+        </>
+    );
+
+    return (
+        <SkeletonGroup>
+            <div
+                className="overflow-hidden border-x border-b border-ink/10 bg-white lg:fixed lg:inset-y-0 lg:left-0 lg:flex lg:flex-col"
+                style={{ right: `${CONTENT_PANEL_WIDTH_EXPANDED}px` }}
+            >
+                <div className="flex h-[52px] flex-none items-center justify-between gap-3 border-b border-ink/10 px-4 sm:px-5">
+                    <Skeleton tone="soft" className="h-[10.5px] w-44" />
+                    <div className="hidden items-center gap-1 sm:flex">
+                        <Skeleton tone="soft" className="h-6 w-6 rounded-full" />
+                        <Skeleton tone="soft" className="h-6 w-6 rounded-full" />
+                        <Skeleton tone="soft" className="h-6 w-6 rounded-full" />
+                    </div>
+                </div>
+                <Skeleton tone="faint" className="h-[320px] w-full lg:h-auto lg:flex-1" />
+            </div>
+
+            <aside className="fixed top-0 right-0 bottom-0 z-30 hidden flex-col overflow-hidden border-l border-ink/10 bg-off lg:flex" style={{ width: CONTENT_PANEL_WIDTH_EXPANDED }}>
+                <div className="flex h-[52px] flex-none items-center justify-between gap-2 border-b border-ink/10 bg-white px-4">
+                    <Skeleton className="h-[12px] w-32" />
+                    <Skeleton tone="soft" className="h-8 w-8 rounded-full" />
+                </div>
+                <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-hidden p-4">{cards}</div>
+            </aside>
+
+            <div className="mt-6 flex flex-col gap-5 px-5 pb-12 sm:px-10 lg:hidden">
+                <Skeleton className="h-[12.5px] w-32" />
+                {cards}
+            </div>
+        </SkeletonGroup>
     );
 }

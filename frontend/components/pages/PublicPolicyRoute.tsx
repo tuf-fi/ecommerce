@@ -23,12 +23,40 @@ export default function PublicPolicyRoute({ slug }: { slug: "privacy-policy" | "
     if (!sessionChecked || isLoggedIn || !page) {
         return (
             <div className={shell}>
-                <SkeletonGroup className="mx-auto max-w-[720px] py-4 md:py-10">
-                    <Skeleton tone="soft" className="h-[10px] w-24" />
-                    <Skeleton className="mt-4 mb-10 h-[34px] w-3/5 sm:h-[44px]" />
-                    <Skeleton tone="soft" className="mb-3 h-3 w-full" />
-                    <Skeleton tone="soft" className="mb-3 h-3 w-11/12" />
-                    <Skeleton tone="soft" className="mb-3 h-3 w-4/5" />
+                <SkeletonGroup className="mx-auto max-w-[1040px]">
+                    <div className="mb-8 flex min-h-11 items-center md:mb-10">
+                        <Skeleton className="h-[12.5px] w-14" />
+                    </div>
+                    <div className="mb-8 border-b border-ink/10 pb-8 md:mb-12 md:pb-10">
+                        <Skeleton className="h-[32px] w-3/5 max-w-[420px] sm:h-[40px] lg:h-[48px]" />
+                    </div>
+
+                    <div className="grid gap-10 lg:grid-cols-[200px_minmax(0,1fr)] lg:gap-16">
+                        <div className="hidden lg:block">
+                            <Skeleton tone="soft" className="mb-4 h-[10px] w-24" />
+                            <div className="flex flex-col gap-3 border-l border-ink/10 pl-4">
+                                {Array.from({ length: 5 }).map((_, i) => (
+                                    <Skeleton key={i} className="h-3 w-4/5" />
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="max-w-[72ch]">
+                            {Array.from({ length: 3 }).map((_, i) => (
+                                <div key={i} className={`border-t border-ink/10 pt-8 ${i === 0 ? "" : "mt-10"}`}>
+                                    <div className="mb-4 flex items-center gap-3">
+                                        <Skeleton tone="soft" className="h-[11px] w-4" />
+                                        <Skeleton className="h-[18px] w-40" />
+                                    </div>
+                                    <div className="space-y-2.5">
+                                        <Skeleton tone="soft" className="h-3 w-full" />
+                                        <Skeleton tone="soft" className="h-3 w-11/12" />
+                                        <Skeleton tone="soft" className="h-3 w-4/5" />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
                 </SkeletonGroup>
             </div>
         );

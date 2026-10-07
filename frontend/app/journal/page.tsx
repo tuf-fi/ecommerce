@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import RevealIn from "@/components/ui/motion/RevealIn";
 import JournalCard from "@/components/sections/JournalCard";
 import PageIntro from "@/components/sections/PageIntro";
 import SectionTitle from "@/components/ui/SectionTitle";
@@ -29,7 +28,6 @@ export default function JournalIndexPage() {
                 <>
                     <SectionTitle num="—" title={`${published.length} ${published.length === 1 ? "Entry" : "Entries"}`} />
 
-                    <RevealIn direction="bottom">
                         <Link
                             href={`/journal/${slugify(featured.title)}`}
                             className="group relative isolate mb-14 flex h-[420px] flex-col justify-end overflow-hidden sm:h-[520px]"
@@ -57,7 +55,6 @@ export default function JournalIndexPage() {
                                 </span>
                             </div>
                         </Link>
-                    </RevealIn>
 
                     {rest.length > 0 && (
                         // The most recent post gets a spanning, larger-typed slot instead of an equal grid tile.
@@ -65,15 +62,9 @@ export default function JournalIndexPage() {
                             {rest.map((post, index) => {
                                 const lead = index === 0;
                                 return (
-                                    <RevealIn
-                                        key={post.id}
-                                        direction="bottom"
-                                        delay={index * 0.08}
-                                        distance={28}
-                                        className={lead ? "sm:col-span-2" : undefined}
-                                    >
+                                    <div key={post.id} className={lead ? "sm:col-span-2" : undefined}>
                                         <JournalCard post={post} href={`/journal/${slugify(post.title)}`} size={lead ? "large" : "default"} />
-                                    </RevealIn>
+                                    </div>
                                 );
                             })}
                         </div>
@@ -93,7 +84,7 @@ function JournalSkeleton() {
                     <Skeleton className="mt-3 h-[34px] w-[45%] max-w-[340px] sm:h-[42px]" />
                 </div>
 
-                <div className="mb-11 flex items-center gap-x-5">
+                <div className="mb-8 flex items-center gap-x-4 sm:gap-x-5 md:mb-11">
                     <Skeleton className="h-[10.5px] w-3" />
                     <Skeleton className="h-[10.5px] w-20" />
                     <span className="h-px flex-1 bg-grey-light/40" />

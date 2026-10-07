@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { PRODUCTS, getProduct } from "./products";
+import { PRODUCTS, getProduct, currentPrice } from "./products";
 import { customerLogout, customerSession, updateCustomerProfile } from "./api/auth";
 import { API_BASE_URL, ApiError } from "./api/client";
 import { addToWishlist, createAddress, customerLogoutAll, deleteAddress, listAddresses, listMyNotifications, markMyNotificationsRead, mergeWishlist, removeFromWishlist, updateAddress, type CustomerNotification } from "./api/customer";
@@ -39,7 +39,7 @@ export function lineUnitPrice(line: CartLine): number {
     const p = getProduct(line.productId);
     if (!p) return 0;
     const size = line.sizeId ? p.sizes?.find((s) => s.id === line.sizeId) : undefined;
-    return size ? size.price : p.price;
+    return currentPrice(size ?? p);
 }
 
 type StoreValue = {
@@ -49,7 +49,11 @@ type StoreValue = {
     addToCart: (id: number, qty?: number, sizeId?: string | null) => void;
     changeQty: (key: string, delta: number) => void;
     removeLine: (key: string) => void;
+    removeLines: (keys: string[]) => void;
     clearCart: () => void;
+    // The bag lines the customer ticked in the cart, carried to the checkout page.
+    checkoutKeys: string[];
+    setCheckoutKeys: (keys: string[]) => void;
 
     wishlist: number[];
     toggleWishlist: (id: number) => void;
@@ -102,6 +106,7 @@ const StoreContext = createContext<StoreValue | null>(null);
 export function StoreProvider({ children }: { children: React.ReactNode }) {
     const { version: catalogVersion } = useProducts();
     const [cart, setCart] = useState<CartMap>({});
+    const [checkoutKeys, setCheckoutKeys] = useState<string[]>([]);
     const [wishlist, setWishlist] = useState<number[]>([]);
     const [addresses, setAddresses] = useState<Address[]>([]);
     const [checkoutAddressId, setCheckoutAddressId] = useState<number | null>(null);
@@ -364,6 +369,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         });
     }, []);
 
+    const removeLines = useCallback((keys: string[]) => {
+        setCart((c) => {
+            const copy = { ...c };
+            for (const k of keys) delete copy[k];
+            return copy;
+        });
+    }, []);
+
     const clearCart = useCallback(() => setCart({}), []);
 
     const toggleWishlist = useCallback(
@@ -517,7 +530,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         addToCart,
         changeQty,
         removeLine,
+        removeLines,
         clearCart,
+        checkoutKeys,
+        setCheckoutKeys,
         wishlist,
         toggleWishlist,
         addresses,

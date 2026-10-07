@@ -211,3 +211,31 @@ body::before {
   background-position: right 0.8rem center;
   background-size: 11px 11px;
 }
+
+/* Live notification pop-ups: entrance runs as a CSS animation (off the main thread). `backwards` fill hands opacity back to
+   framer-motion afterwards so its fade-out still works. Drops in from the top on phones, from the right from `sm` up. */
+@keyframes notif-in-y {
+  from { opacity: 0; transform: translate3d(0, -20px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+@keyframes notif-in-x {
+  from { opacity: 0; transform: translate3d(40px, 0, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+@keyframes notif-in-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.notif-in {
+  animation: notif-in-y 0.5s cubic-bezier(0.25, 0.1, 0.25, 1) backwards;
+}
+@media (min-width: 640px) {
+  .notif-in {
+    animation-name: notif-in-x;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .notif-in {
+    animation-name: notif-in-fade;
+  }
+}

@@ -3,9 +3,9 @@
 import Image from "next/image";
 import Modal from "@/components/ui/Modal";
 import StatusBadge from "@/components/admin/StatusBadge";
-import { ViewHeader, DetailRow, DetailBody, FactRow, FactCell, SectionLabel, SizeTable } from "@/components/admin/modals/ViewModalLayout";
+import { ViewHeader, DetailList, DetailBody, SectionLabel, SizeTable } from "@/components/admin/modals/ViewModalLayout";
 import { AdminProduct } from "@/library/admin/types";
-import { productStock, productStockStatus, productPriceRange, isExpiringSoon } from "@/library/adminStore";
+import { productStock, productStockStatus, productPriceRange, productSalePrice, isExpiringSoon } from "@/library/adminStore";
 
 const STOCK_LABEL: Record<"in" | "low" | "out", string> = {
     in: "In stock",
@@ -31,6 +31,7 @@ export default function ProductViewModal({
 
     const status = productStockStatus(product);
     const { min, max } = productPriceRange(product);
+    const sale = productSalePrice(product);
 
     return (
         <Modal open={open} onClose={onClose} maxWidth="max-w-[420px]">
@@ -50,22 +51,25 @@ export default function ProductViewModal({
                     </div>
                 }
             />
-            <FactRow>
-                <FactCell label="Price" size="lg" value={min === max ? `₱${min.toLocaleString()}` : `₱${min.toLocaleString()}–₱${max.toLocaleString()}`} />
-                <FactCell label="Stock" size="lg" tone={status === "out" ? "alert" : status === "low" ? "warning" : "default"} value={`${productStock(product)} units`} />
-            </FactRow>
+            <DetailList
+                items={[
+                    { label: "Price", value: min === max ? `₱${min.toLocaleString()}` : `₱${min.toLocaleString()}–₱${max.toLocaleString()}` },
+                    ...(sale !== null ? [{ label: product.sizes?.length ? "Sale from" : "Discounted price", value: `₱${sale.toLocaleString()}`, tone: "warning" as const }] : []),
+                    { label: "Stock", value: `${productStock(product)} units`, tone: status === "out" ? "alert" : status === "low" ? "warning" : "default" },
+                    {
+                        label: "Expiry",
+                        value: (
+                            <span className="inline-flex items-center gap-2">
+                                {product.expiry ?? "—"}
+                                {isExpiringSoon(product.expiry) && <StatusBadge label="Expiring soon" tone="warning" />}
+                            </span>
+                        ),
+                    },
+                ]}
+            />
             <DetailBody>
-                <DetailRow
-                    label="Expiry"
-                    value={
-                        <span className="inline-flex items-center gap-2">
-                            {product.expiry ?? "—"}
-                            {isExpiringSoon(product.expiry) && <StatusBadge label="Expiring soon" tone="warning" />}
-                        </span>
-                    }
-                />
                 {product.sizes && product.sizes.length > 0 && (
-                    <div className="mt-5">
+                    <div>
                         <SectionLabel label="Sizes" />
                         <SizeTable
                             sizes={product.sizes.map((s) => {
@@ -74,6 +78,7 @@ export default function ProductViewModal({
                                     id: s.id,
                                     label: s.label,
                                     price: s.price,
+                                    salePrice: s.salePrice,
                                     stock: s.stock,
                                     tone: sizeStatus === "out" ? "alert" : sizeStatus === "low" ? "warning" : "default",
                                 };

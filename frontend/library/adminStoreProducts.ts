@@ -15,6 +15,7 @@ export function sizesPayload(sizes: ProductSize[]): NonNullable<ProductPayload["
         ...(isServerId(s.id) ? { id: Number(s.id) } : { stock: s.stock }),
         label: s.label,
         price: s.price,
+        salePrice: s.salePrice ?? null,
     }));
 }
 
@@ -37,6 +38,6 @@ export function toCreatePayload(input: Omit<AdminProduct, "id">): ProductPayload
         expiry: input.expiry,
         reorderThreshold: input.reorderThreshold ?? null,
         ...(image ? { image } : {}),
-        ...(sizes.length ? { sizes: sizesPayload(sizes) } : { price: input.price, stock: input.stock }),
+        ...(sizes.length ? { sizes: sizesPayload(sizes) } : { price: input.price, salePrice: input.salePrice ?? null, stock: input.stock }),
     };
 }

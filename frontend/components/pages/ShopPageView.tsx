@@ -7,7 +7,7 @@ import Card from "@/components/ui/Card";
 import SectionTitle from "@/components/ui/SectionTitle";
 import Pagination from "@/components/ui/Pagination";
 import SearchField, { FILTER_SELECT } from "@/components/ui/SearchField";
-import { CATEGORIES, PRODUCTS } from "@/library/products";
+import { CATEGORIES, PRODUCTS, currentPrice } from "@/library/products";
 import { useScrollTopOnChange } from "@/library/useScrollTopOnChange";
 import PageIntro from "@/components/sections/PageIntro";
 import { PageIntroContent, useContent } from "@/library/content";
@@ -55,10 +55,10 @@ function ShopContent() {
         const sorted = [...list];
         switch (sort) {
             case "price-asc":
-                sorted.sort((a, b) => a.price - b.price);
+                sorted.sort((a, b) => currentPrice(a) - currentPrice(b));
                 break;
             case "price-desc":
-                sorted.sort((a, b) => b.price - a.price);
+                sorted.sort((a, b) => currentPrice(b) - currentPrice(a));
                 break;
             case "rating-desc":
                 sorted.sort((a, b) => b.rating - a.rating);
@@ -147,9 +147,9 @@ function ShopContent() {
                     </div>
                 ) : (
                     <>
-                        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                        <div className="grid grid-cols-2 gap-3 sm:gap-5 xl:grid-cols-3">
                             {paged.map((product) => (
-                                <Card key={product.id} product={product} />
+                                <Card key={product.id} product={product} dense />
                             ))}
                         </div>
 
@@ -165,36 +165,41 @@ function ShopGridSkeleton() {
     return (
         <SkeletonGroup>
             <div className="grid grid-cols-1 gap-10 lg:grid-cols-[220px_1fr]">
-                <div className="flex flex-col gap-8">
+                <div className="flex flex-col gap-6 lg:gap-8">
                     <Skeleton tone="outline" className="h-11 w-full" />
-                    <div className="flex flex-col gap-3">
-                        <Skeleton tone="soft" className="h-[10px] w-16" />
-                        {Array.from({ length: 5 }).map((_, i) => (
-                            <Skeleton key={i} className="h-4 w-full" />
-                        ))}
+                    <div>
+                        <Skeleton tone="soft" className="mb-3 h-[10.5px] w-16" />
+                        <div className="flex flex-row gap-1 lg:flex-col lg:gap-0">
+                            {CATEGORIES.map((c) => (
+                                <div key={c} className="flex h-[41px] flex-none items-center justify-between gap-3 px-3 lg:flex-1 lg:pl-4">
+                                    <Skeleton className="h-3 w-14" />
+                                    <Skeleton tone="soft" className="h-[11px] w-4" />
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
 
-                <div>
-                    <div className="mb-8 flex items-center justify-between gap-x-5">
-                        <div className="flex items-center gap-x-5">
+                <div className="min-w-0">
+                    <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-center gap-x-4 sm:gap-x-5">
                             <Skeleton className="h-[10.5px] w-3" />
                             <Skeleton className="h-[10.5px] w-24" />
                         </div>
-                        <Skeleton tone="outline" className="h-11 w-40" />
+                        <Skeleton tone="outline" className="h-11 w-40 flex-none" />
                     </div>
 
-                    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                    <div className="grid grid-cols-2 gap-3 sm:gap-5 xl:grid-cols-3">
                         {Array.from({ length: PAGE_SIZE }).map((_, i) => (
                             <div key={i} className="flex flex-col border border-ink/10">
                                 <Skeleton tone="faint" className="aspect-[4/5] w-full" />
-                                <div className="flex flex-col gap-2 p-5">
+                                <div className="flex flex-col gap-1.5 p-3 sm:gap-2 sm:p-5">
                                     <Skeleton className="h-[10px] w-16" />
-                                    <Skeleton className="h-[16.5px] w-4/5" />
-                                    <Skeleton tone="soft" className="h-3 w-24" />
-                                    <div className="mt-2 flex items-center justify-between">
-                                        <Skeleton className="h-3 w-12" />
-                                        <Skeleton tone="outline" className="h-8 w-24" />
+                                    <Skeleton className="h-[14px] w-4/5 sm:h-[16.5px]" />
+                                    <Skeleton tone="soft" className="mb-2 h-[14px] w-24" />
+                                    <div className="flex flex-col items-stretch gap-2 pt-2 sm:flex-row sm:items-center sm:justify-between sm:gap-x-3 sm:pt-3">
+                                        <Skeleton className="h-[13px] w-12" />
+                                        <Skeleton tone="outline" className="h-[37px] w-full sm:h-[35px] sm:w-24" />
                                     </div>
                                 </div>
                             </div>

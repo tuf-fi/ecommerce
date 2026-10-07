@@ -1,6 +1,6 @@
 import { AdminOrder } from "./types";
 import type { TrendPoint } from "./dashboard";
-import { getProduct } from "../products";
+import { getProduct, currentPrice } from "../products";
 
 export function orderItemCount(order: AdminOrder): number {
     return order.items.reduce((sum, item) => sum + item.qty, 0);
@@ -8,7 +8,7 @@ export function orderItemCount(order: AdminOrder): number {
 
 export function orderTotal(order: AdminOrder): number {
     if (order.total !== undefined) return order.total;
-    return order.items.reduce((sum, item) => sum + (item.unitPrice ?? getProduct(item.productId)?.price ?? 0) * item.qty, 0);
+    return order.items.reduce((sum, item) => sum + (item.unitPrice ?? (getProduct(item.productId) ? currentPrice(getProduct(item.productId)!) : 0)) * item.qty, 0);
 }
 
 // Revenue only counts orders with confirmed payment (Paid onward); Pending hasn't been verified and Cancelled never completes.
