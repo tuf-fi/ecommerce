@@ -4,6 +4,7 @@ import { z } from "zod";
 import { prisma } from "../lib/prisma";
 import { HttpError } from "../lib/httpError";
 import { sniffImage } from "../lib/imageSniff";
+import { normalizeScreenshot } from "../lib/processImage";
 import { recordOrderStatus, record, staffActor } from "../services/audit.service";
 import { sendMail } from "../services/email.service";
 import { canAccess } from "../lib/sections";
@@ -16,6 +17,8 @@ export const submitProofSchema = z.object({
   method: z.enum(METHODS),
   reference: z.string().trim().max(60).optional(),
   note: z.string().trim().max(300).optional(),
+  amount: z.coerce.number().int().min(1).max(10_000_000).optional(),
+  senderName: z.string().trim().max(100).optional(),
 });
 
 export const reviewProofSchema = z.discriminatedUnion("decision", [
@@ -31,8 +34,10 @@ export async function submitProof(req: Request, res: Response) {
   if (!req.file) throw new HttpError(400, 'Attach a screenshot in the "file" field');
 
   // Trust the bytes, not the filename or the declared type.
-  const mimeType = sniffImage(req.file.buffer);
-  if (!mimeType) throw new HttpError(400, "That file isn't a JPG, PNG or WEBP image");
+  if (!sniffImage(req.file.buffer)) throw new HttpError(400, "That file isn't a JPG, PNG or WEBP image");
+  const image = await normalizeScreenshot(req.file.buffer).catch(() => {
+    throw new HttpError(400, "We couldn't read that image. Try another screenshot");
+  });
 
   const order = await prisma.order.findFirst({
     where: { number, customerId: req.customerId },
@@ -49,9 +54,11 @@ export async function submitProof(req: Request, res: Response) {
       method: fields.data.method,
       reference: fields.data.reference || null,
       note: fields.data.note || null,
-      mimeType,
-      sizeBytes: req.file.size,
-      file: { create: { data: new Uint8Array(req.file.buffer) } },
+      amount: fields.data.amount ?? null,
+      senderName: fields.data.senderName || null,
+      mimeType: image.mimeType,
+      sizeBytes: image.data.length,
+      file: { create: { data: new Uint8Array(image.data) } },
     },
     select: { id: true, status: true, method: true, createdAt: true },
   });
@@ -93,6 +100,10 @@ export async function reviewProof(req: Request, res: Response) {
   const result = await prisma.$transaction(async (tx) => {
     const proof = await tx.paymentProof.findFirst({ where: { id: proofId, order: { number } }, include: { order: true } });
     if (!proof) throw new HttpError(404, "Not found");
+    if (body.decision === "approve" && staff.role !== "ADMINISTRATOR") {
+      const limit = Number(process.env.PROOF_APPROVER_MIN_TOTAL);
+      if (limit > 0 && proof.order.total >= limit) throw new HttpError(403, `Only an administrator can approve orders of ₱${limit.toLocaleString()} or more`);
+    }
 
     // Claiming the proof first (only while still PENDING) means two staff acting at once can't both decide.
     const claimed = await tx.paymentProof.updateMany({

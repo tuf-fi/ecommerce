@@ -389,6 +389,13 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
         if (isAdminLoggedIn) void reloadOrders();
     }, [isAdminLoggedIn, reloadOrders]);
 
+    // Keeps the "payments to review" count fresh while the panel stays open.
+    useEffect(() => {
+        if (!isAdminLoggedIn) return;
+        const id = setInterval(() => void reloadOrders(), 60_000);
+        return () => clearInterval(id);
+    }, [isAdminLoggedIn, reloadOrders]);
+
     const updateOrderStatus = useCallback(
         async (orderNo: string, status: AdminOrderStatus) => {
             try {

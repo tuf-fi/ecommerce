@@ -4,9 +4,10 @@
   "description": "",
   "main": "dist/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node --import tsx --import ./src/__tests__/setup.ts --test --test-concurrency=1 src/__tests__/*.test.ts",
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
+    "start": "node dist/index.js",
     "typecheck": "tsc --noEmit",
     "create-staff": "tsx src/scripts/create-staff.ts",
     "postinstall": "prisma generate",
@@ -28,12 +29,14 @@
     "express": "^5.2.1",
     "express-rate-limit": "^8.7.0",
     "google-auth-library": "^11.1.0",
+    "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.4.0",
     "nodemailer": "^10.0.13",
     "otplib": "^13.5.0",
     "pg": "^8.23.1",
     "qrcode": "^1.5.4",
+    "sharp": "^0.35.5",
     "zod": "^4.6.5"
   },
   "devDependencies": {

@@ -29,6 +29,8 @@ export default function PaymentProofModal({
     const [instructions, setInstructions] = useState<PaymentInstructions | null>(null);
     const [method, setMethod] = useState<PaymentMethodId>("gcash");
     const [reference, setReference] = useState("");
+    const [amount, setAmount] = useState(String(total));
+    const [senderName, setSenderName] = useState("");
     const [file, setFile] = useState<File | null>(null);
     const [preview, setPreview] = useState<string | null>(null);
     const [busy, setBusy] = useState(false);
@@ -69,7 +71,7 @@ export default function PaymentProofModal({
         if (!file) return showToast("error", "Attach your payment screenshot first.");
         setBusy(true);
         try {
-            await submitPaymentProof(orderNo, { method: activeMethod, reference: reference.trim() || undefined, file });
+            await submitPaymentProof(orderNo, { method: activeMethod, reference: reference.trim() || undefined, amount: Number(amount) > 0 ? Math.round(Number(amount)) : undefined, senderName: senderName.trim() || undefined, file });
             showToast("success", "Thanks — we'll check your payment and confirm your order soon.");
             onSubmitted();
             onClose();
@@ -127,6 +129,17 @@ export default function PaymentProofModal({
                     <div>
                         <label htmlFor="proof-ref" className={label}>Reference no.</label>
                         <input id="proof-ref" value={reference} onChange={(e) => setReference(e.target.value)} maxLength={60} placeholder="Optional" className={input} />
+                    </div>
+                </div>
+
+                <div className="mb-4 grid gap-4 sm:grid-cols-2">
+                    <div>
+                        <label htmlFor="proof-amount" className={label}>Amount sent (₱)</label>
+                        <input id="proof-amount" type="number" inputMode="numeric" min={1} value={amount} onChange={(e) => setAmount(e.target.value)} className={input} />
+                    </div>
+                    <div>
+                        <label htmlFor="proof-sender" className={label}>Sender name</label>
+                        <input id="proof-sender" value={senderName} onChange={(e) => setSenderName(e.target.value)} maxLength={100} placeholder="Optional" className={input} />
                     </div>
                 </div>
 

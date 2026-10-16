@@ -1,5 +1,7 @@
 import type { AdminOrder } from "./types";
 import { extractLocation } from "./location";
+
+const placeOf = (order: AdminOrder) => order.location ?? extractLocation(order.address);
 import { orderTotal } from "./orders";
 import { getProduct } from "../products";
 
@@ -27,7 +29,7 @@ function startOfToday(): number {
 export function salesLocations(orders: AdminOrder[]): string[] {
     const volume = new Map<string, number>();
     for (const order of sales(orders)) {
-        const location = extractLocation(order.address);
+        const location = placeOf(order);
         volume.set(location, (volume.get(location) ?? 0) + 1);
     }
     return [...volume.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([location]) => location);
@@ -50,7 +52,7 @@ export function salesTrendByLocation(orders: AdminOrder[], range: ChartRange): L
     for (const order of sales(orders)) {
         const index = Math.floor((new Date(order.createdAt!).getTime() - start) / (size * DAY_MS));
         if (index < 0 || index >= buckets) continue;
-        const location = extractLocation(order.address);
+        const location = placeOf(order);
         points[index].values[location] = (points[index].values[location] ?? 0) + orderTotal(order);
     }
     return points;

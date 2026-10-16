@@ -7,16 +7,18 @@ export type SavedSections = Record<string, unknown>;
 
 // Runs on the server (root layout). Not cached, so an admin who saves and reloads never sees a stale copy of their edit.
 // Fails soft to "nothing saved" so a down API leaves the site rendering its defaults.
-export async function fetchContent(): Promise<SavedSections> {
+export type ContentSnapshot = { sections: SavedSections; versions: Record<string, string> };
+
+export async function fetchContent(): Promise<ContentSnapshot> {
     try {
         const res = await fetch(`${API_URL}/content`, { cache: "no-store" });
-        if (!res.ok) return {};
-        const { sections } = (await res.json()) as { sections: SavedSections };
-        return sections;
+        if (!res.ok) return { sections: {}, versions: {} };
+        const { sections, versions } = (await res.json()) as { sections: SavedSections; versions?: Record<string, string> };
+        return { sections, versions: versions ?? {} };
     } catch {
-        return {};
+        return { sections: {}, versions: {} };
     }
 }
 
-export const saveContentSection = (section: string, data: unknown) =>
-    api<{ section: string; updatedAt: string }>(`/content/${encodeURIComponent(section)}`, { method: "PATCH", body: JSON.stringify({ data }) });
+export const saveContentSection = (section: string, data: unknown, expectedUpdatedAt: string | null) =>
+    api<{ section: string; updatedAt: string }>(`/content/${encodeURIComponent(section)}`, { method: "PATCH", body: JSON.stringify({ data, expectedUpdatedAt }) });

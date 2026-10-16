@@ -57,7 +57,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col">
         <ProductsProvider initial={catalog}>
         <StoreProvider>
-        <ContentProvider initial={content}>
+        <ContentProvider initial={content.sections} versions={content.versions}>
           <ScrollToTop />
           <ConditionalPromoBanner />
           <ConditionalNavbar />

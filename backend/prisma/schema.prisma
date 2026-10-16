@@ -159,6 +159,8 @@ model Order {
   shipName      String
   shipEmail     String
   shipAddress   String
+  // Where the order is going (city, or town and province), worked out from the address at checkout for the dashboard.
+  shipCity      String?
   // Set when staff verify the customer's payment screenshot (or mark the order Paid).
   paidAt        DateTime?
   // total = subtotal - discount + shippingFee, all in whole pesos, fixed when the order is placed.
@@ -334,6 +336,9 @@ model PaymentProof {
   method       String
   reference    String?
   note         String?
+  // What the customer says they sent, shown beside the order total so staff can spot a mismatch.
+  amount       Int?
+  senderName   String?
   mimeType     String
   sizeBytes    Int
   status       ProofStatus @default(PENDING)
@@ -345,6 +350,7 @@ model PaymentProof {
   file         ProofFile?
 
   @@index([orderId, createdAt])
+  @@index([reference])
 }
 
 model ProofFile {

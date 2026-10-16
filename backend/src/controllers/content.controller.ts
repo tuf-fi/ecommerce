@@ -58,7 +58,7 @@ function sectionKey(req: Request): SectionKey {
 // its built-in defaults for the rest.
 export async function getAllContent(_req: Request, res: Response) {
   const rows = await prisma.contentSection.findMany();
-  res.json({ sections: Object.fromEntries(rows.map((r) => [r.key, r.data])) });
+  res.json({ sections: Object.fromEntries(rows.map((r) => [r.key, r.data])), versions: Object.fromEntries(rows.map((r) => [r.key, r.updatedAt.toISOString()])) });
 }
 
 export async function getContent(req: Request, res: Response) {
@@ -72,6 +72,9 @@ export async function saveContent(req: Request, res: Response) {
   // Whoever can edit these can change where customers send their money, so it is limited to administrators.
   if ((key === "paymentInstructions" || key === "shipping") && req.staff?.role !== "ADMINISTRATOR") throw new HttpError(403, "Only administrators can change payment and shipping details");
   const data: unknown = req.body?.data;
+  // The version the editor loaded (null = the section had never been saved). Left out, the save skips the conflict check.
+  const expected: string | null | undefined = req.body?.expectedUpdatedAt;
+  if (expected !== undefined && expected !== null && Number.isNaN(Date.parse(expected))) throw new HttpError(400, "Invalid expectedUpdatedAt");
   const isArray = Array.isArray(data);
   if (data === null || typeof data !== "object" || isArray !== (SHAPES[key] === "array")) {
     throw new HttpError(400, `"${key}" must be ${SHAPES[key] === "array" ? "an array" : "an object"}`);
@@ -80,12 +83,21 @@ export async function saveContent(req: Request, res: Response) {
   if (bytes > MAX_BYTES) throw new HttpError(413, "That content is too large");
   assertSafe(data);
 
+  const conflict = () => new HttpError(409, "Someone else changed this section. Reload the page to see their version");
   const row = await prisma.$transaction(async (tx) => {
-    const saved = await tx.contentSection.upsert({
-      where: { key },
-      create: { key, data: data as Prisma.InputJsonValue },
-      update: { data: data as Prisma.InputJsonValue },
-    });
+    let saved;
+    if (expected === undefined) {
+      saved = await tx.contentSection.upsert({ where: { key }, create: { key, data: data as Prisma.InputJsonValue }, update: { data: data as Prisma.InputJsonValue } });
+    } else if (expected === null) {
+      // Never saved when the editor loaded: only create, and a row that has appeared since is a conflict.
+      saved = await tx.contentSection.create({ data: { key, data: data as Prisma.InputJsonValue } }).catch((err: { code?: string }) => {
+        throw err.code === "P2002" ? conflict() : err;
+      });
+    } else {
+      const { count } = await tx.contentSection.updateMany({ where: { key, updatedAt: new Date(expected) }, data: { data: data as Prisma.InputJsonValue } });
+      if (count === 0) throw conflict();
+      saved = await tx.contentSection.findUniqueOrThrow({ where: { key } });
+    }
     await record(tx, {
       entityType: "content",
       entityId: key,

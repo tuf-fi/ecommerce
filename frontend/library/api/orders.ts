@@ -11,6 +11,7 @@ export type ApiOrder = {
     customerName: string;
     email: string;
     address: string;
+    location?: string | null;
     total: number;
     subtotal: number;
     discount: number;
@@ -54,10 +55,12 @@ async function allOrderPages(path: string): Promise<{ orders: ApiOrder[] }> {
 
 export const listMyOrders = () => allOrderPages("/orders");
 // Customers pay by transfer and upload a screenshot; staff then approve or reject it.
-export const submitPaymentProof = (no: string, input: { method: string; reference?: string; file: File }) => {
+export const submitPaymentProof = (no: string, input: { method: string; reference?: string; amount?: number; senderName?: string; file: File }) => {
     const form = new FormData();
     form.append("method", input.method);
     if (input.reference) form.append("reference", input.reference);
+    if (input.amount) form.append("amount", String(input.amount));
+    if (input.senderName) form.append("senderName", input.senderName);
     form.append("file", input.file);
     return api<{ proof: { id: number; status: string } }>(`/orders/${encodeURIComponent(no)}/payment-proofs`, { method: "POST", body: form });
 };
@@ -186,6 +189,7 @@ export function toAdminOrder(o: ApiOrder): AdminOrder {
         customer: o.customerName,
         email: o.email,
         address: o.address,
+        location: o.location ?? undefined,
         date: new Date(o.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
         status: ADMIN_STATUS[o.status],
         total: o.total,

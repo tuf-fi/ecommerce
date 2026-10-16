@@ -9,6 +9,9 @@ export type ProofInfo = {
     method: string;
     reference: string | null;
     note: string | null;
+    amount: number | null;
+    senderName: string | null;
+    duplicateOf: string[];
     rejectReason: string | null;
     reviewedBy: string | null;
     reviewedAt: string | null;

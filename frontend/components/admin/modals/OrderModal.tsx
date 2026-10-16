@@ -162,6 +162,17 @@ export default function OrderModal({
                                                 {p.status === "PENDING" ? "Needs review" : p.status.toLowerCase()}
                                             </span>
                                         </div>
+                                        {p.duplicateOf.length > 0 && (
+                                            <p className="mb-2 border-l-2 border-alert bg-alert/5 px-3 py-2 text-[12px] text-ink">
+                                                The same reference was used on {p.duplicateOf.join(", ")}. Check that this isn&apos;t one screenshot reused.
+                                            </p>
+                                        )}
+                                        {(p.amount !== null || p.senderName) && (
+                                            <p className={`mb-2 text-[12px] ${p.amount !== null && p.amount !== orderTotal(order) ? "font-medium text-alert" : "text-grey"}`}>
+                                                {p.amount !== null && <>Customer says they sent ₱{p.amount.toLocaleString()}{p.amount !== orderTotal(order) ? ` — order total is ₱${orderTotal(order).toLocaleString()}` : ""}</>}
+                                                {p.senderName ? `${p.amount !== null ? " · " : ""}from ${p.senderName}` : ""}
+                                            </p>
+                                        )}
                                         <ProofImage orderNo={order.no} proofId={p.id} className="mb-2 max-h-72 w-full border border-ink/10 object-contain" />
                                         <div className="text-[11.5px] text-grey">
                                             Sent {new Date(p.createdAt).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}

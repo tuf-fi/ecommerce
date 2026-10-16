@@ -40,6 +40,7 @@ export type AdminOrder = {
     customer: string;
     email: string;
     address: string;
+    location?: string;
     date: string;
     status: AdminOrderStatus;
     items: AdminOrderLine[];

@@ -217,7 +217,7 @@ const SAVE_DELAY_MS = 700;
 
 // `initial` is whatever an admin has saved on the server (fetched during render of the root layout). Anything not saved
 // there starts from the built-in defaults, and edits are written back to the server automatically.
-export function ContentProvider({ children, initial = {} }: { children: React.ReactNode; initial?: SavedSections }) {
+export function ContentProvider({ children, initial = {}, versions = {} }: { children: React.ReactNode; initial?: SavedSections; versions?: Record<string, string> }) {
     const seed = <T,>(key: string, fallback: T): T => (initial[key] as T | undefined) ?? fallback;
     const [sectionVisibility, setSectionVisibility] = useState<Record<SectionKey, boolean>>({ ...SECTION_VISIBILITY_DEFAULT, ...seed<Partial<Record<SectionKey, boolean>>>("visibility", {}) });
     const updateSectionVisibility = useCallback((key: SectionKey, enabled: boolean) => {
@@ -514,6 +514,8 @@ export function ContentProvider({ children, initial = {} }: { children: React.Re
     // pause. Only signed-in staff ever change this state; if a save is rejected the next edit retries it.
     const synced = useRef<Record<string, string>>({});
     const timers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+    // When each section was last saved, as this editor knows it; sent with a save so someone else's newer edit isn't overwritten.
+    const savedAt = useRef<Record<string, string | null>>({ ...versions });
     useEffect(() => {
         const sections: Record<string, unknown> = {
             visibility: sectionVisibility,
@@ -546,12 +548,19 @@ export function ContentProvider({ children, initial = {} }: { children: React.Re
             if (synced.current[key] === json) continue;
             clearTimeout(timers.current[key]);
             timers.current[key] = setTimeout(() => {
-                saveContentSection(key, payload)
-                    .then(() => {
+                saveContentSection(key, payload, savedAt.current[key] ?? null)
+                    .then((saved) => {
                         synced.current[key] = json;
+                        savedAt.current[key] = saved.updatedAt;
                     })
                     .catch((err) => {
-                        toast.error(err instanceof ApiError && err.status === 401 ? "Your session expired — sign in again to save changes." : "Couldn't save your changes. They'll be retried on your next edit.");
+                        toast.error(
+                            err instanceof ApiError && err.status === 401
+                                ? "Your session expired — sign in again to save changes."
+                                : err instanceof ApiError && err.status === 409
+                                  ? "Someone else edited this — reload the page before making changes."
+                                  : "Couldn't save your changes. They'll be retried on your next edit."
+                        );
                     });
             }, SAVE_DELAY_MS);
         }

@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { OrderStatus, Prisma } from "../generated/prisma/client";
 import { prisma } from "../lib/prisma";
 import { HttpError } from "../lib/httpError";
+import { extractLocation } from "../lib/location";
 import { adjustStockTx } from "./stock.service";
 import { Actor, recordOrderStatus, SYSTEM_ACTOR } from "./audit.service";
 import { getShippingRule, shippingFor } from "./pricing.service";
@@ -13,7 +14,7 @@ export const orderInclude = {
   items: { include: { size: { select: { label: true } } }, orderBy: { id: "asc" } },
   // Never the image bytes — those are fetched one at a time, behind an access check.
   paymentProofs: {
-    select: { id: true, status: true, method: true, reference: true, note: true, rejectReason: true, reviewedBy: true, reviewedAt: true, createdAt: true },
+    select: { id: true, status: true, method: true, reference: true, note: true, amount: true, senderName: true, rejectReason: true, reviewedBy: true, reviewedAt: true, createdAt: true },
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
   },
 } satisfies Prisma.OrderInclude;
@@ -148,6 +149,7 @@ export async function createOrder(input: {
         shipName: input.shipName,
         shipEmail: input.shipEmail,
         shipAddress: input.shipAddress,
+        shipCity: extractLocation(input.shipAddress),
         subtotal,
         discount,
         shippingFee,

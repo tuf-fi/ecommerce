@@ -201,7 +201,8 @@ const NAV_GROUPS: { label: string; items: { href: string; label: string; section
 
 export default function AdminSidebar() {
     const pathname = usePathname();
-    const { adminName, currentStaffMember, sidebarCollapsed, toggleSidebar, mobileSidebarOpen, closeMobileSidebar } = useAdminStore();
+    const { adminName, currentStaffMember, sidebarCollapsed, toggleSidebar, mobileSidebarOpen, closeMobileSidebar, orders } = useAdminStore();
+    const toReview = orders.filter((o) => o.status === "Pending" && o.payment?.state === "review").length;
 
     // Cosmetic-only filtering (see library/admin/permissions.ts); a group with nothing visible is dropped entirely.
     const visibleGroups = NAV_GROUPS.map((group) => ({
@@ -331,6 +332,11 @@ export default function AdminSidebar() {
                                         >
                                             <span className={active ? "opacity-100" : "opacity-75"}>{item.icon}</span>
                                             <span className={sidebarCollapsed ? "lg:hidden" : ""}>{item.label}</span>
+                                            {item.href === "/admin/orders" && toReview > 0 && (
+                                                <span aria-label={`${toReview} payments to review`} className={`ml-auto bg-pink-btn px-1.5 py-0.5 font-mono text-[10px] leading-none text-white ${sidebarCollapsed ? "lg:hidden" : ""}`}>
+                                                    {toReview}
+                                                </span>
+                                            )}
                                         </Link>
                                     );
                                     return sidebarCollapsed ? (

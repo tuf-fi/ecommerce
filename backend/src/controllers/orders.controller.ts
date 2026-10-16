@@ -5,13 +5,14 @@ import { HttpError } from "../lib/httpError";
 import { customerActor, staffActor } from "../services/audit.service";
 import { changeOrderStatus, checkCart, createOrder, orderInclude, OrderWithItems } from "../services/orders.service";
 
-function serialize(o: OrderWithItems) {
+function serialize(o: OrderWithItems, duplicates: Map<number, string[]> = new Map()) {
   return {
     no: o.number,
     status: o.status,
     customerName: o.shipName,
     email: o.shipEmail,
     address: o.shipAddress,
+    location: o.shipCity,
     total: o.total,
     subtotal: o.subtotal || o.total,
     discount: o.discount,
@@ -29,6 +30,9 @@ function serialize(o: OrderWithItems) {
         method: p.method,
         reference: p.reference,
         note: p.note,
+        amount: p.amount,
+        senderName: p.senderName,
+        duplicateOf: duplicates.get(p.id) ?? [],
         rejectReason: p.rejectReason,
         reviewedBy: p.reviewedBy,
         reviewedAt: p.reviewedAt ? p.reviewedAt.toISOString() : null,
@@ -75,6 +79,7 @@ const listQuery = z.object({
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(50),
   status: z.enum(statuses).optional(),
+  payment: z.literal("review").optional(),
 });
 
 export async function cartCheck(req: Request, res: Response) {
@@ -100,7 +105,27 @@ export async function placeOrder(req: Request, res: Response) {
   res.status(201).json({ order: serialize(order) });
 }
 
-async function listPage(res: Response, where: object, q: { page: number; pageSize: number }) {
+// Other orders whose screenshots quote the same reference (any letter case), so a reused screenshot stands out.
+async function findDuplicates(orders: OrderWithItems[]): Promise<Map<number, string[]>> {
+  const refs = new Set(orders.flatMap((o) => o.paymentProofs.map((p) => p.reference?.trim().toLowerCase()).filter((r): r is string => !!r)));
+  const found = new Map<number, string[]>();
+  if (refs.size === 0) return found;
+  const same = await prisma.paymentProof.findMany({
+    where: { OR: [...refs].map((r) => ({ reference: { equals: r, mode: "insensitive" as const } })) },
+    select: { reference: true, order: { select: { number: true } } },
+  });
+  for (const o of orders) {
+    for (const p of o.paymentProofs) {
+      const ref = p.reference?.trim().toLowerCase();
+      if (!ref) continue;
+      const others = [...new Set(same.filter((s) => s.reference?.trim().toLowerCase() === ref && s.order.number !== o.number).map((s) => s.order.number))];
+      if (others.length) found.set(p.id, others);
+    }
+  }
+  return found;
+}
+
+async function listPage(res: Response, where: object, q: { page: number; pageSize: number }, withDuplicates = false) {
   const [total, rows] = await Promise.all([
     prisma.order.count({ where }),
     prisma.order.findMany({
@@ -111,7 +136,8 @@ async function listPage(res: Response, where: object, q: { page: number; pageSiz
       take: q.pageSize,
     }),
   ]);
-  res.json({ total, page: q.page, pageSize: q.pageSize, orders: rows.map(serialize) });
+  const duplicates = withDuplicates ? await findDuplicates(rows) : undefined;
+  res.json({ total, page: q.page, pageSize: q.pageSize, orders: rows.map((o) => serialize(o, duplicates)) });
 }
 
 export async function myOrders(req: Request, res: Response) {
@@ -120,7 +146,8 @@ export async function myOrders(req: Request, res: Response) {
 
 export async function allOrders(req: Request, res: Response) {
   const q = parseBody(listQuery, req.query);
-  await listPage(res, q.status ? { status: q.status } : {}, q);
+  const where = { ...(q.status ? { status: q.status } : {}), ...(q.payment === "review" ? { status: "PENDING", paymentProofs: { some: { status: "PENDING" } } } : {}) };
+  await listPage(res, where, q, true);
 }
 
 export async function cancelMyOrder(req: Request, res: Response) {

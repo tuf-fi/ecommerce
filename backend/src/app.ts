@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import helmet from "helmet";
 import cookieParser from "cookie-parser";
 import { authRouter } from "./routes/auth.routes";
 import { productsRouter } from "./routes/products.routes";
@@ -21,6 +22,7 @@ export const app = express();
 // Set TRUST_PROXY to the number of reverse proxies in front of the API (e.g. 1) so rate limits see real client addresses.
 if (process.env.TRUST_PROXY) app.set("trust proxy", Number(process.env.TRUST_PROXY) || process.env.TRUST_PROXY);
 
+app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
 app.use(cors({ origin: process.env.FRONTEND_ORIGIN ?? "http://localhost:3000", credentials: true }));
 app.use(apiLimiter);
 // CMS sections can be a few hundred KB of JSON.
