@@ -21,7 +21,7 @@ The code for the original roadmap (Phases 0–8) is built. What remains is mostl
 - [x] **"Custom" access level (C1):** removed from the Staff dropdown and the server. The four remaining levels are Full access, Inventory & orders only, Inventory only, Orders only.
 
 ### 3. Smaller improvements, all optional — C6 and C7
-- [ ] **Payment safeguards (C7):** warn on reused reference numbers, a "payments to review" badge, delete old screenshots after 90 days, and optionally let only administrators approve large orders.
+- [x] **Payment safeguards (C7):** built 2026-10-14. Reused-reference warning, amount and sender fields with a mismatch highlight, a "payments to review" badge on the Orders menu, screenshots deleted 90 days after an order closes, screenshots resized and stripped of metadata, and an optional administrator-only limit for large orders (`PROOF_APPROVER_MIN_TOTAL`). Tested against the running API; the new screens compile but nobody has used them yet.
 - [x] **Screens for data that is already stored:** Settings → Audit Log (administrators), Newsletter Subscribers and Contact Messages (administrators and staff with Full access).
 - [x] **Extras (C6):** newsletter unsubscribe links, order emails to customers, customer sign-out-everywhere, Google sign-in — all built. Two need your accounts to see working: emails need SMTP (B4) and Google sign-in needs a Google client id (`GOOGLE_CLIENT_ID` in `backend/.env` and `NEXT_PUBLIC_GOOGLE_CLIENT_ID` in `frontend/.env.local`); without them the button says it isn't available.
 - [ ] **Click through all of the above in a browser.** The backend for these was tested with real requests (including simultaneous orders on one code, and stock failures rolling a code back); the new screens compile and load but nobody has used them yet.
@@ -29,13 +29,40 @@ The code for the original roadmap (Phases 0–8) is built. What remains is mostl
 ### 4. Before you go live — Part D
 - [ ] **Secrets and accounts (D1, D2):** fresh secret keys; replace the test accounts with real ones; turn on two-factor for every administrator.
 - [ ] **Database (D3):** a managed Postgres with automatic backups, and a restore you have practised.
-- [ ] **Login cookies across your two addresses (D6):** the site and API need a shared parent domain (e.g. `www.yourshop.ph` and `api.yourshop.ph`), and the code needs a small `COOKIE_DOMAIN` change. Without it, admins look signed out on the live site.
-- [ ] **Start script (D4):** the API has no production `start` script yet.
+- [ ] **Login cookies across your two addresses (D6):** the code is done. You still need a shared parent domain (e.g. `www.yourshop.ph` and `api.yourshop.ph`), `COOKIE_DOMAIN=.yourshop.ph` on the API host, and a test on the real domains. Without it, admins look signed out on the live site.
+- [x] **Start script (D4):** added.
 - [ ] **Payment procedure (D7):** write down who checks screenshots, how fast, and how you match them to the real GCash / bank statement.
 - [ ] **Email sender (D8):** SPF/DKIM records so emails don't land in spam.
 - [ ] **Monitoring (D9) and a final real small order (D10).**
 
-**Suggested order:** do section 1 first because it shows what is actually broken; then server-side customer addresses; then the cookie-domain and start-script changes; then Part D.
+**Checked against the code (2026-10-14):**
+- Confirmed built: refund and reopen routes, server-side addresses and wishlist, customer sign-out-everywhere, Google sign-in, newsletter unsubscribe, shipping fee and the per-order voucher fields, and the "Payment to review" label on each order in the Orders list.
+- Confirmed **not** built:
+  - These were missing at the time of the audit and have since been built (see the tick marks below): the C7 safeguards, CMS conflict protection, email retries, graceful shutdown and the first automated tests.
+  - Still not built: the server-side dashboard stats.
+- Not checked: whether anything works when clicked through. Section 1 is still the first job.
+
+**Code gaps found in the audit (fix before or during launch prep):**
+- [x] **Cloudinary images will break several pages — fixed.** `res.cloudinary.com` is now allowed in `frontend/next.config.ts`. Original problem: `frontend/next.config.ts` is empty (no `images.remotePatterns`), but the product page (`app/shop/[id]`), cart, checkout, My Purchase, the order dialog and the quiz render product images with `next/image` and no `unoptimized`. A product whose image is a `res.cloudinary.com` URL makes those pages throw "hostname not configured". Fix: allow `res.cloudinary.com` in `next.config.ts`. Do this before B3, or every uploaded photo will break the product page.
+- [x] **`start` script — added** (`"start": "node dist/index.js"`). Built and started once locally, `/health` answered.
+- [x] **`COOKIE_DOMAIN` — added** to `cookieOptions` in `backend/src/lib/jwt.ts` and to `.env.example`. Still to do: set it on the host and test on the real domains (D6).
+- [x] **Automated tests — done.** `npm test` in `backend/` runs 15 tests: image detection, screenshot resizing, shipping fee, and the real order paths against a database (no overselling when orders arrive together, cancelling returns stock once, bad status moves refused, discount codes used once, code not spent when stock fails, code returned on cancel). They run against their own `cindyrella_test` database and refuse to run against any database not ending in `_test`. One-time setup: `docker exec cindyrella-db psql -U postgres -c "CREATE DATABASE cindyrella_test"`, then run `npx prisma migrate deploy` with `DATABASE_URL` pointed at it (or set `TEST_DATABASE_URL`). Re-run `migrate deploy` there after each new migration.
+- [x] **Security headers — added** (`helmet`, with cross-origin resource policy so the site can still load API images).
+- [x] **Duplicate Prisma config — removed** (`prisma7.config.ts`; nothing referenced it, `prisma.config.ts` is the one in use).
+- [x] **Email timeouts and retries — added.** A failed send is retried twice (after 1 s and 4 s) and connections time out after 10–20 s. A long outage still drops the mail, so keep watching the logs (D9).
+- [x] **Graceful shutdown — added.** On SIGTERM or Ctrl+C the API stops taking requests, finishes running ones, closes the database, and force-exits after 10 s.
+- [x] **Screenshots live in the database — size now capped.** Screenshots are stored as bytes in `ProofFile`, but are resized to at most 1600 px as WEBP and deleted 90 days after the order is delivered or cancelled. Mention the 90 days in your privacy page.
+
+**Checked and fine:**
+- The backend type-checks with no errors.
+- `JWT_SECRET` refuses to start if unset or `change-me`.
+- Cloudinary uploads are signed on the server, so the secret never reaches the browser. Staff can upload to products and content; customers can upload only avatars. The frontend checks real file bytes, a 3 MB limit and an allowed-format list.
+- Without Cloudinary keys the API answers 503 and the admin sees an unsaved preview.
+- Email falls back to the API terminal when SMTP isn't set, and a failed send never fails the request.
+- Orders: stale unpaid orders are auto-cancelled every 5 minutes, and orders awaiting review are skipped.
+- CORS is limited to `FRONTEND_ORIGIN`, and the request body limit is 1 MB.
+
+**Suggested order:** do section 1 first because it shows what is actually broken; then Part D (the `COOKIE_DOMAIN` and `start` code changes are already done). Pick up C7 and the other optional items after the browser pass shows what matters.
 
 ---
 
@@ -106,7 +133,7 @@ Nothing in the frontend has been clicked through in a browser yet. Do B1 first; 
 
 ### B2. Manual payment verification (customer sends a screenshot, you approve it)
 
-This replaces the earlier PayMongo plan. No external account is needed.
+No external payment account is needed.
 
 - [ ] **Set your payment details.** Admin → Settings → Payment Details (Administrators only). Enter the GCash / Maya number and/or bank account customers should pay, the account name, and a short message. Save. (Use your real numbers, or obvious test ones while testing.)
 - [ ] **Place an order as a customer.** After "Place Order" you land on My Purchase and the payment dialog opens by itself, showing the exact total and your payment details (the "Copy number" buttons should work).
@@ -123,6 +150,7 @@ This replaces the earlier PayMongo plan. No external account is needed.
 
 ### B3. Cloudinary (image uploads)
 
+- [ ] **First** allow `res.cloudinary.com` in `frontend/next.config.ts` (`images.remotePatterns`). Without it, the product page, cart, checkout and My Purchase crash on any Cloudinary image (see the audit note above).
 - [ ] Create a free Cloudinary account. From its dashboard copy the cloud name, API key and API secret into `backend/.env`:
   `CLOUDINARY_CLOUD_NAME=`, `CLOUDINARY_API_KEY=`, `CLOUDINARY_API_SECRET=`. Restart the API.
 - [ ] Admin → Inventory → edit a product → upload a photo → save. Reload; the photo should still be there, and the image address should be a `res.cloudinary.com` URL.
@@ -130,7 +158,7 @@ This replaces the earlier PayMongo plan. No external account is needed.
 
 ### B4. Real email (SMTP)
 
-- [ ] Pick a mail service (your host's SMTP, Gmail app password, Mailgun, etc.). Put the details in `backend/.env`: `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM`, and `CONTACT_INBOX` (where the Contact form should deliver). Restart the API.
+- [ ] Use Brevo (free plan). DigitalOcean blocks the usual SMTP ports (25, 465, 587), so set `SMTP_PORT=2525`. Put the details in `backend/.env`: `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM`, and `CONTACT_INBOX` (where the Contact form should deliver). Restart the API.
 - [ ] Submit the Contact form, the newsletter box and the welcome pop-up with your own address; check your inbox.
 - [ ] Forgot-password on a customer account: the code should now arrive by email instead of the API terminal.
 
@@ -213,7 +241,7 @@ Built as an administrator setting rather than env variables: `shipping` content 
 The invented admin data is gone (staff, customers, notifications, dashboard charts, sample orders and reviews); see "Mock data removal" in `BACKEND_PROGRESS.md`. Still open:
 - [x] **Customer delivery addresses (and wishlists) on the server — done.** (Original note: they lived only in the customer's browser.) Add `GET/POST/PATCH/DELETE /addresses` (customer, own addresses only, one default), load them after sign-in in `library/store.tsx`, and use them in `app/account/addresses/page.tsx`. The `Address` table already exists. Also save the wishlist per customer the same way if you want it to follow them across devices.
 - [ ] **Dashboard on the server** when order volume grows: a `GET /admin/stats?range=` doing the sums in SQL (`date_trunc('day', "createdAt")`, `groupBy`), instead of computing from up to 2,000 orders in the browser (`library/admin/dashboard.ts`).
-- [ ] **Save the location on the order** (`shipCity` at checkout) rather than reading it out of the free-text address (`library/admin/location.ts`).
+- [x] **Location saved on the order — done.** `Order.shipCity` is worked out from the address at checkout (`backend/src/lib/location.ts`), returned as `location`, and used by the dashboard map chart. Orders placed before this have none, so the dashboard still reads it from the address for those.
 - [ ] **Notification preferences, done properly.** The two fake pages were removed. Bring them back only together with the thing they control: store preferences on `Customer` / `StaffMember` (a JSON column), then have `sendMail` and the order/stock events check them before emailing.
 
 ### C6. Smaller improvements
@@ -222,7 +250,7 @@ The invented admin data is gone (staff, customers, notifications, dashboard char
   Original plan: Backend: the audit endpoint exists; add `GET /subscribers` and `GET /contact-messages` (staff, paginated). Frontend: pages under `app/admin/(panel)/` (e.g. `settings/audit`) with a table, filters (entity, id) and a page selector; copy the layout of the Stock Movements page.
 - [x] **Newsletter unsubscribe — done** (link in the welcome and promo emails; landing page `/unsubscribed`).
   Original plan: Put a link in every marketing email: `${API}/newsletter/unsubscribe?e=<email>&t=<token>` where `token = HMAC-SHA256(email, JWT_SECRET)` (hex). The handler recomputes the token with `timingSafeEqual`, deletes the `Subscriber` row, and redirects to a "you've been unsubscribed" page.
-- [ ] **CMS conflict protection.** Return each section's `updatedAt` in `GET /content` (it's already stored), pass it into `ContentProvider`, send it as `expectedUpdatedAt` with each save, and in `saveContent` use `updateMany({ where: { key, updatedAt: expected } })`; no match → 409 and a toast "Someone else edited this — reload".
+- [x] **CMS conflict protection — done.** Saves now carry the version the editor loaded, and a stale save gets a 409 and a "Someone else edited this" message. Original plan: Return each section's `updatedAt` in `GET /content` (it's already stored), pass it into `ContentProvider`, send it as `expectedUpdatedAt` with each save, and in `saveContent` use `updateMany({ where: { key, updatedAt: expected } })`; no match → 409 and a toast "Someone else edited this — reload".
 - [x] **Customer sign-out-everywhere — done** (Account → Change Password → "Sign out of all devices"; implemented with a per-customer token version rather than a sessions table). A "devices" list page is not built.
   Original plan: mirror the admin work: a `CustomerSession` table + `jti` in the customer JWT, a "devices" page, and `POST /auth/customer/logout-all`.
 - [x] **Google sign-in — built, untested with Google** (needs your client id, see above).
@@ -260,23 +288,24 @@ Do these after C1. Each one is independent.
 4. Decide whether to run `npm run seed-products` (sample catalogue) or add your real products in the admin panel.
 
 ### D3. Database
-1. Pick a managed Postgres (examples: Neon, Supabase, Railway, Render, AWS RDS). Create a database and copy its connection string into `DATABASE_URL` (use the "pooled" string only if your host recommends it for Prisma).
+1. Use DigitalOcean Managed PostgreSQL (1 GB single node, Singapore region, daily backups on). Create a database and copy its connection string into `DATABASE_URL` (use the "pooled" string only if your host recommends it for Prisma).
 2. Apply the schema: from `backend/` with `DATABASE_URL` pointing at it, run `npx prisma migrate deploy` (this applies the existing migrations without creating new ones).
 3. Backups: turn on the provider's automated daily backups. Also practise a restore once. A manual dump of the local database, as an example: `docker exec cindyrella-db pg_dump -U postgres cindyrella > backup.sql`, restore with `psql … < backup.sql` into an empty database.
 
 ### D4. Run the API in production
-1. Add a start script to `backend/package.json`: `"start": "node dist/index.js"` (there isn't one yet; the file already has `"build": "tsc"` and `"main": "dist/index.js"`).
+1. The `start` script (`"start": "node dist/index.js"`) is now in `backend/package.json`.
 2. Build and start: `npm ci`, `npm run build`, `npm start`. The `postinstall` script runs `prisma generate` automatically.
-3. Set these environment variables on the host: `NODE_ENV=production`, `PORT` (as the host requires), `DATABASE_URL`, `JWT_SECRET`, `TOTP_ENCRYPTION_KEY`, `FRONTEND_ORIGIN` (your website's exact address, e.g. `https://www.yourshop.ph`), `TRUST_PROXY=1`, the `CLOUDINARY_*`, `SMTP_*`, `MAIL_FROM`, `CONTACT_INBOX` values, `ORDER_HOLD_HOURS` (default 24).
+3. Set these environment variables on the host: `NODE_ENV=production`, `PORT` (as the host requires), `DATABASE_URL`, `JWT_SECRET`, `TOTP_ENCRYPTION_KEY`, `FRONTEND_ORIGIN` (your website's exact address, e.g. `https://www.yourshop.ph`), `TRUST_PROXY=1`, the `CLOUDINARY_*`, `SMTP_*`, `MAIL_FROM`, `CONTACT_INBOX` values, `ORDER_HOLD_HOURS` (default 24), and `PUBLIC_API_URL` (the API's public address, e.g. `https://api.yourshop.ph`; email unsubscribe links point at `localhost` without it). `GOOGLE_CLIENT_ID` is optional, and `APP_ENV=staging` only if you want the developer helpers on.
 4. Run only **one** API instance for now. The rate limits and the 5-minute cleanup job keep their state in memory; to run several instances, move the rate-limit counters to Redis first.
 
 ### D5. Run the website
 1. Deploy `frontend/` (any Next.js host; e.g. Vercel). Set `NEXT_PUBLIC_API_URL` to the API's public address and make sure the build can reach the API (the root layout fetches products and content on the server).
-2. Set `SITE_URL` in `frontend/library/siteConfig.ts` to the real domain (used for the sitemap and metadata).
+2. Set `NEXT_PUBLIC_SITE_URL` in the frontend's environment to the real domain (used for the sitemap and metadata). It is read in `frontend/library/siteConfig.ts` and falls back to `https://cindyrella.ph`; no code edit is needed. Also set `NEXT_PUBLIC_GOOGLE_CLIENT_ID` if you use Google sign-in.
+3. Allow `res.cloudinary.com` in `frontend/next.config.ts` (see the audit note near the top).
 
 ### D6. Make the login cookies work across your two addresses
-The site and the API need a **shared parent domain**, e.g. `www.yourshop.ph` (site) and `api.yourshop.ph` (API). This needs one code change that isn't in the project yet:
-1. In `backend/src/lib/jwt.ts`, add a `domain` to `cookieOptions`: `domain: process.env.COOKIE_DOMAIN || undefined,` and set `COOKIE_DOMAIN=.yourshop.ph` in production. (`clearAuthCookie` already reuses the same options, so logout will clear it correctly.)
+The site and the API need a **shared parent domain**, e.g. `www.yourshop.ph` (site) and `api.yourshop.ph` (API). The code change is now in the project; you still need to set the variable and test:
+1. `backend/src/lib/jwt.ts` now reads `COOKIE_DOMAIN`. Set `COOKIE_DOMAIN=.yourshop.ph` in production. (`clearAuthCookie` already reuses the same options, so logout will clear it correctly.)
 2. Without this, the API sets the cookie only for `api.yourshop.ph`, the website at `www.yourshop.ph` never sees it, and `frontend/proxy.ts` will think every admin is signed out.
 3. Test on the real domains: sign in as admin, open `/admin/dashboard`, reload, and confirm you stay signed in; sign in as a customer and confirm My Purchase loads.
 
@@ -310,6 +339,8 @@ The site and the API need a **shared parent domain**, e.g. `www.yourshop.ph` (si
 | What | Command |
 |---|---|
 | Run the API | `npm run dev` |
+| Run the tests | `npm test` (needs the `cindyrella_test` database, see the audit note in section 4) |
+| Run the tests | `npm test` (needs the `cindyrella_test` database, see the audit note in section 4) |
 | Type-check | `npm run typecheck` (frontend: `npx tsc --noEmit` in `frontend/`) |
 | Look at the database | `npx prisma studio` |
 | Apply database changes | `npx prisma migrate deploy` (production) / `npx prisma migrate dev` (development) |
