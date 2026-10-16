@@ -5,7 +5,6 @@ import { useStore } from "@/library/store";
 import PageHeading from "@/components/ui/PageHeading";
 import Modal from "@/components/ui/Modal";
 import ConfirmModal from "@/components/ui/ConfirmModal";
-import Tooltip from "@/components/ui/Tooltip";
 import { useAsyncAction, wait } from "@/library/useAsyncAction";
 import { useMounted } from "@/library/useMounted";
 import Skeleton, { SkeletonGroup } from "@/components/ui/Skeleton";
@@ -109,67 +108,39 @@ export default function SavedAddressesPage() {
                     <p className="max-w-[280px] text-[13px] leading-relaxed text-grey">No saved addresses yet. Add one to speed up checkout.</p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-                    {sortedAddresses.map((a) => {
+                <ul className="border border-ink/10 bg-white">
+                    {sortedAddresses.map((a, i) => {
                         const isCheckoutAddress = checkoutAddress?.id === a.id;
                         const linkBtn =
                             "text-[12px] font-semibold text-ink underline decoration-ink/25 underline-offset-4 transition hover:text-pink-btn hover:decoration-pink-btn focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-2";
-                        const iconBtn = "flex h-11 w-11 flex-none items-center justify-center rounded-full transition focus-visible:ring-2 focus-visible:ring-navy";
 
                         return (
-                            <div
+                            <li
                                 key={a.id}
-                                className={`flex flex-col border bg-white transition-colors ${a.isDefault ? "border-ink/30" : "border-ink/10 hover:border-ink/25"}`}
+                                className={`flex flex-col gap-3 border-b border-ink/10 px-5 py-4 last:border-b-0 sm:flex-row sm:items-start sm:gap-6 ${a.isDefault || isCheckoutAddress ? "bg-off shadow-[inset_2px_0_0_0_#0F2036]" : ""}`}
                             >
-                                <div className="flex items-start gap-4 p-5 pb-4 sm:p-6 sm:pb-5">
-                                    <span className={`flex h-10 w-10 flex-none items-center justify-center rounded-full ${a.isDefault ? "bg-navy text-white" : "bg-off text-grey"}`}>
-                                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
-                                            <path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0Z" />
-                                            <circle cx="12" cy="10" r="3" />
-                                        </svg>
-                                    </span>
+                                <span className="hidden w-6 flex-none pt-0.5 font-mono text-[11px] text-grey sm:block">{String(i + 1).padStart(2, "0")}</span>
 
-                                    <div className="min-w-0 flex-1">
-                                        <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
-                                            <span className="text-[16px] font-medium text-ink">{a.label}</span>
-                                            {a.isDefault && (
-                                                <span className="rounded-pill bg-navy px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-[.1em] text-white">Default</span>
-                                            )}
-                                        </div>
-                                        <p className="mt-1.5 text-[13.5px] leading-relaxed text-grey">{a.text}</p>
-                                    </div>
-
-                                    <div className="-mt-2.5 -mr-2.5 flex flex-none items-center">
-                                        <Tooltip label="Edit">
-                                            <button onClick={() => openEditModal(a.id)} aria-label="Edit address" className={`${iconBtn} text-ink/70 hover:bg-off hover:text-ink`}>
-                                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                                                    <path d="M12 20h9" />
-                                                    <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5Z" />
+                                <div className="min-w-0 flex-1">
+                                    <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+                                        <span className="text-[15px] font-medium text-ink">{a.label}</span>
+                                        {a.isDefault && (
+                                            <span className="rounded-pill bg-navy px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-[.1em] text-white">Default</span>
+                                        )}
+                                        {isCheckoutAddress && (
+                                            <span className="inline-flex items-center gap-1 rounded-pill bg-success/15 px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-[.1em] text-success-dark">
+                                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                                    <path d="M20 6 9 17l-5-5" />
                                                 </svg>
-                                            </button>
-                                        </Tooltip>
-                                        <Tooltip label="Remove">
-                                            <button onClick={() => setRemoveId(a.id)} aria-label="Remove address" className={`${iconBtn} text-alert/80 hover:bg-alert/5 hover:text-alert`}>
-                                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                                                    <path d="M4 7h16" />
-                                                    <path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
-                                                    <path d="M18 7l-.8 12.1a2 2 0 0 1-2 1.9H8.8a2 2 0 0 1-2-1.9L6 7" />
-                                                    <path d="M10 11v6M14 11v6" />
-                                                </svg>
-                                            </button>
-                                        </Tooltip>
+                                                Checkout
+                                            </span>
+                                        )}
                                     </div>
+                                    <p className="mt-1 text-[13.5px] leading-relaxed text-grey">{a.text}</p>
                                 </div>
 
-                                <div className="mt-auto flex min-h-[3.25rem] flex-wrap items-center gap-x-5 gap-y-1 border-t border-ink/10 px-5 py-3 sm:px-6">
-                                    {isCheckoutAddress ? (
-                                        <span className="inline-flex items-center gap-1.5 font-mono text-[10.5px] uppercase tracking-[.1em] text-success-dark">
-                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                                <path d="M20 6 9 17l-5-5" />
-                                            </svg>
-                                            Used at checkout
-                                        </span>
-                                    ) : (
+                                <div className="flex flex-none flex-wrap items-center gap-x-4 gap-y-1 sm:justify-end sm:pt-0.5">
+                                    {!isCheckoutAddress && (
                                         <button onClick={() => chooseForCheckout(a.id)} className={linkBtn}>
                                             Use for checkout
                                         </button>
@@ -179,21 +150,20 @@ export default function SavedAddressesPage() {
                                             Set as default
                                         </button>
                                     )}
+                                    <button onClick={() => openEditModal(a.id)} className={linkBtn}>
+                                        Edit
+                                    </button>
+                                    <button
+                                        onClick={() => setRemoveId(a.id)}
+                                        className="text-[12px] font-semibold text-alert underline decoration-alert/30 underline-offset-4 transition hover:decoration-alert focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-2"
+                                    >
+                                        Remove
+                                    </button>
                                 </div>
-                            </div>
+                            </li>
                         );
                     })}
-
-                    <button
-                        onClick={openAddModal}
-                        className="flex min-h-[9.5rem] flex-col items-center justify-center gap-2 border border-dashed border-ink/20 text-grey transition hover:border-pink-btn hover:text-pink-dark focus-visible:ring-2 focus-visible:ring-navy"
-                    >
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-                            <path d="M12 5v14M5 12h14" />
-                        </svg>
-                        <span className="text-[12.5px] font-semibold tracking-wide">Add a new address</span>
-                    </button>
-                </div>
+                </ul>
             )}
 
             <Modal open={modalOpen} onClose={saving ? () => {} : closeModal} maxWidth="max-w-[460px]">
@@ -261,35 +231,17 @@ function AddressesSkeleton() {
                     <Skeleton tone="outline" className="h-9 w-36" />
                 </div>
 
-                <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+                <div className="border border-ink/10 bg-white">
                     {Array.from({ length: 3 }).map((_, i) => (
-                        <div key={i} className="flex flex-col border border-ink/10">
-                            <div className="flex items-start gap-4 p-5 pb-4 sm:p-6 sm:pb-5">
-                                <Skeleton tone="soft" className="h-10 w-10 flex-none rounded-full" />
-                                <div className="min-w-0 flex-1">
-                                    <div className="flex items-center gap-2.5">
-                                        <Skeleton className="h-[15px] w-24" />
-                                        {i === 0 && <Skeleton tone="soft" className="h-5 w-16 rounded-pill" />}
-                                    </div>
-                                    <Skeleton tone="soft" className="mt-2.5 h-3 w-full max-w-[280px]" />
-                                    <Skeleton tone="soft" className="mt-2 h-3 w-2/3 max-w-[200px]" />
-                                </div>
-                                <div className="-mt-2.5 -mr-2.5 flex flex-none items-center">
-                                    {Array.from({ length: 2 }).map((_, b) => (
-                                        <span key={b} className="flex h-11 w-11 items-center justify-center">
-                                            <Skeleton tone="soft" className="h-[15px] w-[15px]" />
-                                        </span>
-                                    ))}
-                                </div>
+                        <div key={i} className="flex items-start gap-6 border-b border-ink/10 px-5 py-4 last:border-b-0">
+                            <Skeleton tone="soft" className="hidden h-3 w-6 sm:block" />
+                            <div className="min-w-0 flex-1">
+                                <Skeleton className="h-[15px] w-24" />
+                                <Skeleton tone="soft" className="mt-2.5 h-3 w-full max-w-[320px]" />
                             </div>
-                            <div className="mt-auto flex min-h-[3.25rem] items-center gap-5 border-t border-ink/10 px-5 py-3 sm:px-6">
-                                <Skeleton tone="soft" className="h-3 w-28" />
-                                {i !== 0 && <Skeleton tone="soft" className="h-3 w-24" />}
-                            </div>
+                            <Skeleton tone="soft" className="hidden h-3 w-40 sm:block" />
                         </div>
                     ))}
-
-                    <Skeleton tone="faint" className="min-h-[9.5rem] border border-dashed border-ink/20" />
                 </div>
             </SkeletonGroup>
         </div>
