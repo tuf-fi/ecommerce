@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
+import EmptyState from "@/components/ui/EmptyState";
 import Image from "next/image";
 import { ORDER_STATUS_TABS, Order, OrderStatus } from "@/library/orders";
 import { ApiError } from "@/library/api/client";
@@ -24,7 +24,7 @@ const PAGE_SIZE = 10;
 
 // Unit price/qty/total are clustered as one "amount" column, not split tracks.
 const ROW_GRID = "grid grid-cols-1 gap-4 sm:grid-cols-[minmax(0,1fr)_140px_170px] sm:items-center";
-const HEADER_GRID = "mb-3 hidden gap-4 border-b border-ink/10 pb-3 font-mono text-[10px] uppercase tracking-[.14em] text-grey sm:grid sm:grid-cols-[minmax(0,1fr)_140px_170px]";
+const HEADER_GRID = "mb-3 hidden gap-4 border-b border-ink/10 pb-3 font-mono text-label uppercase tracking-[.14em] text-grey sm:grid sm:grid-cols-[minmax(0,1fr)_140px_170px]";
 
 function formatDate(iso: string) {
     const [y, m, d] = iso.split("-").map(Number);
@@ -58,7 +58,7 @@ const STATUS_DOT: Record<OrderStatus, string> = {
 
 function StatusTag({ status }: { status: OrderStatus }) {
     return (
-        <span className="inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[.1em] text-ink/70">
+        <span className="inline-flex items-center gap-1.5 font-mono text-label uppercase tracking-[.1em] text-ink/70">
             <span className={`h-1.5 w-1.5 rounded-full ${STATUS_DOT[status]}`} />
             {status}
         </span>
@@ -81,7 +81,7 @@ function OrderTracker({ order, compact = false }: { order: Order; compact?: bool
                 <span
                     className={`flex h-10 w-10 items-center justify-center rounded-full border transition-all duration-500 ease-out ${
                         mounted ? "scale-100 opacity-100" : "scale-50 opacity-0"
-                    } ${isCancelled ? "border-ink/15 text-ink/30" : "border-pink-dark/30 text-pink-dark"}`}
+                    } ${isCancelled ? "border-ink/15 text-grey" : "border-pink-dark/30 text-pink-dark"}`}
                 >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                         {isCancelled ? (
@@ -95,7 +95,7 @@ function OrderTracker({ order, compact = false }: { order: Order; compact?: bool
                         )}
                     </svg>
                 </span>
-                <p className="text-center text-[12.5px] text-grey">{order.eta}</p>
+                <p className="text-center text-meta text-grey">{order.eta}</p>
             </div>
         );
     }
@@ -124,7 +124,7 @@ function OrderTracker({ order, compact = false }: { order: Order; compact?: bool
                         <div key={s} className="relative z-10 flex flex-1 flex-col items-center gap-2 text-center">
                             <div className={`relative flex items-center justify-center ${dotSize}`}>
                                 <div
-                                    className={`relative flex items-center justify-center rounded-full border text-[11px] ${dotSize} ${done ? "border-success bg-success text-white" : isNext ? "border-navy/40 bg-white text-navy/50" : "border-ink/15 bg-white text-ink/25"}`}
+                                    className={`relative flex items-center justify-center rounded-full border text-label ${dotSize} ${done ? "border-success bg-success text-white" : isNext ? "border-navy/40 bg-white text-navy/50" : "border-ink/15 bg-white text-grey"}`}
                                 >
                                     {done ? (
                                         <svg width={compact ? 8 : 10} height={compact ? 8 : 10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
@@ -137,7 +137,7 @@ function OrderTracker({ order, compact = false }: { order: Order; compact?: bool
                             </div>
                             {!compact && (
                                 <span
-                                    className={`text-[10.5px] transition-colors duration-500 ${
+                                    className={`text-label transition-colors duration-500 ${
                                         done || isNext ? "font-medium text-ink" : "text-grey/70"
                                     }`}
                                 >
@@ -148,7 +148,7 @@ function OrderTracker({ order, compact = false }: { order: Order; compact?: bool
                     );
                 })}
             </div>
-            <p className={`text-center text-grey ${compact ? "text-[11px]" : "text-[12.5px]"}`}>
+            <p className={`text-center text-grey ${compact ? "text-label" : "text-meta"}`}>
                 {compact ? `${order.steps[order.current]} — ${order.eta}` : order.eta}
             </p>
         </div>
@@ -269,11 +269,11 @@ export default function PurchasesPage() {
 
     return (
         <div>
-            <PageHeading action={<span className="font-mono text-[11px] text-grey">{filtered.length} Orders</span>}>
+            <PageHeading action={<span className="font-mono text-label text-grey">{filtered.length} Orders</span>}>
                 My Purchase
             </PageHeading>
 
-            <div className="mb-6 flex flex-wrap gap-x-7 gap-y-2 border-b border-ink/10 font-mono text-[11px] uppercase tracking-[.1em]">
+            <div className="mb-6 flex flex-wrap gap-x-7 gap-y-2 border-b border-ink/10 font-mono text-label uppercase tracking-[.1em]">
                 {ORDER_STATUS_TABS.map((t) => (
                     <button
                         key={t}
@@ -297,23 +297,7 @@ export default function PurchasesPage() {
             </div>
 
             {filtered.length === 0 ? (
-                <div className="flex flex-col items-center gap-4 border border-ink/10 py-16 text-center">
-                    <span className="flex h-11 w-11 items-center justify-center rounded-full bg-pink-soft text-pink-dark">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                            <rect x="4" y="4" width="16" height="17" rx="1.5" />
-                            <path d="M8 9h8M8 13h8M8 17h5" />
-                        </svg>
-                    </span>
-                    <p className="max-w-[280px] text-[13px] leading-relaxed text-grey">
-                        {query ? "No orders match your search." : "No orders in this status."}
-                    </p>
-                    <Link
-                        href="/shop"
-                        className="border border-ink/15 px-6 py-3 text-[13px] font-semibold uppercase tracking-wide text-ink transition hover:border-pink-btn hover:bg-pink-btn hover:text-white"
-                    >
-                        Browse the Catalogue
-                    </Link>
-                </div>
+                <EmptyState title={query ? "No matches" : "No orders here"} message={query ? "No orders match your search." : "No orders in this status."} action={{ label: "Browse the catalogue", href: "/shop" }} />
             ) : (
                 <>
                     <div className={HEADER_GRID}>
@@ -336,12 +320,15 @@ export default function PurchasesPage() {
                                     tabIndex={0}
                                     onClick={() => setSelectedOrderNo(no)}
                                     onKeyDown={(e) => {
-                                        if (e.key === "Enter" || e.key === " ") setSelectedOrderNo(no);
+                                        if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) {
+                                            e.preventDefault();
+                                            setSelectedOrderNo(no);
+                                        }
                                     }}
                                     className="-mx-3 cursor-pointer px-3 py-4 transition hover:bg-off/50"
                                 >
                                     <div className="mb-3 flex items-center justify-between gap-4">
-                                        <span className="font-mono text-[11px] text-grey">
+                                        <span className="font-mono text-label text-grey">
                                             Order {no} <span className="text-ink/20">·</span> {formatDate(o.date)}
                                         </span>
                                         <StatusTag status={o.status} />
@@ -355,21 +342,21 @@ export default function PurchasesPage() {
                                                 </div>
                                             )}
                                             <div className="min-w-0">
-                                                <div className="truncate text-[13.5px] text-ink">{o.product}</div>
+                                                <div className="truncate text-small text-ink">{o.product}</div>
                                                 {p && (
-                                                    <div className="font-mono text-[10px] uppercase tracking-[.14em] text-grey">{p.category}</div>
+                                                    <div className="font-mono text-label uppercase tracking-[.14em] text-grey">{p.category}</div>
                                                 )}
                                             </div>
                                         </div>
 
                                         {/* Unit price, qty and total are one calculation, so they're one visual cluster. */}
                                         <div className="flex items-center justify-between sm:block sm:text-right">
-                                            <span className="font-mono text-[11px] uppercase text-grey sm:hidden">Amount</span>
+                                            <span className="font-mono text-label uppercase text-grey sm:hidden">Amount</span>
                                             <div className="sm:text-right">
-                                                <div className="font-mono text-[11px] text-grey">
+                                                <div className="font-mono text-label text-grey">
                                                     {o.items && o.items.length > 1 ? `${o.qty} items` : `₱${unitPrice.toLocaleString()} × ${o.qty}`}
                                                 </div>
-                                                <div className="font-mono text-[14px] font-semibold text-ink">₱{o.total.toLocaleString()}</div>
+                                                <div className="font-mono text-body font-semibold text-ink">₱{o.total.toLocaleString()}</div>
                                             </div>
                                         </div>
 
@@ -380,7 +367,7 @@ export default function PurchasesPage() {
                                                         e.stopPropagation();
                                                         runAction(primary, no);
                                                     }}
-                                                    className="bg-pink-btn px-4 py-2 text-[11.5px] font-semibold text-white transition hover:bg-pink-btn-hover"
+                                                    className="ui-btn ui-btn-accent ui-btn-sm"
                                                 >
                                                     {primary}
                                                 </button>
@@ -396,22 +383,42 @@ export default function PurchasesPage() {
 
             <Pagination page={currentPage} totalPages={totalPages} onChange={setPage} />
 
-            <Modal open={selectedOrderNo !== null} onClose={() => setSelectedOrderNo(null)} maxWidth="max-w-[460px]">
+            <Modal
+                open={selectedOrderNo !== null}
+                onClose={() => setSelectedOrderNo(null)}
+                maxWidth="max-w-[460px]"
+                eyebrow="Order"
+                heading={selectedOrderNo ?? "Order"}
+                footer={
+                    selectedOrderNo && orders[selectedOrderNo] && primaryAction(orders[selectedOrderNo]) ? (
+                        <>
+                            <div className="sm:mr-auto">
+                                <p className="font-mono text-label uppercase tracking-[.14em] text-grey">Order total</p>
+                                <p className="font-mono text-body font-semibold text-ink">₱{orders[selectedOrderNo].total.toLocaleString()}</p>
+                            </div>
+                            {orders[selectedOrderNo].awaitingPayment && (
+                                <button onClick={() => setCancelNo(selectedOrderNo)} className="ui-btn ui-btn-ghost ui-btn-sm">
+                                    Cancel this order
+                                </button>
+                            )}
+                            <button onClick={() => runAction(primaryAction(orders[selectedOrderNo])!, selectedOrderNo)} className="ui-btn ui-btn-primary">
+                                {primaryAction(orders[selectedOrderNo])}
+                            </button>
+                        </>
+                    ) : undefined
+                }
+            >
                 {selectedOrderNo && (() => {
                     const o = orders[selectedOrderNo];
-                    const primary = primaryAction(o);
 
                     return (
                         <>
-                            <div className="border-b border-ink/10 px-5 pb-5 pt-7 sm:px-8">
-                                <p className="font-mono text-[10px] uppercase tracking-[.14em] text-grey">Order {selectedOrderNo}</p>
-                                <div className="mt-1.5 flex items-center justify-between gap-4">
-                                    <StatusTag status={o.status} />
-                                    <span className="text-[12.5px] text-grey">{formatDate(o.date)}</span>
-                                </div>
+                            <div className="flex items-center justify-between gap-4 border-b border-ink/10 pb-5">
+                                <StatusTag status={o.status} />
+                                <span className="text-meta text-grey">{formatDate(o.date)}</span>
                             </div>
 
-                            <div className="px-5 py-6 sm:px-8">
+                            <div className="pt-6">
                                 <div className="flex flex-col gap-4">
                                     {(o.items ?? []).map((line) => {
                                         const lp = getProduct(line.productId);
@@ -423,65 +430,41 @@ export default function PurchasesPage() {
                                                     </div>
                                                 )}
                                                 <div className="min-w-0 flex-1">
-                                                    <div className="truncate text-[14px] text-ink">{line.name}</div>
-                                                    {lp && <div className="font-mono text-[10px] uppercase tracking-[.14em] text-grey">{lp.category}</div>}
-                                                    <div className="mt-1 font-mono text-[12.5px] text-grey">
+                                                    <div className="truncate text-body text-ink">{line.name}</div>
+                                                    {lp && <div className="font-mono text-label uppercase tracking-[.14em] text-grey">{lp.category}</div>}
+                                                    <div className="mt-1 font-mono text-meta text-grey">
                                                         ₱{line.unitPrice.toLocaleString()} × {line.qty}
                                                     </div>
                                                 </div>
-                                                <span className="font-mono text-[15px] font-semibold text-ink">₱{(line.unitPrice * line.qty).toLocaleString()}</span>
+                                                <span className="font-mono text-body font-semibold text-ink">₱{(line.unitPrice * line.qty).toLocaleString()}</span>
                                             </div>
                                         );
                                     })}
                                 </div>
 
                                 {o.subtotal !== undefined && ((o.discount ?? 0) > 0 || (o.shippingFee ?? 0) > 0) && (
-                                    <div className="mt-6 flex flex-col gap-1.5 border-t border-ink/10 pt-6 text-[13px] text-grey">
+                                    <div className="mt-6 flex flex-col gap-1.5 border-t border-ink/10 pt-6 text-small text-grey">
                                         <div className="flex justify-between"><span>Items</span><span className="font-mono text-ink">₱{o.subtotal.toLocaleString()}</span></div>
                                         {(o.discount ?? 0) > 0 && (
-                                            <div className="flex justify-between"><span>Discount{o.voucherCode ? ` · ${o.voucherCode}` : ""}</span><span className="font-mono text-ink">−₱{o.discount!.toLocaleString()}</span></div>
+                                            <div className="flex justify-between"><span>Discount{o.voucherCode ? ` · ${o.voucherCode}` : ""}</span><span className="font-mono text-success-dark">−₱{o.discount!.toLocaleString()}</span></div>
                                         )}
-                                        <div className="flex justify-between"><span>Shipping</span><span className="font-mono text-ink">{(o.shippingFee ?? 0) > 0 ? `₱${o.shippingFee!.toLocaleString()}` : "Free"}</span></div>
+                                        <div className="flex justify-between"><span>Shipping</span><span className={`font-mono ${(o.shippingFee ?? 0) > 0 ? "text-ink" : "text-success-dark"}`}>{(o.shippingFee ?? 0) > 0 ? `₱${o.shippingFee!.toLocaleString()}` : "Free"}</span></div>
                                     </div>
                                 )}
 
                                 {o.refund && (
-                                    <p className="mt-6 border-l-2 border-pink-dark bg-pink-soft/40 px-3 py-2 text-[13px] text-ink">
+                                    <p className="mt-6 border-l-2 border-pink-dark bg-pink-soft/40 px-3 py-2 text-small text-ink">
                                         We refunded ₱{o.refund.amount.toLocaleString()} on {new Date(o.refund.at).toLocaleDateString([], { dateStyle: "medium" })}
                                         {o.refund.note ? ` — ${o.refund.note}` : ""}. It may take a little while to show in your account.
                                     </p>
                                 )}
 
                                 <div className="mt-6 border-t border-ink/10 pt-6">
-                                    <p className="mb-1 font-mono text-[10px] uppercase tracking-[.14em] text-grey">Status</p>
+                                    <p className="mb-1 font-mono text-label uppercase tracking-[.14em] text-grey">Status</p>
                                     <OrderTracker order={o} />
                                 </div>
                             </div>
 
-                            {primary && (
-                                <div className="sticky bottom-0 z-10 flex flex-wrap items-center justify-between gap-x-4 gap-y-3 border-t border-ink/10 bg-off px-5 py-5 sm:px-8">
-                                    <div>
-                                        <p className="font-mono text-[10px] uppercase tracking-[.14em] text-grey">Order Total</p>
-                                        <p className="font-mono text-[15px] font-semibold text-ink">₱{o.total.toLocaleString()}</p>
-                                    </div>
-                                    <div className="ml-auto flex flex-wrap items-center justify-end gap-x-5 gap-y-2">
-                                        {o.awaitingPayment && (
-                                            <button
-                                                onClick={() => setCancelNo(selectedOrderNo)}
-                                                className="text-[12.5px] text-grey underline underline-offset-2 transition hover:text-ink"
-                                            >
-                                                Cancel this order
-                                            </button>
-                                        )}
-                                        <button
-                                            onClick={() => runAction(primary, selectedOrderNo)}
-                                            className="bg-pink-btn px-6 py-3 text-[12.5px] font-semibold uppercase tracking-wide text-white transition hover:bg-pink-btn-hover"
-                                        >
-                                            {primary}
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
                         </>
                     );
                 })()}

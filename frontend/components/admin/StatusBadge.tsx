@@ -11,7 +11,7 @@ const TONE_CLASSES: Record<BadgeTone, string> = {
 
 export default function StatusBadge({ label, tone }: { label: string; tone: BadgeTone }) {
     return (
-        <span className={`inline-block rounded-pill px-2.5 py-1 text-[11px] font-semibold tracking-[.01em] ${TONE_CLASSES[tone]}`}>
+        <span className={`inline-block rounded-pill px-2.5 py-1 text-label font-semibold tracking-[.01em] ${TONE_CLASSES[tone]}`}>
             {label}
         </span>
     );

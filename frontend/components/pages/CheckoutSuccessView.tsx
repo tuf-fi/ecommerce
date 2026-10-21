@@ -25,16 +25,16 @@ function Content() {
             <h1 className="mt-8 mb-0 max-w-none font-display text-[clamp(32px,7vw,52px)] leading-[1.02] font-normal tracking-tight text-ink">
                 Checkout is <em className="pink-highlight font-normal">successful.</em>
             </h1>
-            <p className="mt-4 mb-0 max-w-[330px] text-[13.5px] leading-relaxed text-balance text-grey">We&apos;ll check your payment and confirm your order soon.</p>
-            <p className="mt-5 mb-0 font-mono text-[11px] tracking-[.14em] text-grey uppercase">Order {order}</p>
+            <p className="mt-4 mb-0 max-w-[330px] text-small leading-relaxed text-balance text-grey">We&apos;ll check your payment and confirm your order soon.</p>
+            <p className="mt-5 mb-0 font-mono text-label tracking-[.14em] text-grey uppercase">Order {order}</p>
 
             <Link
                 href="/shop"
-                className="mt-12 inline-flex h-12 w-full items-center justify-center bg-navy text-[12.5px] font-semibold tracking-[.06em] text-white uppercase transition hover:bg-pink-dark sm:w-[260px]"
+                className="ui-btn ui-btn-primary ui-btn-sm mt-12 w-full sm:w-[260px]"
             >
                 Continue shopping
             </Link>
-            <Link href="/account/purchases" className="mt-5 text-[12.5px] text-grey underline underline-offset-4 transition-colors hover:text-pink-dark">
+            <Link href="/account/purchases" className="mt-5 text-meta text-grey underline underline-offset-4 transition-colors hover:text-pink-dark">
                 Go to my orders
             </Link>
         </div>

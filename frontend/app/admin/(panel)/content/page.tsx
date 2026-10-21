@@ -31,7 +31,7 @@ export default function ContentPage() {
 
     return (
         <div>
-            <div className="mb-6 flex gap-x-7 overflow-x-auto border-b border-ink/10 font-mono text-[11px] tracking-[.1em] whitespace-nowrap uppercase [scrollbar-width:none] sm:mb-8 sm:flex-wrap sm:gap-y-2 sm:overflow-visible [&::-webkit-scrollbar]:hidden">
+            <div className="mb-6 flex gap-x-7 overflow-x-auto border-b border-ink/10 font-mono text-label tracking-[.1em] whitespace-nowrap uppercase [scrollbar-width:none] sm:mb-8 sm:flex-wrap sm:gap-y-2 sm:overflow-visible [&::-webkit-scrollbar]:hidden">
                 {TABS.map((t) => (
                     <button
                         key={t.key}

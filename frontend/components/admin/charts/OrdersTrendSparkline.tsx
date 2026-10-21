@@ -16,7 +16,7 @@ function OrdersTooltip({ active, payload, label }: { active?: boolean; payload?:
     const count = Number(payload[0].value ?? 0);
 
     return (
-        <div className="rounded bg-ink px-2.5 py-1.5 font-mono text-[11px] whitespace-nowrap text-white shadow-card">
+        <div className="rounded bg-ink px-2.5 py-1.5 font-mono text-label whitespace-nowrap text-white shadow-card">
             <span className="text-grey-light">{label}</span>
             <span className="ml-2">
                 {count} {count === 1 ? "order" : "orders"}

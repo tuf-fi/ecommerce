@@ -39,12 +39,12 @@ function FormattingGuide() {
             <dl className="space-y-2.5">
                 {rows.map((r) => (
                     <div key={r.marker} className="grid grid-cols-[96px_1fr] items-baseline gap-3">
-                        <dt className="font-mono text-[11.5px] break-words text-ink">{r.marker}</dt>
-                        <dd className="text-[12px] leading-snug text-grey">{r.meaning}</dd>
+                        <dt className="font-mono text-label break-words text-ink">{r.marker}</dt>
+                        <dd className="text-meta leading-snug text-grey">{r.meaning}</dd>
                     </div>
                 ))}
             </dl>
-            <pre className="mt-3.5 border-t border-ink/10 pt-3 font-mono text-[11px] leading-relaxed whitespace-pre-wrap text-grey">{example}</pre>
+            <pre className="mt-3.5 border-t border-ink/10 pt-3 font-mono text-label leading-relaxed whitespace-pre-wrap text-grey">{example}</pre>
         </div>
     );
 }

@@ -16,7 +16,7 @@ The intended stack, already decided in `frontend/CLAUDE.md`:
 
 - **API:** Node/Express, separate service from the Next.js app
 - **DB:** PostgreSQL + Prisma
-- **Payments:** PayMongo (GCash, Maya, cards)
+- **Payments:** manual verification (GCash, Maya, bank transfer + screenshot)
 - **Media:** Cloudinary
 - **Auth:** JWT + httpOnly cookies, separate customer/admin roles
 
@@ -78,7 +78,6 @@ backend/
     services/
       stock.service.ts       (stock-adjustment + transaction logic)
       orders.service.ts
-      paymongo.service.ts
       email.service.ts
       cloudinary.service.ts
       audit.service.ts
@@ -373,48 +372,9 @@ one locally, the difference between "the frontend prevents it" and "the database
 
 ---
 
-## Phase 5 — Payments (PayMongo)
+## Phase 5 — Payments (manual verification)
 
-> **Superseded.** The shop has no PayMongo account: customers pay by transfer, upload a screenshot, and an admin verifies it. The PayMongo steps below were not used and the code was removed. See `BACKEND_PROGRESS.md` (Phase 5) for what was built instead.
-
-**Why this order:** depends on Phase 4's order creation existing first — payment status updates an
-order that must already exist.
-
-**Tasks**
-
-- [ ] Get PayMongo test-mode API keys, read their checkout-session or payment-intent docs. PayMongo
-      has no official Node SDK — call its REST API directly with a plain HTTP client:
-
-  ```powershell
-  npm install axios
-  ```
-
-- [ ] `POST /orders/:id/payment-intent` — creates a PayMongo payment intent/checkout session for
-      GCash/Maya/card, returns the client-facing redirect/token to the frontend cart page.
-- [ ] Webhook endpoint (`POST /webhooks/paymongo`) — PayMongo calls this when payment succeeds or
-      fails; **verify the webhook signature** (don't trust an unverified POST body to mark an order
-      paid — this is a real fraud vector, not a hypothetical).
-- [ ] On confirmed payment, transition the order to "Paid" and trigger whatever your Phase 4
-      decision was for stock (if you chose "decrement on paid" rather than "decrement on order
-      creation" — reconsider this now that payment is real, since "decrement on creation" risks
-      holding stock hostage for abandoned/unpaid carts).
-
-**Where the code goes**
-
-- Backend — create: `backend/src/services/paymongo.service.ts`,
-  `backend/src/controllers/payments.controller.ts`, `backend/src/routes/webhooks.routes.ts`.
-- Backend — edit: `backend/src/app.ts` (mount webhook route at `/webhooks`; note this route needs
-  the *raw* request body for signature verification, not the JSON-parsed one — configure that
-  route's body parser separately from the rest of `app.ts`).
-- Frontend — create: `frontend/library/api/payments.ts`.
-- Frontend — edit: `app/cart/page.tsx` (payment step calls `POST /orders/:id/payment-intent` and
-  redirects/embeds the PayMongo checkout).
-
-**Done when:** a test-mode GCash/card payment in PayMongo's sandbox flips your order's status from
-pending to paid via the webhook, without you manually updating anything.
-
-**Concepts you'll practice:** third-party payment integration, webhook signature verification,
-idempotency (a webhook can fire more than once — your handler must not double-process it).
+> **Superseded.** There is no payment-gateway account: customers pay by transfer, upload a screenshot, and an admin verifies it. See `BACKEND_PROGRESS.md` (Phase 5) for what was built.
 
 ---
 

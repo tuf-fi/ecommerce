@@ -5,10 +5,13 @@ import { toast } from "sonner";
 import { SettingsSection } from "@/components/admin/settings/SettingsSection";
 import { BTN_HEADER_ACTION, TABLE_HEAD_ROW, TABLE_TD, TABLE_TH } from "@/components/admin/formClasses";
 import ListPanel from "@/components/admin/ListPanel";
+import Pagination from "@/components/ui/Pagination";
 import { useMounted } from "@/library/useMounted";
 import Skeleton, { SkeletonGroup, SkeletonTable } from "@/components/ui/Skeleton";
 import { ApiError } from "@/library/api/client";
 import { AdminSessionInfo, listAdminSessions, revokeAdminSession, revokeOtherAdminSessions } from "@/library/api/auth";
+
+const PAGE_SIZE = 10;
 
 // Best-effort "Chrome on Windows" from a User-Agent string; falls back to what little can be read.
 function describeDevice(userAgent: string | null): string {
@@ -33,6 +36,7 @@ const message = (err: unknown) => (err instanceof ApiError ? err.message : "Coul
 export default function AdminSessionsSettingsPage() {
     const mounted = useMounted();
     const [sessions, setSessions] = useState<AdminSessionInfo[] | null>(null);
+    const [page, setPage] = useState(1);
 
     const load = useCallback(async () => {
         try {
@@ -72,6 +76,9 @@ export default function AdminSessionsSettingsPage() {
     if (!mounted || sessions === null) return <SessionsSettingsSkeleton />;
 
     const others = sessions.filter((s) => !s.current).length;
+    const totalPages = Math.max(1, Math.ceil(sessions.length / PAGE_SIZE));
+    const currentPage = Math.min(page, totalPages);
+    const paged = sessions.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
     return (
         // Uses the same PageHeading `action` slot as Purchases/Addresses, not a floating button.
@@ -83,7 +90,7 @@ export default function AdminSessionsSettingsPage() {
                 </button>
             }
         >
-            <ListPanel minWidth={760} footer={<>Showing {sessions.length} of {sessions.length}</>}>
+            <ListPanel minWidth={760} footer={<>Showing {paged.length} of {sessions.length}</>}>
                 <thead>
                     <tr className={TABLE_HEAD_ROW}>
                         {["Device", "IP address", "Signed in", "Last active", ""].map((h, i) => (
@@ -92,20 +99,20 @@ export default function AdminSessionsSettingsPage() {
                     </tr>
                 </thead>
                 <tbody>
-                    {sessions.map((s) => (
+                    {paged.map((s) => (
                         <tr key={s.id}>
-                            <td className={`${TABLE_TD} text-[13px] font-medium whitespace-nowrap text-ink`}>
+                            <td className={`${TABLE_TD} text-small font-medium whitespace-nowrap text-ink`}>
                                 {describeDevice(s.userAgent)}
-                                {s.current && <span className="ml-2 font-mono text-[10.5px] font-normal tracking-[.1em] text-success-dark uppercase">This device</span>}
+                                {s.current && <span className="ml-2 font-mono text-label font-normal tracking-[.1em] text-success-dark uppercase">This device</span>}
                             </td>
-                            <td className={`${TABLE_TD} font-mono text-[12px] whitespace-nowrap text-grey`}>{s.ip ?? "—"}</td>
-                            <td className={`${TABLE_TD} font-mono text-[12px] whitespace-nowrap text-grey`}>{timeAgo(s.createdAt)}</td>
-                            <td className={`${TABLE_TD} font-mono text-[12px] whitespace-nowrap ${s.current ? "text-success-dark" : "text-grey"}`}>
+                            <td className={`${TABLE_TD} font-mono text-meta whitespace-nowrap text-grey`}>{s.ip ?? "—"}</td>
+                            <td className={`${TABLE_TD} font-mono text-meta whitespace-nowrap text-grey`}>{timeAgo(s.createdAt)}</td>
+                            <td className={`${TABLE_TD} font-mono text-meta whitespace-nowrap ${s.current ? "text-success-dark" : "text-grey"}`}>
                                 {s.current ? "Active now" : timeAgo(s.lastSeenAt)}
                             </td>
                             <td className={`${TABLE_TD} w-px text-right`}>
                                 {!s.current && (
-                                    <button onClick={() => signOut(s.id)} className="border border-ink/15 px-3.5 py-2 text-[12.5px] whitespace-nowrap text-ink transition hover:bg-off">
+                                    <button onClick={() => signOut(s.id)} className="ui-btn ui-btn-secondary ui-btn-sm">
                                         Sign out
                                     </button>
                                 )}
@@ -114,6 +121,7 @@ export default function AdminSessionsSettingsPage() {
                     ))}
                 </tbody>
             </ListPanel>
+            <Pagination page={currentPage} totalPages={totalPages} onChange={setPage} />
         </SettingsSection>
     );
 }

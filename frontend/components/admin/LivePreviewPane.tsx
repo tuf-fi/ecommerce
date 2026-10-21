@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import PreviewFrame from "@/components/admin/PreviewFrame";
 
 type Device = "desktop" | "tablet" | "mobile";
 
@@ -61,7 +62,7 @@ export default function LivePreviewPane({
     return (
         <div className={`flex flex-col border-b border-ink/10 bg-white ${scroll ? "lg:min-h-0 lg:flex-1" : ""}`}>
             {/* Fixed h-[52px] (not py-*) to line up exactly with ContentEditorShell's rail header, which uses the same explicit height. */}
-            <div className="flex h-[52px] flex-none items-center justify-between gap-3 border-b border-ink/10 px-4 font-mono sm:px-5 text-[10.5px] tracking-[.06em] text-grey uppercase">
+            <div className="flex h-[52px] flex-none items-center justify-between gap-3 border-b border-ink/10 px-4 font-mono sm:px-5 text-label tracking-[.06em] text-grey uppercase">
                 <div className="flex min-w-0 items-center gap-1.5">
                     <span className="h-1.5 w-1.5 flex-none animate-pulse rounded-full bg-success" />
                     <span className="min-w-0 truncate">Live Preview — {label}</span>
@@ -100,7 +101,8 @@ export default function LivePreviewPane({
                         device === "desktop" ? "border-transparent" : "border-ink/10"
                     }`}
                 >
-                    {children}
+                    {/* Tablet and mobile render in a frame of that width, so breakpoints respond to it like on a real device. */}
+                    {device === "desktop" ? children : <PreviewFrame key={device}>{children}</PreviewFrame>}
                 </div>
             </div>
         </div>

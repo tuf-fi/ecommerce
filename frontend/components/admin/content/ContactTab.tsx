@@ -75,8 +75,8 @@ export default function ContactTab() {
                 puts the Journal toggle at the top of the Blog tab. */}
             <div className="mb-6 flex items-center justify-between gap-6 border border-ink/10 bg-white px-5 py-4">
                 <div>
-                    <div className="text-[13.5px] font-medium text-ink">Show the Contact section</div>
-                    <p className="mt-0.5 text-[12px] text-grey">
+                    <div className="text-small font-medium text-ink">Show the Contact section</div>
+                    <p className="mt-0.5 text-meta text-grey">
                         Hiding it also removes its link from the site navigation. The details below still feed the footer either way.
                     </p>
                 </div>
@@ -93,8 +93,8 @@ export default function ContactTab() {
                                 onClick={() => setSection(s.key)}
                                 className={`flex-none px-4 py-3.5 text-left whitespace-nowrap transition sm:px-5 sm:py-4 sm:whitespace-normal ${active ? "bg-navy" : "hover:bg-off/60"}`}
                             >
-                                <div className={`text-[13.5px] font-medium ${active ? "text-white" : "text-ink"}`}>{s.label}</div>
-                                <div className={`mt-0.5 hidden text-[11.5px] sm:block ${active ? "text-white/70" : "text-grey"}`}>{s.caption}</div>
+                                <div className={`text-small font-medium ${active ? "text-white" : "text-ink"}`}>{s.label}</div>
+                                <div className={`mt-0.5 hidden text-label sm:block ${active ? "text-white/70" : "text-grey"}`}>{s.caption}</div>
                             </button>
                         );
                     })}
@@ -104,8 +104,8 @@ export default function ContactTab() {
                 {section === "headline" && (
                 <div>
                 <div className="mb-5">
-                    <h3 className="m-0 text-[15px] font-medium text-ink">Section Headline</h3>
-                    <p className="mt-1 text-[12px] text-grey">The two-line heading above the contact form.</p>
+                    <h3 className="m-0 text-body font-medium text-ink">Section Headline</h3>
+                    <p className="mt-1 text-meta text-grey">The two-line heading above the contact form.</p>
                 </div>
 
                 <ListPanel minWidth={480}>
@@ -115,7 +115,7 @@ export default function ContactTab() {
                                     <th
                                         key={h}
                                         scope="col"
-                                        className="border-b border-ink/10 px-5 py-3.5 text-left font-mono text-[11px] tracking-[.12em] text-grey uppercase"
+                                        className="border-b border-ink/10 px-5 py-3.5 text-left font-mono text-label tracking-[.12em] text-grey uppercase"
                                     >
                                         {h}
                                     </th>
@@ -127,16 +127,17 @@ export default function ContactTab() {
                                 const error = errors[f.key];
                                 return (
                                     <tr key={f.key} className="transition hover:bg-off/40">
-                                        <td className="border-b border-ink/10 px-5 py-3 text-[13.5px] font-medium text-ink">{f.label}</td>
+                                        <td className="border-b border-ink/10 px-5 py-3 text-small font-medium text-ink">{f.label}</td>
                                         <td className="border-b border-ink/10 px-5 py-3">
                                             <input
                                                 value={contactDraft[f.key]}
                                                 onChange={(e) => handleContactChange({ [f.key]: e.target.value } as Partial<ContactContent>)}
                                                 aria-label={f.label}
                                                 aria-invalid={error ? true : undefined}
+                                                aria-describedby={error ? `contact-error-${f.key}` : undefined}
                                                 className={`${FIELD_INPUT} h-9 max-w-[420px] py-1.5 ${error ? FIELD_INPUT_INVALID : ""}`}
                                             />
-                                            {error && <p className={FIELD_ERROR}>{error}</p>}
+                                            {error && <p id={`contact-error-${f.key}`} role="alert" className={FIELD_ERROR}>{error}</p>}
                                         </td>
                                     </tr>
                                 );
@@ -155,8 +156,8 @@ export default function ContactTab() {
                 {section === "details" && (
                 <div>
                 <div className="mb-5">
-                    <h3 className="m-0 text-[15px] font-medium text-ink">Contact Details</h3>
-                    <p className="mt-1 text-[12px] text-grey">Read by both the Contact section and the footer — one copy, two places.</p>
+                    <h3 className="m-0 text-body font-medium text-ink">Contact Details</h3>
+                    <p className="mt-1 text-meta text-grey">Read by both the Contact section and the footer — one copy, two places.</p>
                 </div>
 
                 <ListPanel minWidth={480}>
@@ -166,7 +167,7 @@ export default function ContactTab() {
                                     <th
                                         key={h}
                                         scope="col"
-                                        className="border-b border-ink/10 px-5 py-3.5 text-left font-mono text-[11px] tracking-[.12em] text-grey uppercase"
+                                        className="border-b border-ink/10 px-5 py-3.5 text-left font-mono text-label tracking-[.12em] text-grey uppercase"
                                     >
                                         {h}
                                     </th>
@@ -178,16 +179,17 @@ export default function ContactTab() {
                                 const error = f.key === "email" ? errors.email : undefined;
                                 return (
                                     <tr key={f.key} className="transition hover:bg-off/40">
-                                        <td className="border-b border-ink/10 px-5 py-3 text-[13.5px] font-medium text-ink">{f.label}</td>
+                                        <td className="border-b border-ink/10 px-5 py-3 text-small font-medium text-ink">{f.label}</td>
                                         <td className="border-b border-ink/10 px-5 py-3">
                                             <input
                                                 value={contactInfoDraft[f.key]}
                                                 onChange={(e) => handleContactInfoChange({ [f.key]: e.target.value } as Partial<ContactInfo>)}
                                                 aria-label={f.label}
                                                 aria-invalid={error ? true : undefined}
+                                                aria-describedby={error ? `contact-info-error-${f.key}` : undefined}
                                                 className={`${FIELD_INPUT} h-9 max-w-[420px] py-1.5 ${error ? FIELD_INPUT_INVALID : ""}`}
                                             />
-                                            {error && <p className={FIELD_ERROR}>{error}</p>}
+                                            {error && <p id={`contact-info-error-${f.key}`} role="alert" className={FIELD_ERROR}>{error}</p>}
                                         </td>
                                     </tr>
                                 );

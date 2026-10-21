@@ -116,16 +116,16 @@ export default function StatCard({
             } ${className ?? ""}`}
         >
             <div className="mb-2.5 flex h-[15px] items-center justify-between gap-3">
-                <span className={`font-mono text-[11px] tracking-[.06em] uppercase ${solid ? "text-white/75" : "text-grey"}`}>{label}</span>
+                <span className={`font-mono text-label tracking-[.06em] uppercase ${solid ? "text-white/75" : "text-grey"}`}>{label}</span>
                 {control}
             </div>
-            <div className={`font-display text-[28px] font-medium ${valueClassName ?? (solid ? "text-white" : "text-ink")}`}>
+            <div className={`font-display text-display-sm font-medium ${valueClassName ?? (solid ? "text-white" : "text-ink")}`}>
                 {/* Explicit gap — the peso sign's crossbar reads as a strikethrough into the first digit without it. */}
                 {prefix && <span className="mr-[3px]">{prefix}</span>}
                 {animated.toLocaleString()}
             </div>
             {/* Fixed height even with no delta, to avoid resizing the hero row; red/green drops to white tint on solid tones for contrast. */}
-            <div className={`mt-1.5 h-[16px] text-[11.5px] ${solid ? "text-white/90" : down ? "text-alert" : "text-success-dark"}`}>{delta}</div>
+            <div className={`mt-1.5 h-[16px] text-label ${solid ? "text-white/90" : down ? "text-alert" : "text-success-dark"}`}>{delta}</div>
             {sparkline && sparkline.length > 1 && <Sparkline points={sparkline} />}
             {graph && <div className="mt-3 -mx-1.5">{graph}</div>}
         </Container>

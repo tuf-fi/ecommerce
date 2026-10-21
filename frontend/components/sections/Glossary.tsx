@@ -16,7 +16,7 @@ export default function Glossary(){
 
     return(
         <SectionContainer id="concern">
-            <SectionTitle section="glossary" title="Shop by Concern" />
+            <SectionTitle animate section="glossary" title="Shop by Concern" />
 
             {/* Horizontally scrollable so the row holds up whether the CMS list has fewer or more tiles than a fixed grid. */}
             <div className="thin-scrollbar flex snap-x justify-center-safe gap-3 overflow-x-auto overflow-y-hidden pb-2 sm:gap-4">
@@ -42,8 +42,8 @@ export default function Glossary(){
                                 )}
                                 <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/15 to-transparent transition-colors duration-300 group-hover:from-black/90" />
                                 <div className="absolute inset-x-0 bottom-0 flex flex-col items-center gap-1 p-4 text-center">
-                                    <span className="font-mono text-[11px] uppercase tracking-[.1em] text-white">{concern.title}</span>
-                                    <span className="font-mono text-[10px] text-white/70">{count} product{count === 1 ? "" : "s"}</span>
+                                    <span className="font-mono text-label uppercase tracking-[.1em] text-white">{concern.title}</span>
+                                    <span className="font-mono text-label text-white/70">{count} product{count === 1 ? "" : "s"}</span>
                                 </div>
                             </Link>
                         </RevealIn>

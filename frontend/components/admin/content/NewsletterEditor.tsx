@@ -88,7 +88,7 @@ export default function NewsletterEditor() {
                     onChange={(e) => handleChange({ socialProof: e.target.value })}
                     className={FIELD_INPUT}
                 />
-                <p className="mt-2 text-[11.5px] text-grey">Sits beside the five stars under the signup form.</p>
+                <p className="mt-2 text-label text-grey">Sits beside the five stars under the signup form.</p>
             </div>
         </ContentEditorShell>
     );

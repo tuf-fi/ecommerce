@@ -1,12 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { toast } from "sonner";
 import Modal from "@/components/ui/Modal";
-import ConfirmModal from "@/components/ui/ConfirmModal";
 import { FooterLinkItem } from "@/library/admin/types";
 import { FooterLinkGroup } from "@/library/content";
-import { BTN_PRIMARY, FIELD_INPUT, FIELD_INPUT_INVALID, FIELD_LABEL, FIELD_ERROR } from "@/components/admin/formClasses";
+import { FIELD_INPUT, FIELD_INPUT_INVALID, FIELD_LABEL, FIELD_ERROR, focusFirstInvalid } from "@/components/admin/formClasses";
 import { useIsDirty } from "@/components/admin/useIsDirty";
 import { useAsyncAction, wait } from "@/library/useAsyncAction";
 import { isSafeHref } from "@/library/url-safety";
@@ -31,14 +29,9 @@ export default function FooterLinkModal({
     const [label, setLabel] = useState(link?.label ?? "");
     const [href, setHref] = useState(link?.href ?? "");
     const [errors, setErrors] = useState<{ label?: string; href?: string }>({});
-    const [confirmCloseOpen, setConfirmCloseOpen] = useState(false);
 
     const isDirty = useIsDirty({ label, href });
 
-    function requestClose() {
-        if (isDirty) setConfirmCloseOpen(true);
-        else onClose();
-    }
 
     const [submitting, handleSubmit] = useAsyncAction(async () => {
         const nextErrors: { label?: string; href?: string } = {};
@@ -49,7 +42,7 @@ export default function FooterLinkModal({
         }
         if (nextErrors.label || nextErrors.href) {
             setErrors(nextErrors);
-            toast.error("Fix the highlighted fields before saving.");
+            focusFirstInvalid("footerlink-form");
             return;
         }
         setErrors({});
@@ -59,14 +52,22 @@ export default function FooterLinkModal({
     });
 
     return (
-        <>
-        <Modal open onClose={submitting ? () => {} : requestClose} maxWidth="max-w-[380px]">
-            <div className="sticky top-0 z-10 border-b border-ink/10 bg-white px-5 sm:px-8 py-5">
-                <h3 className="text-xl font-medium text-ink">
-                    {link ? "Edit" : "Add"} {GROUP_LABEL[group]} Link
-                </h3>
-            </div>
-            <div className="px-5 sm:px-8 pt-6 pb-4">
+        <Modal
+            open
+            onClose={submitting ? () => {} : onClose}
+            maxWidth="max-w-[380px]"
+            heading={`${link ? "Edit" : "Add"} ${GROUP_LABEL[group]} link`}
+            dirty={isDirty && !submitting}
+            footer={
+                <button type="submit" form="footerlink-form" disabled={submitting} className="ui-btn ui-btn-primary w-full sm:w-auto">
+                    {submitting ? "Saving…" : "Save Link"}
+                </button>
+            }
+        >
+            <form id="footerlink-form" onSubmit={(e) => {
+                e.preventDefault();
+                handleSubmit();
+            }}>
                 <div className="mb-4">
                     <label htmlFor="footer-link-label" className={FIELD_LABEL}>Label</label>
                     <input
@@ -78,9 +79,10 @@ export default function FooterLinkModal({
                         }}
                         placeholder="e.g. Shipping & Returns"
                         aria-invalid={errors.label ? true : undefined}
+                        aria-describedby={errors.label ? "footerlink-label-error" : undefined}
                         className={`${FIELD_INPUT} ${errors.label ? FIELD_INPUT_INVALID : ""}`}
                     />
-                    {errors.label && <p className={FIELD_ERROR}>{errors.label}</p>}
+                    {errors.label && <p id="footerlink-label-error" role="alert" className={FIELD_ERROR}>{errors.label}</p>}
                 </div>
                 <div>
                     <label htmlFor="footer-link-href" className={FIELD_LABEL}>Destination</label>
@@ -93,29 +95,16 @@ export default function FooterLinkModal({
                         }}
                         placeholder="/pages/terms or /#contact"
                         aria-invalid={errors.href ? true : undefined}
+                        aria-describedby={errors.href ? "footerlink-href-error" : undefined}
                         className={`${FIELD_INPUT} ${errors.href ? FIELD_INPUT_INVALID : ""}`}
                     />
-                    {errors.href && <p className={FIELD_ERROR}>{errors.href}</p>}
-                    <p className="mt-2 text-[11.5px] text-grey">
+                    {errors.href && <p id="footerlink-href-error" role="alert" className={FIELD_ERROR}>{errors.href}</p>}
+                    <p className="mt-2 text-label text-grey">
                         A route (<span className="font-mono">/journal</span>), a homepage anchor (<span className="font-mono">/#faq</span>), or a
                         full URL.
                     </p>
                 </div>
-            </div>
-            <div className="sticky bottom-0 border-t border-ink/10 bg-white px-5 sm:px-8 py-5">
-                <button onClick={handleSubmit} disabled={submitting} className={`w-full ${BTN_PRIMARY}`}>
-                    {submitting ? "Saving…" : "Save Link"}
-                </button>
-            </div>
+            </form>
         </Modal>
-        <ConfirmModal
-            open={confirmCloseOpen}
-            title="Discard changes?"
-            description="Your edits to this footer link haven't been saved."
-            confirmLabel="Discard"
-            onConfirm={onClose}
-            onClose={() => setConfirmCloseOpen(false)}
-        />
-        </>
     );
 }

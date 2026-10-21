@@ -23,9 +23,9 @@ import { ORDER_STATUS_TONE } from "@/components/admin/orderStatus";
 import { useMounted } from "@/library/useMounted";
 import Skeleton, { SkeletonGroup } from "@/components/ui/Skeleton";
 
-const RANGE_SELECT = "rounded-none border border-ink/10 bg-off/50 px-3 py-1.5 font-mono text-[11px] text-grey outline-none transition hover:border-pink/40 focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-1";
+const RANGE_SELECT = "rounded-none border border-ink/10 bg-off/50 px-3 py-1.5 font-mono text-label text-grey outline-none transition hover:border-pink/40 focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-1";
 // Restyled for the New Users card's solid fill — light-on-light would nearly disappear against it.
-const RANGE_SELECT_ON_SOLID = "rounded-none border border-white/30 bg-white/10 px-3 py-1.5 font-mono text-[11px] text-white outline-none transition hover:bg-white/20 focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-1";
+const RANGE_SELECT_ON_SOLID = "rounded-none border border-white/30 bg-white/10 px-3 py-1.5 font-mono text-label text-white outline-none transition hover:bg-white/20 focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-1";
 
 type UsersRange = "today" | "week" | "month" | "year";
 const USERS_RANGE_DAYS: Record<UsersRange, number> = { today: 1, week: 7, month: 30, year: 365 };
@@ -39,6 +39,7 @@ const USERS_RANGE_COMPARE_LABEL: Record<UsersRange, string> = {
 export default function AdminDashboardPage() {
     const { products, orders, users, updateOrderStatus, reviewPayment, currentStaffMember } = useAdminStore();
     const canOrders = canAccessSection(currentStaffMember, "orders");
+    const paymentsToReview = orders.filter((o) => o.status === "Pending" && o.payment?.state === "review").length;
     const canInventory = canAccessSection(currentStaffMember, "inventory");
     const mounted = useMounted();
     const router = useRouter();
@@ -166,25 +167,26 @@ export default function AdminDashboardPage() {
 
                 <div className="border border-ink/10 bg-white shadow-card">
                     <div className="border-b border-ink/10 bg-off/50 px-6 py-4.5">
-                        <h3 className="m-0 text-[15px] font-medium text-ink">Needs Attention</h3>
+                        <h3 className="m-0 text-body font-medium text-ink">Needs Attention</h3>
                     </div>
                     <div className="grid grid-cols-1 divide-y divide-ink/10 lg:grid-cols-3 lg:divide-x lg:divide-y-0">
                         <button
-                            onClick={canInventory ? () => router.push("/admin/inventory") : undefined}
-                            className={`flex h-[84px] items-center justify-between gap-4 px-6 text-left transition ${canInventory ? "hover:bg-off/50" : "cursor-default"}`}
+                            onClick={canOrders ? () => router.push("/admin/orders?filter=review") : undefined}
+                            className={`flex h-[84px] items-center justify-between gap-4 px-6 text-left transition ${canOrders ? "hover:bg-off/50" : "cursor-default"}`}
                         >
                             <div>
-                                <div className="font-mono text-[11px] tracking-[.06em] uppercase text-grey">Products</div>
-                                <div className="mt-1.5 font-display text-[22px] font-medium text-ink">{products.length}</div>
+                                <div className="font-mono text-label tracking-[.06em] uppercase text-grey">Payments to review</div>
+                                <div className="mt-1.5 font-display text-heading font-medium text-ink">{paymentsToReview}</div>
                             </div>
+                            {paymentsToReview > 0 && <StatusBadge label="Review now" tone="warning" />}
                         </button>
                         <button
                             onClick={canInventory ? () => router.push("/admin/inventory?sort=stock-asc") : undefined}
                             className={`flex h-[84px] items-center justify-between gap-4 px-6 text-left transition ${canInventory ? "hover:bg-off/50" : "cursor-default"}`}
                         >
                             <div>
-                                <div className="font-mono text-[11px] tracking-[.06em] uppercase text-grey">Low Stock</div>
-                                <div className="mt-1.5 font-display text-[22px] font-medium text-ink">{lowStockCount}</div>
+                                <div className="font-mono text-label tracking-[.06em] uppercase text-grey">Low Stock</div>
+                                <div className="mt-1.5 font-display text-heading font-medium text-ink">{lowStockCount}</div>
                             </div>
                             {lowStockCount > 0 && <StatusBadge label="Needs reorder" tone="alert" />}
                         </button>
@@ -193,8 +195,8 @@ export default function AdminDashboardPage() {
                             className={`flex h-[84px] items-center justify-between gap-4 px-6 text-left transition ${canInventory ? "hover:bg-off/50" : "cursor-default"}`}
                         >
                             <div>
-                                <div className="font-mono text-[11px] tracking-[.06em] uppercase text-grey">Expiring Soon</div>
-                                <div className="mt-1.5 font-display text-[22px] font-medium text-ink">{expiringSoonProducts.length}</div>
+                                <div className="font-mono text-label tracking-[.06em] uppercase text-grey">Expiring Soon</div>
+                                <div className="mt-1.5 font-display text-heading font-medium text-ink">{expiringSoonProducts.length}</div>
                             </div>
                             {expiringSoonProducts.length > 0 && <StatusBadge label="Check expiry" tone="warning" />}
                         </button>
@@ -206,16 +208,16 @@ export default function AdminDashboardPage() {
             <div className="mb-6 grid grid-cols-1 gap-5 lg:grid-cols-2">
                 <div className="flex h-full flex-col border border-ink/10 bg-white shadow-card">
                     <div className="flex items-center justify-between border-b border-ink/10 bg-off/50 px-6 py-4.5">
-                        <h3 className="m-0 text-[15px] font-medium text-ink">Recent Orders</h3>
+                        <h3 className="m-0 text-body font-medium text-ink">Recent Orders</h3>
                         {canOrders && (
-                            <button onClick={canOrders ? () => router.push("/admin/orders") : undefined} className="font-mono text-[11px] text-grey hover:text-pink-dark">
+                            <button onClick={canOrders ? () => router.push("/admin/orders") : undefined} className="font-mono text-label text-grey hover:text-pink-dark">
                                 View all →
                             </button>
                         )}
                     </div>
                     {orderDayTrend.length > 1 && (
                         <div className="border-b border-ink/10 px-6 pt-4 pb-3">
-                            <div className="mb-2 font-mono text-[10.5px] tracking-[.06em] text-grey uppercase">
+                            <div className="mb-2 font-mono text-label tracking-[.06em] text-grey uppercase">
                                 Last {orderDayTrend.length} order days
                             </div>
                             <OrdersTrendSparkline data={orderDayTrend} />
@@ -229,11 +231,11 @@ export default function AdminDashboardPage() {
                                 className="flex items-center justify-between gap-3 px-4 py-3.5 text-left transition hover:bg-off/50"
                             >
                                 <div className="min-w-0">
-                                    <div className="text-[13.5px] font-medium text-ink">{o.no}</div>
-                                    <div className="truncate text-[12px] text-grey">{o.customer}</div>
+                                    <div className="text-small font-medium text-ink">{o.no}</div>
+                                    <div className="truncate text-meta text-grey">{o.customer}</div>
                                 </div>
                                 <div className="flex flex-none items-center gap-3">
-                                    <span className="font-mono text-[12.5px] text-ink">₱{orderTotal(o).toLocaleString()}</span>
+                                    <span className="font-mono text-meta text-ink">₱{orderTotal(o).toLocaleString()}</span>
                                     <StatusBadge label={o.status} tone={ORDER_STATUS_TONE[o.status]} />
                                 </div>
                             </button>
@@ -244,20 +246,20 @@ export default function AdminDashboardPage() {
                 {/* Low Stock and Expiring Soon are the same underlying task, so they share one panel as labeled sections. */}
                 <div className="flex h-full flex-col border border-ink/10 bg-white shadow-card">
                     <div className="flex items-center justify-between border-b border-ink/10 bg-off/50 px-6 py-4.5">
-                        <h3 className="m-0 text-[15px] font-medium text-ink">Inventory Alerts</h3>
+                        <h3 className="m-0 text-body font-medium text-ink">Inventory Alerts</h3>
                         {canInventory && (
-                            <button onClick={canInventory ? () => router.push("/admin/inventory") : undefined} className="font-mono text-[11px] text-grey hover:text-pink-dark">
+                            <button onClick={canInventory ? () => router.push("/admin/inventory") : undefined} className="font-mono text-label text-grey hover:text-pink-dark">
                                 View all →
                             </button>
                         )}
                     </div>
                     <div className="grid flex-1 grid-cols-1 divide-y divide-ink/10 sm:grid-cols-2 sm:divide-x sm:divide-y-0">
                         <div className="flex min-w-0 flex-col">
-                            <div className="px-4 pt-3.5 pb-1.5 font-mono text-[11px] tracking-[.1em] text-grey uppercase">
+                            <div className="px-4 pt-3.5 pb-1.5 font-mono text-label tracking-[.1em] text-grey uppercase">
                                 Low Stock — {lowStockCount}
                             </div>
                             {lowStockProducts.length === 0 ? (
-                                <div className="flex flex-1 items-center justify-center p-6 text-center text-[12.5px] text-grey">Well stocked.</div>
+                                <div className="flex flex-1 items-center justify-center p-6 text-center text-meta text-grey">Well stocked.</div>
                             ) : (
                                 <div className="flex min-w-0 flex-1 flex-col px-2 pb-2">
                                     {lowStockProducts.map((p) => (
@@ -270,8 +272,8 @@ export default function AdminDashboardPage() {
                                                 <Image src={p.image} alt="" fill sizes="36px" unoptimized={typeof p.image === "string"} className="object-cover" />
                                             </span>
                                             <span className="min-w-0 flex-1">
-                                                <span className="block truncate text-[12.5px] font-medium text-ink">{p.name}</span>
-                                                <span className="block font-mono text-[10.5px] text-grey">{p.sku}</span>
+                                                <span className="block truncate text-meta font-medium text-ink">{p.name}</span>
+                                                <span className="block font-mono text-label text-grey">{p.sku}</span>
                                             </span>
                                             <StatusBadge
                                                 label={productStockStatus(p) === "out" ? "Out" : `${productStock(p)} left`}
@@ -284,11 +286,11 @@ export default function AdminDashboardPage() {
                         </div>
 
                         <div className="flex min-w-0 flex-col">
-                            <div className="px-4 pt-3.5 pb-1.5 font-mono text-[11px] tracking-[.1em] text-grey uppercase">
+                            <div className="px-4 pt-3.5 pb-1.5 font-mono text-label tracking-[.1em] text-grey uppercase">
                                 Expiring Soon — within {EXPIRY_WARNING_DAYS}d
                             </div>
                             {expiringSoonProducts.length === 0 ? (
-                                <div className="flex flex-1 items-center justify-center p-6 text-center text-[12.5px] text-grey">Nothing expiring.</div>
+                                <div className="flex flex-1 items-center justify-center p-6 text-center text-meta text-grey">Nothing expiring.</div>
                             ) : (
                                 <div className="flex min-w-0 flex-1 flex-col px-2 pb-2">
                                     {expiringSoonProducts.map((p) => {
@@ -303,8 +305,8 @@ export default function AdminDashboardPage() {
                                                     <Image src={p.image} alt="" fill sizes="36px" unoptimized={typeof p.image === "string"} className="object-cover" />
                                                 </span>
                                                 <span className="min-w-0 flex-1">
-                                                    <span className="block truncate text-[12.5px] font-medium text-ink">{p.name}</span>
-                                                    <span className="block font-mono text-[10.5px] text-grey">{p.expiry}</span>
+                                                    <span className="block truncate text-meta font-medium text-ink">{p.name}</span>
+                                                    <span className="block font-mono text-label text-grey">{p.expiry}</span>
                                                 </span>
                                                 <StatusBadge label={days <= 0 ? "Expired" : `${days}d`} tone={days <= 14 ? "alert" : "warning"} />
                                             </button>
@@ -320,7 +322,7 @@ export default function AdminDashboardPage() {
             <div className="mb-6 grid grid-cols-1 gap-5 lg:grid-cols-[1.4fr_1fr]">
                 <div className="flex h-full flex-col border border-ink/10 bg-white shadow-card">
                     <div className="flex items-center justify-between border-b border-ink/10 bg-off/50 px-6 py-4.5">
-                        <h3 className="m-0 text-[15px] font-medium text-ink">Sales Trend</h3>
+                        <h3 className="m-0 text-body font-medium text-ink">Sales Trend</h3>
                         <select value={salesRange} onChange={(e) => setSalesRange(e.target.value as ChartRange)} className={RANGE_SELECT}>
                             <option value="7d">Last 7 days</option>
                             <option value="30d">Last 30 days</option>
@@ -331,15 +333,15 @@ export default function AdminDashboardPage() {
                         {hasSales(salesData) ? (
                             <SalesTrendChart data={salesData} locations={locations} />
                         ) : (
-                            <p className="py-16 text-center text-[13px] text-grey">No sales in this period yet.</p>
+                            <p className="py-16 text-center text-small text-grey">No sales in this period yet.</p>
                         )}
                     </div>
                 </div>
 
                 <div className="flex h-full flex-col border border-ink/10 bg-white shadow-card">
                     <div className="flex items-center justify-between border-b border-ink/10 bg-off/50 px-6 py-4.5">
-                        <h3 className="m-0 text-[15px] font-medium text-ink">Stock Health</h3>
-                        <span className="font-mono text-[11px] text-grey">All products</span>
+                        <h3 className="m-0 text-body font-medium text-ink">Stock Health</h3>
+                        <span className="font-mono text-label text-grey">All products</span>
                     </div>
                     <div className="flex flex-1 items-center justify-center p-6">
                         <StockHealthDonut
@@ -352,7 +354,7 @@ export default function AdminDashboardPage() {
 
             <div className="border border-ink/10 bg-white shadow-card">
                 <div className="flex items-center justify-between border-b border-ink/10 bg-off/50 px-6 py-4.5">
-                    <h3 className="m-0 text-[15px] font-medium text-ink">Top Selling Products</h3>
+                    <h3 className="m-0 text-body font-medium text-ink">Top Selling Products</h3>
                     <select value={topRange} onChange={(e) => setTopRange(e.target.value as ChartRange)} className={RANGE_SELECT}>
                         <option value="7d">Last 7 days</option>
                         <option value="30d">Last 30 days</option>
@@ -363,7 +365,7 @@ export default function AdminDashboardPage() {
                     {topData.length > 0 ? (
                         <TopProductsBars data={topData} onSelect={canInventory ? (name) => router.push(`/admin/inventory?q=${encodeURIComponent(name)}`) : undefined} />
                     ) : (
-                        <p className="py-6 text-center text-[13px] text-grey">No products sold in this period yet.</p>
+                        <p className="py-6 text-center text-small text-grey">No products sold in this period yet.</p>
                     )}
                 </div>
             </div>

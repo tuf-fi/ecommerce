@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import EmptyState from "@/components/ui/EmptyState";
 import Link from "next/link";
 import JournalCard from "@/components/sections/JournalCard";
 import PageIntro from "@/components/sections/PageIntro";
@@ -20,10 +21,10 @@ export default function JournalIndexPage() {
 
     return (
         <div className="-mx-[var(--gutter)] w-[calc(100%+var(--gutter)*2)] min-h-screen bg-white px-[var(--gutter)] pt-[calc(var(--navbar-h,68px)+1.2rem)] pb-20">
-            <PageIntro pageKey="journal" />
+            <PageIntro pageKey="journal" rule={false} />
 
             {!featured ? (
-                <p className="py-16 text-center text-[13px] text-grey">Nothing published yet — check back soon.</p>
+                <EmptyState title="Nothing published yet" message="Check back soon." />
             ) : (
                 <>
                     <SectionTitle num="—" title={`${published.length} ${published.length === 1 ? "Entry" : "Entries"}`} />
@@ -46,11 +47,11 @@ export default function JournalIndexPage() {
                             <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
                             <div className="px-8 pb-9 sm:px-12 sm:pb-12">
-                                <span className="font-mono text-[11px] uppercase tracking-[.16em] text-white/70">Latest</span>
+                                <span className="font-mono text-label uppercase tracking-[.16em] text-white/70">Latest</span>
                                 <h2 className="mt-3 max-w-[680px] text-[clamp(26px,3.6vw,44px)] font-medium leading-[1.1] text-white">
                                     {featured.title}
                                 </h2>
-                                <span className="mt-4 inline-block text-[12px] font-semibold uppercase tracking-wide text-white underline decoration-white/40 underline-offset-4 group-hover:decoration-white">
+                                <span className="mt-4 inline-block text-meta font-semibold uppercase tracking-wide text-white underline decoration-white/40 underline-offset-4 group-hover:decoration-white">
                                     Read more →
                                 </span>
                             </div>

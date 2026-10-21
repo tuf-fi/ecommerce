@@ -74,7 +74,7 @@ export default function PromotionsTab() {
                     <thead>
                         <tr className="bg-off/50">
                             {["Promotion", "Code", "Active", ""].map((h) => (
-                                <th key={h} scope="col" className="border-b border-ink/10 px-5 py-3.5 text-left font-mono text-[11px] tracking-[.12em] text-grey uppercase">
+                                <th key={h} scope="col" className="border-b border-ink/10 px-5 py-3.5 text-left font-mono text-label tracking-[.12em] text-grey uppercase">
                                     {h}
                                 </th>
                             ))}
@@ -84,14 +84,13 @@ export default function PromotionsTab() {
                         {paged.length === 0 && (
                             <EmptyStateRow
                                 colSpan={4}
-                                variant={promos.length === 0 ? "empty" : "filtered"}
                                 message={promos.length === 0 ? "No promotions yet." : "No promotions match this search."}
                             />
                         )}
                         {paged.map((p) => (
                             <tr key={p.id} className="transition hover:bg-off/40">
-                                <td className="border-b border-ink/10 px-5 py-3.5 text-[13.5px] text-ink">{p.text}</td>
-                                <td className="border-b border-ink/10 px-5 py-3.5 font-mono text-[12px] text-grey">{p.code || "—"}</td>
+                                <td className="border-b border-ink/10 px-5 py-3.5 text-small text-ink">{p.text}</td>
+                                <td className="border-b border-ink/10 px-5 py-3.5 font-mono text-meta text-grey">{p.code || "—"}</td>
                                 <td className="border-b border-ink/10 px-5 py-3.5">
                                     <Toggle checked={p.active} onChange={() => togglePromoActive(p.id)} />
                                 </td>

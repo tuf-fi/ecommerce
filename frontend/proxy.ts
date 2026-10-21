@@ -26,15 +26,15 @@ export async function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl;
     const isLoggedIn = await hasValidSession(request);
 
-    if (pathname === "/admin/login") {
-        if (isLoggedIn) {
-            return NextResponse.redirect(new URL("/admin/dashboard", request.url));
-        }
-        return NextResponse.next();
+    // Signed-in staff skip the login form.
+    if (pathname === "/admin/login" && isLoggedIn) {
+        return NextResponse.redirect(new URL("/admin/dashboard", request.url));
     }
 
+    // Everyone else sees a plain "not found" for anything under /admin, including /admin/login itself, so typing /admin
+    // reveals nothing. The real sign-in form is served at a private address (see library/adminPaths.ts).
     if (!isLoggedIn) {
-        return NextResponse.redirect(new URL("/admin/login", request.url));
+        return NextResponse.rewrite(new URL("/__not-found", request.url), { status: 404 });
     }
 
     return NextResponse.next();

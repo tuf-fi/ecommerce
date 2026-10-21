@@ -207,7 +207,7 @@ export default function StaffPage() {
                                     />
                                 </th>
                                 {["Staff", "Role & Access", ""].map((h) => (
-                                    <th key={h} scope="col" className="border-b border-ink/10 px-5 py-3.5 text-left font-mono text-[11px] tracking-[.12em] text-grey uppercase">
+                                    <th key={h} scope="col" className="border-b border-ink/10 px-5 py-3.5 text-left font-mono text-label tracking-[.12em] text-grey uppercase">
                                         {h}
                                     </th>
                                 ))}
@@ -215,7 +215,7 @@ export default function StaffPage() {
                         </thead>
                         <tbody>
                             {paged.length === 0 && (
-                                <EmptyStateRow colSpan={4} variant="filtered" message="No staff match this search." />
+                                <EmptyStateRow colSpan={4} message="No staff match this search." />
                             )}
                             {paged.map((s) => (
                                 <tr
@@ -244,7 +244,7 @@ export default function StaffPage() {
                                     {/* Email demoted to a caption under the name, not its own column — context, not a peer fact. */}
                                     <td className="border-b border-ink/10 px-5 py-3">
                                         <div className="flex items-center gap-3">
-                                            <span className="flex h-9 w-9 flex-none items-center justify-center overflow-hidden rounded-full bg-blue-soft font-mono text-[11px] text-ink">
+                                            <span className="flex h-9 w-9 flex-none items-center justify-center overflow-hidden rounded-full bg-blue-soft font-mono text-label text-ink">
                                                 {s.photo ? (
                                                     // eslint-disable-next-line @next/next/no-img-element
                                                     <img src={s.photo} alt="" className="h-full w-full object-cover" />
@@ -253,8 +253,8 @@ export default function StaffPage() {
                                                 )}
                                             </span>
                                             <div className="min-w-0">
-                                                <div className="text-[13.5px] font-medium text-ink">{s.name}</div>
-                                                <div className="truncate text-[12px] text-grey">{s.email}</div>
+                                                <div className="text-small font-medium text-ink">{s.name}</div>
+                                                <div className="truncate text-meta text-grey">{s.email}</div>
                                             </div>
                                         </div>
                                     </td>
@@ -262,7 +262,7 @@ export default function StaffPage() {
                                     <td className="border-b border-ink/10 px-5 py-3">
                                         <div className="flex items-center gap-2.5">
                                             <StatusBadge label={s.role} tone={s.role === "Administrator" ? "neutral" : "success"} />
-                                            <span className="text-[12.5px] text-grey">{s.access}</span>
+                                            <span className="text-meta text-grey">{s.access}</span>
                                         </div>
                                     </td>
                                     <td className="border-b border-ink/10 px-5 py-3">

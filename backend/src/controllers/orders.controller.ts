@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import { z } from "zod";
 import { prisma } from "../lib/prisma";
 import { HttpError } from "../lib/httpError";
+import { phoneField } from "../lib/phone";
 import { customerActor, staffActor } from "../services/audit.service";
 import { changeOrderStatus, checkCart, createOrder, orderInclude, OrderWithItems } from "../services/orders.service";
 
@@ -11,6 +12,7 @@ function serialize(o: OrderWithItems, duplicates: Map<number, string[]> = new Ma
     status: o.status,
     customerName: o.shipName,
     email: o.shipEmail,
+    phone: o.shipPhone,
     address: o.shipAddress,
     location: o.shipCity,
     total: o.total,
@@ -72,6 +74,7 @@ const createSchema = z.object({
   items: lines,
   address: z.string().trim().min(5, "Choose a delivery address").max(500),
   name: z.string().trim().min(1).max(100).optional(),
+  phone: phoneField.optional(),
   voucherCode,
 });
 const statusSchema = z.object({ status: z.enum(statuses) });
@@ -92,12 +95,17 @@ export async function placeOrder(req: Request, res: Response) {
   const d = parseBody(createSchema, req.body);
   const customer = await prisma.customer.findUnique({ where: { id: req.customerId } });
   if (!customer) throw new HttpError(401, "Not signed in");
+  // A number sent with the order is also saved to the profile when none is on file yet.
+  const phone = d.phone ?? customer.phone;
+  if (!phone) throw new HttpError(400, "phone: Add a mobile number so the courier can reach you");
+  if (d.phone && !customer.phone) await prisma.customer.update({ where: { id: customer.id }, data: { phone: d.phone } });
   const order = await createOrder({
     actor: customerActor(customer),
     customerId: customer.id,
     lines: d.items,
     shipName: d.name ?? customer.name,
     shipEmail: customer.email,
+    shipPhone: phone,
     shipAddress: d.address,
     customerEmail: customer.email,
     voucherCode: d.voucherCode,

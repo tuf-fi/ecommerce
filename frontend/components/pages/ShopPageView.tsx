@@ -1,21 +1,36 @@
 "use client";
 
-import { Suspense, useMemo, useState } from "react";
-import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Card from "@/components/ui/Card";
 import SectionTitle from "@/components/ui/SectionTitle";
 import Pagination from "@/components/ui/Pagination";
-import SearchField, { FILTER_SELECT } from "@/components/ui/SearchField";
-import { CATEGORIES, PRODUCTS, currentPrice } from "@/library/products";
+import SearchField from "@/components/ui/SearchField";
+import { CATEGORIES, PRODUCTS, currentPrice, isOnSale } from "@/library/products";
 import { useScrollTopOnChange } from "@/library/useScrollTopOnChange";
 import PageIntro from "@/components/sections/PageIntro";
 import { PageIntroContent, useContent } from "@/library/content";
 import Skeleton, { SkeletonGroup } from "@/components/ui/Skeleton";
+import FilterDrawer from "@/components/ui/FilterDrawer";
+import { BAR_BUTTON } from "@/components/ui/ActionBar";
+import EmptyState from "@/components/ui/EmptyState";
+import { ASIDE_CLASS, ASIDE_STICKY, FilterColumnSkeleton, HEADER_LABEL, HEADER_ROW, PAGE_COLUMN, SECTION_LABEL, SHELL_GRID, SHELL_WRAPPER, Tick, rowClass } from "@/components/ui/sidebar";
 
 type SortKey = "default" | "price-asc" | "price-desc" | "rating-desc";
 
+const SORT_KEYS: SortKey[] = ["default", "price-asc", "price-desc", "rating-desc"];
+
 const PAGE_SIZE = 16;
+
+const SORT_OPTIONS: { key: SortKey; label: string }[] = [
+    { key: "default", label: "Featured" },
+    { key: "price-asc", label: "Price, low to high" },
+    { key: "price-desc", label: "Price, high to low" },
+    { key: "rating-desc", label: "Top rated" },
+];
+
+const PRICE_INPUT =
+    "h-full min-w-0 flex-1 bg-transparent px-2 text-ink outline-none placeholder:text-grey [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none";
 
 // `preview`/`introPreviewData`: the admin's Shop-intro editor embeds this real page (via ContentEditorShell's
 // previewScroll="page", so the admin page scrolls with it instead of a clipped inner pane) so admins see the intro
@@ -23,35 +38,85 @@ const PAGE_SIZE = 16;
 // actually editable here. `preview` just drops the bleed trick (the admin's box has no real body padding to cancel).
 export default function ShopPageView({ preview = false, introPreviewData }: { preview?: boolean; introPreviewData?: PageIntroContent } = {}) {
     return (
-        <div className={preview ? "bg-white px-8 pt-8 pb-16" : "shadow-glow -mx-[var(--gutter)] w-[calc(100%+var(--gutter)*2)] min-h-screen bg-white px-[var(--gutter)] pt-[calc(var(--navbar-h,68px)+1.2rem)] pb-20"}>
-            <PageIntro pageKey="shop" previewData={introPreviewData} />
-            <Suspense fallback={<ShopGridSkeleton />}>
-                <ShopContent />
+        <div className={preview ? "bg-white px-8 pt-8 pb-16" : SHELL_WRAPPER}>
+            <Suspense fallback={<ShopGridSkeleton introPreviewData={introPreviewData} />}>
+                <ShopContent preview={preview} introPreviewData={introPreviewData} />
             </Suspense>
         </div>
     );
 }
 
-// Reads the URL (`?concern=`), so it must sit inside a Suspense boundary or `next build` can't prerender this route.
-function ShopContent() {
-    const searchParams = useSearchParams();
-    const concernParam = searchParams.get("concern");
+// Reads the URL, so it must sit inside a Suspense boundary or `next build` can't prerender this route.
+// Category, sort, search, price range and the sale/stock toggles all live in the query string, so a filtered view survives back-navigation and can be shared.
+function ShopContent({ preview, introPreviewData }: { preview: boolean; introPreviewData?: PageIntroContent }) {
+    const urlParams = useSearchParams();
+    // The admin preview keeps its filters in local state so they never touch the admin page's own URL.
+    const [previewQs, setPreviewQs] = useState("");
+    const searchParams = preview ? new URLSearchParams(previewQs) : urlParams;
+    const router = useRouter();
+    const pathname = usePathname();
     const { concerns } = useContent();
-    const concernLabel = concernParam ? (concerns.find((c) => c.key === concernParam)?.title ?? concernParam) : null;
 
-    const [search, setSearch] = useState("");
-    const [category, setCategory] = useState<(typeof CATEGORIES)[number]>("All");
-    const [sort, setSort] = useState<SortKey>("default");
+    const concernParam = searchParams.get("concern");
+    const concernLabel = concernParam ? (concerns.find((c) => c.key === concernParam)?.title ?? concernParam) : null;
+    const category = (CATEGORIES.find((c) => c === searchParams.get("category")) ?? "All") as (typeof CATEGORIES)[number];
+    const sortParam = searchParams.get("sort");
+    const sort = (SORT_KEYS.includes(sortParam as SortKey) ? sortParam : "default") as SortKey;
+    const q = searchParams.get("q") ?? "";
+    const minParam = searchParams.get("min") ?? "";
+    const maxParam = searchParams.get("max") ?? "";
+    const onSaleOnly = searchParams.get("sale") === "1";
+    const inStockOnly = searchParams.get("stock") === "1";
+
+    const [search, setSearch] = useState(q);
+    const [minInput, setMinInput] = useState(minParam);
+    const [maxInput, setMaxInput] = useState(maxParam);
     const [page, setPage] = useState(1);
+    const [drawerOpen, setDrawerOpen] = useState(false);
+
+    const setParams = useCallback(
+        (updates: Record<string, string | null>) => {
+            const next = new URLSearchParams(preview ? previewQs : window.location.search);
+            for (const [k, v] of Object.entries(updates)) {
+                if (v === null || v === "") next.delete(k);
+                else next.set(k, v);
+            }
+            const qs = next.toString();
+            if (preview) setPreviewQs(qs);
+            else router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+        },
+        [router, pathname, preview, previewQs]
+    );
+
+    // Typing stays local and reaches the URL a beat later, so each keystroke isn't a navigation.
+    useEffect(() => {
+        const t = setTimeout(() => {
+            if (search.trim() !== q) setParams({ q: search.trim() || null });
+        }, 300);
+        return () => clearTimeout(t);
+    }, [search, q, setParams]);
+    useEffect(() => {
+        const t = setTimeout(() => {
+            if (minInput !== minParam || maxInput !== maxParam) setParams({ min: minInput || null, max: maxInput || null });
+        }, 500);
+        return () => clearTimeout(t);
+    }, [minInput, maxInput, minParam, maxParam, setParams]);
+
+    const min = minParam === "" || Number.isNaN(Number(minParam)) ? null : Number(minParam);
+    const max = maxParam === "" || Number.isNaN(Number(maxParam)) ? null : Number(maxParam);
 
     const filtered = useMemo(() => {
         let list = PRODUCTS;
         if (category !== "All") list = list.filter((p) => p.category === category);
         if (concernParam) list = list.filter((p) => p.concerns?.includes(concernParam));
-        if (search.trim()) {
-            const q = search.trim().toLowerCase();
-            list = list.filter((p) => p.title.toLowerCase().includes(q));
+        if (q.trim()) {
+            const needle = q.trim().toLowerCase();
+            list = list.filter((p) => `${p.title} ${p.category} ${p.desc}`.toLowerCase().includes(needle));
         }
+        if (min !== null) list = list.filter((p) => currentPrice(p) >= min);
+        if (max !== null) list = list.filter((p) => currentPrice(p) <= max);
+        if (onSaleOnly) list = list.filter((p) => isOnSale(p) || !!p.sizes?.some(isOnSale));
+        if (inStockOnly) list = list.filter((p) => p.stock > 0);
         const sorted = [...list];
         switch (sort) {
             case "price-asc":
@@ -65,10 +130,10 @@ function ShopContent() {
                 break;
         }
         return sorted;
-    }, [category, search, sort, concernParam]);
+    }, [category, q, sort, concernParam, min, max, onSaleOnly, inStockOnly]);
 
     // Reset to page 1 on filter change; a render-time state adjustment, not an effect.
-    const filterKey = `${category}|${search}|${sort}|${concernParam}`;
+    const filterKey = `${category}|${q}|${sort}|${concernParam}|${minParam}|${maxParam}|${onSaleOnly}|${inStockOnly}`;
     const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
     if (filterKey !== prevFilterKey) {
         setPrevFilterKey(filterKey);
@@ -88,63 +153,198 @@ function ShopContent() {
         return counts;
     }, [concernParam]);
 
-    // Filters live in a persistent sidebar column, not a row that scrolls away.
-    return (
-        <div className="grid grid-cols-1 gap-10 lg:grid-cols-[220px_1fr]">
-            <aside className="flex flex-col gap-6 lg:gap-8 lg:sticky lg:top-[calc(var(--navbar-h,72px)+24px)] lg:self-start">
-                <SearchField value={search} onChange={setSearch} placeholder="Search products" />
+    // Counts respect the chosen category, so a concern never promises products the list won't show.
+    const concernCounts = useMemo(() => {
+        const base = category === "All" ? PRODUCTS : PRODUCTS.filter((p) => p.category === category);
+        return Object.fromEntries(concerns.map((c) => [c.key, base.filter((p) => p.concerns?.includes(c.key)).length]));
+    }, [concerns, category]);
 
+    const chips: { key: string; label: string; clear: Record<string, string | null> }[] = [];
+    if (category !== "All") chips.push({ key: "category", label: category, clear: { category: null } });
+    if (concernLabel) chips.push({ key: "concern", label: concernLabel, clear: { concern: null } });
+    if (q.trim()) chips.push({ key: "q", label: `“${q.trim()}”`, clear: { q: null } });
+    if (min !== null || max !== null) chips.push({ key: "price", label: `₱${min ?? 0}${max !== null ? `–₱${max}` : "+"}`, clear: { min: null, max: null } });
+    if (onSaleOnly) chips.push({ key: "sale", label: "On sale", clear: { sale: null } });
+    if (inStockOnly) chips.push({ key: "stock", label: "In stock", clear: { stock: null } });
+
+    function clearAll() {
+        setSearch("");
+        setMinInput("");
+        setMaxInput("");
+        setParams({ category: null, concern: null, q: null, min: null, max: null, sale: null, stock: null });
+    }
+
+    function removeChip(clear: Record<string, string | null>) {
+        if ("q" in clear) setSearch("");
+        if ("min" in clear) {
+            setMinInput("");
+            setMaxInput("");
+        }
+        setParams(clear);
+    }
+
+    const heading = `${filtered.length} ${category === "All" ? (filtered.length === 1 ? "Product" : "Products") : category}`;
+
+    const renderPanel = (showHeader: boolean) => (
+        <div className="flex flex-col gap-6">
+            {showHeader && (
+                <div className={HEADER_ROW}>
+                    <span className={HEADER_LABEL}>Filters</span>
+                    {chips.length > 0 && (
+                        <button onClick={clearAll} className="text-meta text-grey underline underline-offset-4 transition hover:text-ink">
+                            Clear all
+                        </button>
+                    )}
+                </div>
+            )}
+
+            {chips.length > 0 && (
                 <div>
-                    <span className="mb-3 block font-mono text-[10.5px] uppercase tracking-[.16em] text-grey">Category</span>
-                    <ul className="thin-scrollbar -mx-1 flex flex-row gap-1 overflow-x-auto px-1 pb-1 lg:mx-0 lg:flex-col lg:gap-0 lg:overflow-visible lg:p-0">
-                        {CATEGORIES.map((c) => {
-                            const active = category === c;
+                    <span className={SECTION_LABEL}>Applied</span>
+                    <ul className="flex flex-col gap-px">
+                        {chips.map((chip) => (
+                            <li key={chip.key}>
+                                <button onClick={() => removeChip(chip.clear)} aria-label={`Remove filter ${chip.label}`} className={rowClass(true)}>
+                                    {chip.label}
+                                    <span aria-hidden className="text-body leading-none">
+                                        ×
+                                    </span>
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
+
+            <SearchField value={search} onChange={setSearch} placeholder="Name or ingredient" />
+
+            <div>
+                <span className={SECTION_LABEL}>Sort</span>
+                <ul className="flex flex-col gap-px">
+                    {SORT_OPTIONS.map((o) => (
+                        <li key={o.key}>
+                            <button onClick={() => setParams({ sort: o.key === "default" ? null : o.key })} aria-pressed={sort === o.key} className={rowClass(sort === o.key)}>
+                                {o.label}
+                            </button>
+                        </li>
+                    ))}
+                </ul>
+            </div>
+
+            <div>
+                <span className={SECTION_LABEL}>Category</span>
+                <ul className="flex flex-col gap-px">
+                    {CATEGORIES.map((c) => {
+                        const active = category === c;
+                        return (
+                            <li key={c}>
+                                <button onClick={() => setParams({ category: c === "All" ? null : c })} aria-pressed={active} className={rowClass(active)}>
+                                    {c}
+                                    <span className={`font-mono text-label ${active ? "text-pink-dark" : "text-grey"}`}>{categoryCounts[c]}</span>
+                                </button>
+                            </li>
+                        );
+                    })}
+                </ul>
+            </div>
+
+            {concerns.length > 0 && (
+                <div>
+                    <span className={SECTION_LABEL}>Concern</span>
+                    <ul className="flex flex-col gap-px">
+                        {[{ key: "", title: "All" }, ...concerns].map((c) => {
+                            const active = (concernParam ?? "") === c.key;
+                            const count = c.key === "" ? null : concernCounts[c.key];
                             return (
-                                <li key={c} className="flex-none">
-                                    <button
-                                        onClick={() => setCategory(c)}
-                                        className={`flex w-full items-center justify-between gap-3 whitespace-nowrap border-b-2 py-2.5 pl-3 pr-3 text-left text-[13px] transition lg:border-b-0 lg:border-l-2 lg:pl-4 ${
-                                            active ? "border-pink-btn bg-pink-soft/40 font-medium text-pink-dark" : "border-transparent text-ink hover:border-ink/15 hover:bg-off/60"
-                                        }`}
-                                    >
-                                        {c}
-                                        <span className={`font-mono text-[11px] ${active ? "text-pink-dark" : "text-grey"}`}>{categoryCounts[c]}</span>
+                                <li key={c.key || "all"}>
+                                    <button onClick={() => setParams({ concern: c.key || null })} aria-pressed={active} className={rowClass(active)}>
+                                        {c.title}
+                                        {count !== null && <span className={`font-mono text-label ${active ? "text-pink-dark" : "text-grey"}`}>{count}</span>}
                                     </button>
                                 </li>
                             );
                         })}
                     </ul>
                 </div>
+            )}
 
-                {concernLabel && (
-                    <div>
-                        <span className="mb-3 block font-mono text-[10.5px] uppercase tracking-[.16em] text-grey">Concern</span>
-                        <Link
-                            href="/shop"
-                            className="flex items-center gap-1.5 border border-ink/15 bg-off/50 px-3 py-2 text-[12px] font-medium text-ink transition hover:border-pink-btn hover:text-pink-dark"
-                        >
-                            {concernLabel}
-                            <span aria-hidden>×</span>
-                        </Link>
-                    </div>
-                )}
+            <div>
+                <span className={SECTION_LABEL}>Price range</span>
+                <div className="grid grid-cols-2 gap-2 px-3">
+                    {[
+                        { label: "From", value: minInput, set: setMinInput, placeholder: "0", aria: "Minimum price" },
+                        { label: "To", value: maxInput, set: setMaxInput, placeholder: "No limit", aria: "Maximum price" },
+                    ].map((f) => (
+                        <label key={f.label} className="block">
+                            <span className="mb-1 block text-label text-grey">{f.label}</span>
+                            <span className="flex h-10 items-center border border-ink/10 bg-off/50 font-mono text-meta text-ink transition focus-within:border-navy/30 focus-within:ring-2 focus-within:ring-navy focus-within:ring-offset-1">
+                                <span aria-hidden className="pl-3 text-grey">₱</span>
+                                <input type="number" inputMode="numeric" min={0} value={f.value} onChange={(e) => f.set(e.target.value)} placeholder={f.placeholder} aria-label={f.aria} className={PRICE_INPUT} />
+                            </span>
+                        </label>
+                    ))}
+                </div>
+            </div>
+
+            <div>
+                <span className={SECTION_LABEL}>Availability</span>
+                <ul className="flex flex-col gap-px">
+                    <li>
+                        <button onClick={() => setParams({ sale: onSaleOnly ? null : "1" })} aria-pressed={onSaleOnly} className={rowClass(onSaleOnly)}>
+                            On sale
+                            {onSaleOnly && <Tick />}
+                        </button>
+                    </li>
+                    <li>
+                        <button onClick={() => setParams({ stock: inStockOnly ? null : "1" })} aria-pressed={inStockOnly} className={rowClass(inStockOnly)}>
+                            In stock
+                            {inStockOnly && <Tick />}
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    );
+
+    return (
+        <div className={preview ? "grid grid-cols-1 lg:grid-cols-[260px_1fr]" : SHELL_GRID}>
+            <aside className={preview ? "hidden pr-6 lg:block" : ASIDE_CLASS}>
+                <div className={preview ? "" : ASIDE_STICKY}>{renderPanel(true)}</div>
             </aside>
 
-            <div className="min-w-0">
-                <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <SectionTitle num="—" title={`${filtered.length} Products`} />
-                    <select value={sort} onChange={(e) => setSort(e.target.value as SortKey)} className={`${FILTER_SELECT} flex-none`}>
-                        <option value="default">Sort: Featured</option>
-                        <option value="price-asc">Price (Low–High)</option>
-                        <option value="price-desc">Price (High–Low)</option>
-                        <option value="rating-desc">Rating (High–Low)</option>
-                    </select>
-                </div>
+            <div className={preview ? "min-w-0" : PAGE_COLUMN}>
+                <PageIntro pageKey="shop" previewData={introPreviewData} rule={false} />
+                <SectionTitle
+                    num="—"
+                    title={heading}
+                    action={
+                        <button
+                            onClick={() => setDrawerOpen(true)}
+                            className="flex h-11 flex-none items-center gap-2 border border-ink/10 bg-off/50 px-3.5 text-meta normal-case tracking-normal text-ink transition hover:border-ink/30 lg:hidden"
+                        >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                                <path d="M4 7h10M18 7h2M4 17h2M10 17h10" />
+                                <circle cx="16" cy="7" r="2" />
+                                <circle cx="8" cy="17" r="2" />
+                            </svg>
+                            Filters
+                            {chips.length > 0 && <span className="font-mono text-label text-pink-dark">{chips.length}</span>}
+                        </button>
+                    }
+                />
 
                 {filtered.length === 0 ? (
-                    <div className="flex flex-col items-center gap-4 border border-ink/10 py-20 text-center">
-                        <p className="max-w-[280px] text-[13px] leading-relaxed text-grey">No products match your search.</p>
-                    </div>
+                    <EmptyState
+                        title={chips.length > 0 ? "No matches" : "Nothing here yet"}
+                        message={chips.length > 0 ? "Nothing matches these filters. Loosen one, or start again." : "The catalogue is empty right now."}
+                        action={
+                            chips.length > 0 ? (
+                                <button onClick={clearAll} className="ui-btn ui-btn-secondary">
+                                    Clear all filters
+                                </button>
+                            ) : undefined
+                        }
+                    />
                 ) : (
                     <>
                         <div className="grid grid-cols-2 gap-3 sm:gap-5 xl:grid-cols-3">
@@ -157,36 +357,40 @@ function ShopContent() {
                     </>
                 )}
             </div>
+
+            <FilterDrawer
+                open={drawerOpen}
+                onClose={() => setDrawerOpen(false)}
+                footer={
+                    <div className="flex items-center gap-3">
+                        {chips.length > 0 && (
+                            <button onClick={clearAll} className="h-11 px-2 text-meta text-grey underline underline-offset-4 transition hover:text-ink">
+                                Clear all
+                            </button>
+                        )}
+                        <button onClick={() => setDrawerOpen(false)} className={`${BAR_BUTTON} ml-auto`}>
+                            Show {filtered.length} result{filtered.length === 1 ? "" : "s"}
+                        </button>
+                    </div>
+                }
+            >
+                {renderPanel(false)}
+            </FilterDrawer>
         </div>
     );
 }
 
-function ShopGridSkeleton() {
+function ShopGridSkeleton({ introPreviewData }: { introPreviewData?: PageIntroContent }) {
     return (
         <SkeletonGroup>
-            <div className="grid grid-cols-1 gap-10 lg:grid-cols-[220px_1fr]">
-                <div className="flex flex-col gap-6 lg:gap-8">
-                    <Skeleton tone="outline" className="h-11 w-full" />
-                    <div>
-                        <Skeleton tone="soft" className="mb-3 h-[10.5px] w-16" />
-                        <div className="flex flex-row gap-1 lg:flex-col lg:gap-0">
-                            {CATEGORIES.map((c) => (
-                                <div key={c} className="flex h-[41px] flex-none items-center justify-between gap-3 px-3 lg:flex-1 lg:pl-4">
-                                    <Skeleton className="h-3 w-14" />
-                                    <Skeleton tone="soft" className="h-[11px] w-4" />
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
+            <div className={SHELL_GRID}>
+                <FilterColumnSkeleton groups={[4, CATEGORIES.length]} />
 
-                <div className="min-w-0">
-                    <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="flex items-center gap-x-4 sm:gap-x-5">
-                            <Skeleton className="h-[10.5px] w-3" />
-                            <Skeleton className="h-[10.5px] w-24" />
-                        </div>
-                        <Skeleton tone="outline" className="h-11 w-40 flex-none" />
+                <div className={PAGE_COLUMN}>
+                    <PageIntro pageKey="shop" previewData={introPreviewData} rule={false} />
+                    <div className="mb-8 flex items-center gap-x-4 sm:gap-x-5">
+                        <Skeleton className="h-[10.5px] w-3" />
+                        <Skeleton className="h-[10.5px] w-24" />
                     </div>
 
                     <div className="grid grid-cols-2 gap-3 sm:gap-5 xl:grid-cols-3">

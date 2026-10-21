@@ -26,7 +26,7 @@ export default function LowStockViewModal({
     const status = productStockStatus(product);
 
     return (
-        <Modal open={open} onClose={onClose} maxWidth="max-w-[380px]">
+        <Modal open={open} onClose={onClose} maxWidth="max-w-[380px]" titleInBody>
             <ViewHeader
                 title={product.name}
                 caption={
@@ -76,7 +76,7 @@ export default function LowStockViewModal({
                 <div className="sticky bottom-0 border-t border-ink/10 bg-white px-5 sm:px-8 py-5">
                     <Link
                         href="/admin/inventory"
-                        className="flex w-full items-center justify-center gap-2 border border-ink/15 py-3 text-center text-[12.5px] font-semibold uppercase tracking-wide text-ink transition hover:bg-off/60"
+                        className="ui-btn ui-btn-secondary w-full"
                     >
                         Go to Inventory
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

@@ -25,7 +25,7 @@ const PAGES_SECTIONS: { key: PagesSection; label: string; category: string; capt
         key: "pages",
         label: "Pages",
         category: "Pages",
-        caption: "Shop, wishlist & cart",
+        caption: "Shop, wishlist & bag",
         description: "Core shopping routes — headline and accent copy only.",
     },
     {
@@ -75,7 +75,7 @@ const SHOP_ALL_ROW: PageRow = {
 const NEWSLETTER_ROW: PageRow = { slug: "newsletter", name: "Newsletter", category: "Landing Page", sectionKey: "newsletter" };
 const SHOP_ROW: PageRow = { slug: "shop", name: "Shop", category: "Pages" };
 const WISHLIST_ROW: PageRow = { slug: "wishlist", name: "Wishlist", category: "Pages" };
-const CART_ROW: PageRow = { slug: "cart", name: "Cart", category: "Pages" };
+const CART_ROW: PageRow = { slug: "cart", name: "Bag", category: "Pages" };
 
 // Contact and Journal are homepage sections too, but each has its own top-level tab, so their toggles live there instead.
 // Rituals/Shop by Concern/FAQs/Testimonials live in their own "Content Collections" tab instead of here —
@@ -140,8 +140,8 @@ export default function PagesTab() {
                             onClick={() => setSection(s.key)}
                             className={`flex-none px-4 py-3.5 text-left whitespace-nowrap transition sm:px-5 sm:py-4 sm:whitespace-normal ${active ? "bg-navy" : "hover:bg-off/60"}`}
                         >
-                            <div className={`text-[13.5px] font-medium ${active ? "text-white" : "text-ink"}`}>{s.label}</div>
-                            <div className={`mt-0.5 hidden text-[11.5px] sm:block ${active ? "text-white/70" : "text-grey"}`}>{s.caption}</div>
+                            <div className={`text-small font-medium ${active ? "text-white" : "text-ink"}`}>{s.label}</div>
+                            <div className={`mt-0.5 hidden text-label sm:block ${active ? "text-white/70" : "text-grey"}`}>{s.caption}</div>
                         </button>
                     );
                 })}
@@ -149,8 +149,8 @@ export default function PagesTab() {
 
             <div className="min-h-0 min-w-0 flex-1 overflow-y-auto p-4 sm:p-7">
                 <div className="mb-5">
-                    <h3 className="m-0 text-[15px] font-medium text-ink">{activeSection.label}</h3>
-                    <p className="mt-1 text-[12px] text-grey">{activeSection.description}</p>
+                    <h3 className="m-0 text-body font-medium text-ink">{activeSection.label}</h3>
+                    <p className="mt-1 text-meta text-grey">{activeSection.description}</p>
                 </div>
 
                 <ListPanel minWidth={460}>
@@ -160,7 +160,7 @@ export default function PagesTab() {
                                 <th
                                     key={h}
                                     scope="col"
-                                    className={`${HEADER_WIDTH[h]}border-b border-ink/10 px-3 py-3.5 text-left sm:px-5 font-mono text-[11px] tracking-[.12em] text-grey uppercase`}
+                                    className={`${HEADER_WIDTH[h]}border-b border-ink/10 px-3 py-3.5 text-left sm:px-5 font-mono text-label tracking-[.12em] text-grey uppercase`}
                                 >
                                     {h}
                                 </th>
@@ -172,13 +172,13 @@ export default function PagesTab() {
                             <Fragment key={p.slug}>
                                 {i === firstToggleOnlyIndex && i > 0 && (
                                     <tr aria-hidden="true">
-                                        <td colSpan={4} className="border-b border-ink/10 bg-off/30 px-5 py-1.5 font-mono text-[10px] tracking-[.12em] text-grey uppercase">
+                                        <td colSpan={4} className="border-b border-ink/10 bg-off/30 px-5 py-1.5 font-mono text-label tracking-[.12em] text-grey uppercase">
                                             Display only — no editor
                                         </td>
                                     </tr>
                                 )}
                                 <tr className="transition hover:bg-off/40">
-                                    <td className="border-b border-ink/10 px-3 py-3.5 text-[13.5px] font-medium whitespace-nowrap text-ink sm:px-5">
+                                    <td className="border-b border-ink/10 px-3 py-3.5 text-small font-medium whitespace-nowrap text-ink sm:px-5">
                                         {p.hasEditor === false ? (
                                             <span className="flex items-center gap-2 whitespace-nowrap">
                                                 <span className="text-grey">{p.name}</span>
@@ -190,7 +190,7 @@ export default function PagesTab() {
                                             </Link>
                                         )}
                                     </td>
-                                    <td className="hidden border-b border-ink/10 px-5 py-3.5 font-mono text-[12px] text-grey md:table-cell">
+                                    <td className="hidden border-b border-ink/10 px-5 py-3.5 font-mono text-meta text-grey md:table-cell">
                                         {p.updated ?? "—"}
                                     </td>
                                     {/* Reversible in one click, so no ConfirmModal — the
@@ -202,7 +202,7 @@ export default function PagesTab() {
                                                 onChange={(v) => updateSectionVisibility(p.sectionKey!, v)}
                                             />
                                         ) : (
-                                            <span className="font-mono text-[12px] text-grey">—</span>
+                                            <span className="font-mono text-meta text-grey">—</span>
                                         )}
                                     </td>
                                     <td className="border-b border-ink/10 px-2 py-3.5 sm:px-5">

@@ -44,10 +44,10 @@ export default function Newsletter({
                         {newsletter.headline} <em className="font-normal text-pink-dark">{newsletter.accent}</em>
                     </h2>
 
-                    <p className="text-[13.5px] text-grey">{newsletter.body}</p>
+                    <p className="text-small text-grey">{newsletter.body}</p>
 
                     {subscribed ? (
-                        <p className="text-sm font-medium text-ink">
+                        <p className="text-small font-medium text-ink">
                             You&apos;re on the list! Check your inbox for your 10% off code.
                         </p>
                     ) : (
@@ -61,19 +61,19 @@ export default function Newsletter({
                                 type="email"
                                 required
                                 placeholder="Your email address"
-                                className="min-w-0 flex-1 border border-ink/15 bg-white px-5 py-3 text-sm text-ink outline-none transition focus:border-pink-dark focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-1"
+                                className="ui-input min-w-0 flex-1"
                             />
                             <button
                                 type="submit"
                                 disabled={submitting}
-                                className="flex-none bg-pink-btn px-6 py-3.5 text-xs font-semibold tracking-wide text-white transition hover:bg-pink-btn-hover disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-pink-btn"
+                                className="ui-btn ui-btn-accent flex-none"
                             >
                                 {submitting ? "Subscribing…" : "Subscribe"}
                             </button>
                         </form>
                     )}
 
-                    <div className="text-[11.5px] text-grey">{newsletter.socialProof}</div>
+                    {newsletter.socialProof && <div className="text-label text-grey">{newsletter.socialProof}</div>}
                 </div>
             </div>
         </div>

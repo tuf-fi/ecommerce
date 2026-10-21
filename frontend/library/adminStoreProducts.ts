@@ -37,6 +37,7 @@ export function toCreatePayload(input: Omit<AdminProduct, "id">): ProductPayload
         category: input.category,
         expiry: input.expiry,
         reorderThreshold: input.reorderThreshold ?? null,
+        description: input.description ?? "",
         ...(image ? { image } : {}),
         ...(sizes.length ? { sizes: sizesPayload(sizes) } : { price: input.price, salePrice: input.salePrice ?? null, stock: input.stock }),
     };

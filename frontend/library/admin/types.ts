@@ -18,6 +18,8 @@ export type AdminProduct = {
     sizes?: ProductSize[];
     // Units-remaining "low stock" cutoff per product/size; falls back to LOW_STOCK_THRESHOLD when unset.
     reorderThreshold?: number;
+    // Shown on the product page; `## Ingredients`, `## How to use`, `## Suitable for` sections become the spec list.
+    description?: string;
     // The product version this copy was loaded at; an edit is rejected if someone else has saved since.
     version?: number;
 };
@@ -39,6 +41,7 @@ export type AdminOrder = {
     no: string;
     customer: string;
     email: string;
+    phone?: string;
     address: string;
     location?: string;
     date: string;

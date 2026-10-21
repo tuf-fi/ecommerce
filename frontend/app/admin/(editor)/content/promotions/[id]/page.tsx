@@ -103,7 +103,7 @@ function PromoEditorForm({
                 active ? (
                     <PromoBanner promo={{ id: existing?.id ?? 0, text, code, image, active }} />
                 ) : (
-                    <p className="p-6 text-center text-[12.5px] text-grey">
+                    <p className="p-6 text-center text-meta text-grey">
                         This promotion is turned off — it won&apos;t show on the site until &quot;Display this promo&quot; is on.
                     </p>
                 )
@@ -114,19 +114,19 @@ function PromoEditorForm({
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={image} alt="" className="h-full w-full object-cover" />
                     ) : (
-                        <span className="text-center font-mono text-[10px] tracking-[.08em] text-ink/60 uppercase">+ Set image</span>
+                        <span className="text-center font-mono text-label tracking-[.08em] text-ink/60 uppercase">+ Set image</span>
                     )}
                     {!disabled && image && (
-                        <span className="absolute inset-0 flex items-center justify-center bg-navy/60 text-[11.5px] font-medium text-white opacity-0 transition group-hover:opacity-100">
+                        <span className="absolute inset-0 flex items-center justify-center bg-navy/60 text-label font-medium text-white opacity-0 transition group-hover:opacity-100">
                             Replace
                         </span>
                     )}
-                    {!disabled && <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />}
+                    {!disabled && <input type="file" aria-label="Upload image" accept="image/*" onChange={handleImageChange} className="sr-only" />}
                 </label>
             }
             meta={
                 <div className="flex items-center justify-between">
-                    <label htmlFor="promo-display-toggle" className="text-[13px] text-ink">Display this promo</label>
+                    <label htmlFor="promo-display-toggle" className="text-small text-ink">Display this promo</label>
                     <Toggle
                         id="promo-display-toggle"
                         checked={active}
@@ -156,9 +156,10 @@ function PromoEditorForm({
                     }}
                     placeholder="e.g. 10% off your first order"
                     aria-invalid={errors.text ? true : undefined}
+                    aria-describedby={errors.text ? "promo-text-error" : undefined}
                     className={`${FIELD_INPUT} resize-y ${errors.text ? FIELD_INPUT_INVALID : ""}`}
                 />
-                {errors.text && <p className={FIELD_ERROR}>{errors.text}</p>}
+                {errors.text && <p id="promo-text-error" role="alert" className={FIELD_ERROR}>{errors.text}</p>}
             </div>
             <div className="mb-5">
                 <label htmlFor="promo-code" className={FIELD_LABEL}>Promo Code (optional)</label>

@@ -146,11 +146,11 @@ export default function Navbar(){
     ${solid ? "border-b border-white/10 bg-navy" : "border-b border-transparent"}`}>
         <div ref={topBarRef} className={`flex items-center justify-between px-(--gutter) transition-[padding] duration-300 ${solid ? "py-3.5" : "py-5"}`}>
             <div className="flex items-center gap-x-8 xl:gap-x-16">
-                <button onClick={handleHomeClick} className="font-display text-[19px] font-medium tracking-tight">
+                <button onClick={handleHomeClick} className="font-display text-title font-medium tracking-tight">
                     Cindyrella
                 </button>
 
-                <ul className="hidden items-center gap-x-9 font-mono text-[10.5px] uppercase tracking-[.12em] lg:flex">
+                <ul className="hidden items-center gap-x-9 font-mono text-label uppercase tracking-[.12em] lg:flex">
                     {mainNavLinks.map((link) => (
                         <li key={link.id}>
                             <button onClick={() => handleNavClick(link)} className="group/link relative py-1 text-white/65 transition-colors duration-200 hover:text-white">
@@ -175,7 +175,7 @@ export default function Navbar(){
                                     <button
                                         key={link.id}
                                         onClick={() => { setMoreOpen(false); handleNavClick(link); }}
-                                        className="block w-full px-4 py-2.5 text-left font-mono text-[10.5px] uppercase tracking-[.12em] text-white/65 transition hover:bg-white/5 hover:text-white"
+                                        className="block w-full px-4 py-2.5 text-left font-mono text-label uppercase tracking-[.12em] text-white/65 transition hover:bg-white/5 hover:text-white"
                                     >
                                         {link.label}
                                     </button>
@@ -189,7 +189,7 @@ export default function Navbar(){
             <div className="flex items-center gap-x-5">
                 <Link
                     href="/shop"
-                    className="hidden border border-pink px-4 py-[7px] font-mono text-[10.5px] font-semibold uppercase tracking-[.14em] text-pink transition-colors duration-200 hover:border-pink-btn hover:bg-pink-btn hover:text-white lg:inline-block"
+                    className="hidden border border-pink px-4 py-[7px] font-mono text-label font-semibold uppercase tracking-[.14em] text-pink transition-colors duration-200 hover:border-pink-btn hover:bg-pink-btn hover:text-white lg:inline-block"
                 >
                     Shop
                 </Link>
@@ -212,12 +212,12 @@ export default function Navbar(){
                         {accountOpen && isLoggedIn && (
                             <div className="absolute right-[var(--gutter)] top-full mt-2 w-[min(15rem,calc(100vw-2*var(--gutter)))] border border-ink/10 bg-white py-2 text-ink shadow-modal sm:right-0 sm:w-60">
                                 <div className="px-4 py-3">
-                                    <div className="text-[13px] text-ink">Hi, {customerName}</div>
+                                    <div className="text-small text-ink">Hi, {customerName}</div>
                                 </div>
                                 <div className="my-1 border-t border-ink/10" />
                                 <button
                                     onClick={() => { setAccountOpen(false); router.push("/account"); }}
-                                    className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-[12.5px] transition hover:bg-ink/5"
+                                    className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-meta transition hover:bg-ink/5"
                                 >
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="flex-none text-grey">
                                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
@@ -226,7 +226,7 @@ export default function Navbar(){
                                     View Profile
                                 </button>
                                 <div className="my-1 border-t border-ink/10" />
-                                <button onClick={() => { setAccountOpen(false); signOut(); }} className="block w-full px-4 py-2.5 text-left text-[12.5px] text-pink-dark transition hover:bg-ink/5">
+                                <button onClick={() => { setAccountOpen(false); signOut(); }} className="block w-full px-4 py-2.5 text-left text-meta text-pink-dark transition hover:bg-ink/5">
                                     Sign out
                                 </button>
                             </div>
@@ -245,16 +245,16 @@ export default function Navbar(){
                                 <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z" />
                             </svg>
                             {wishlist.length > 0 && (
-                                <span className="absolute top-0.5 right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-pink-btn text-[9px] font-semibold">
+                                <span className="absolute top-0.5 right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-pink-btn text-label font-semibold">
                                     {wishlist.length}
                                 </span>
                             )}
                         </button>
                     </Tooltip>
 
-                    <Tooltip label="Cart">
+                    <Tooltip label="Bag">
                         <button
-                            aria-label="Cart"
+                            aria-label="Bag"
                             onClick={() => router.push("/cart")}
                             className="relative flex h-10 w-10 items-center justify-center text-white/80 transition hover:bg-white/10 hover:text-white"
                         >
@@ -264,7 +264,7 @@ export default function Navbar(){
                                 <path d="M16 10a4 4 0 0 1-8 0" />
                             </svg>
                             {cartCount > 0 && (
-                                <span className="absolute top-0.5 right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-pink-btn text-[9px] font-semibold">
+                                <span className="absolute top-0.5 right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-pink-btn text-label font-semibold">
                                     {cartCount}
                                 </span>
                             )}
@@ -300,7 +300,7 @@ export default function Navbar(){
                         <li className="border-b border-ink/10 last:border-none">
                             <button
                                 onClick={handleHomeClick}
-                                className="w-full py-3.5 text-left font-mono text-[11px] uppercase tracking-[.12em] text-ink/70 transition-colors hover:text-pink-dark"
+                                className="w-full py-3.5 text-left font-mono text-label uppercase tracking-[.12em] text-ink/70 transition-colors hover:text-pink-dark"
                             >
                                 {HOME_LABEL}
                             </button>
@@ -309,7 +309,7 @@ export default function Navbar(){
                             <li key={link.id} className="border-b border-ink/10 last:border-none">
                                 <button
                                     onClick={() => handleNavClick(link)}
-                                    className="w-full py-3.5 text-left font-mono text-[11px] uppercase tracking-[.12em] text-ink/70 transition-colors hover:text-pink-dark"
+                                    className="w-full py-3.5 text-left font-mono text-label uppercase tracking-[.12em] text-ink/70 transition-colors hover:text-pink-dark"
                                 >
                                     {link.label}
                                 </button>
@@ -320,7 +320,7 @@ export default function Navbar(){
                         <Link
                             href="/shop"
                             onClick={() => setMenuOpen(false)}
-                            className="block border border-pink-btn px-4 py-3 text-center font-mono text-[10.5px] font-semibold uppercase tracking-[.14em] text-pink-btn transition-colors duration-200 hover:bg-pink-btn hover:text-white"
+                            className="block border border-pink-btn px-4 py-3 text-center font-mono text-label font-semibold uppercase tracking-[.14em] text-pink-btn transition-colors duration-200 hover:bg-pink-btn hover:text-white"
                         >
                             Shop
                         </Link>

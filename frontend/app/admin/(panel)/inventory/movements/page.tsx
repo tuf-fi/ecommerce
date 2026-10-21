@@ -87,7 +87,7 @@ export default function StockMovementsPage() {
                         <FilterField label="Legend" className="ml-auto flex-none">
                             <div className="flex min-h-11 flex-wrap items-center gap-x-4 gap-y-1.5">
                                 {LEGEND.map((item) => (
-                                    <span key={item.type} className="flex items-center gap-1.5 text-[11.5px] text-grey">
+                                    <span key={item.type} className="flex items-center gap-1.5 text-label text-grey">
                                         <StatusBadge label={item.type.toUpperCase()} tone={item.tone} />
                                         {item.label}
                                     </span>
@@ -101,7 +101,6 @@ export default function StockMovementsPage() {
             <div className="border border-ink/10 bg-white shadow-card">
                 {sorted.length === 0 ? (
                     <EmptyStateBlock
-                        variant={stockLog.length === 0 ? "empty" : "filtered"}
                         message={stockLog.length === 0 ? "No changes recorded yet." : "No movements match this filter."}
                     />
                 ) : (
@@ -109,7 +108,7 @@ export default function StockMovementsPage() {
                         {paged.map((entry) => (
                             <div
                                 key={entry.id}
-                                className="flex flex-col gap-1.5 border-b border-ink/10 px-4 py-3 text-[12.5px] last:border-b-0 sm:flex-row sm:items-center sm:justify-between sm:gap-2.5 sm:px-6"
+                                className="flex flex-col gap-1.5 border-b border-ink/10 px-4 py-3 text-meta last:border-b-0 sm:flex-row sm:items-center sm:justify-between sm:gap-2.5 sm:px-6"
                             >
                                 <span className="break-words">
                                     <span className="mr-2 inline-block align-middle">
@@ -121,14 +120,14 @@ export default function StockMovementsPage() {
                                     {entry.text}
                                 </span>
                                 <span className="flex-none text-left sm:text-right">
-                                    <span className="block font-mono text-[11px] text-grey">{entry.time}</span>
-                                    <span className="block font-mono text-[10px] text-grey/70">{entry.actor}</span>
+                                    <span className="block font-mono text-label text-grey">{entry.time}</span>
+                                    <span className="block font-mono text-label text-grey/70">{entry.actor}</span>
                                 </span>
                             </div>
                         ))}
                     </div>
                 )}
-                <div className="border-t border-ink/10 bg-off/50 px-5 py-2.5 text-right font-mono text-[11px] text-grey">
+                <div className="border-t border-ink/10 bg-off/50 px-5 py-2.5 text-right font-mono text-label text-grey">
                     Showing {sorted.length} of {stockLog.length}
                 </div>
             </div>

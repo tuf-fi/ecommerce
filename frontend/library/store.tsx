@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { PRODUCTS, getProduct, currentPrice } from "./products";
+import { PRODUCTS, getProduct, currentPrice, cheapestSizeId } from "./products";
 import { customerLogout, customerSession, updateCustomerProfile } from "./api/auth";
 import { API_BASE_URL, ApiError } from "./api/client";
 import { addToWishlist, createAddress, customerLogoutAll, deleteAddress, listAddresses, listMyNotifications, markMyNotificationsRead, mergeWishlist, removeFromWishlist, updateAddress, type CustomerNotification } from "./api/customer";
@@ -16,20 +16,24 @@ const SOUND_KEY = "cindyrella_notification_sound";
 type PersistedStore = {
     cart: CartMap;
     wishlist: number[];
+    wishlistMeta?: WishlistMeta;
     checkoutAddressId: number | null;
 };
+
+// What a product looked like when it was saved, kept in this browser only, so the wishlist can flag price drops and restocks.
+export type WishlistMeta = Record<number, { price: number; soldOut: boolean }>;
 
 export type ModalKey =
     | "login"
     | "welcome"
     | "quiz";
 
-export type Address = { id: number; label: string; text: string; isDefault: boolean };
+export type Address = { id: number; label: string; text: string; phone: string | null; isDefault: boolean };
 
 export type CartLine = { productId: number; sizeId: string | null; qty: number };
 type CartMap = Record<string, CartLine>;
 
-const MAX_PER_ITEM = 6;
+export const MAX_PER_ITEM = 6;
 
 export function cartKey(id: number, sizeId?: string | null) {
     return sizeId ? `${id}::${sizeId}` : String(id);
@@ -47,6 +51,8 @@ type StoreValue = {
     cartCount: number;
     cartTotal: number;
     addToCart: (id: number, qty?: number, sizeId?: string | null) => void;
+    // Adds one of each (cheapest size) in a single update; returns how many went in. Skips sold-out items and ones at their limit.
+    addManyToCart: (ids: number[]) => number;
     changeQty: (key: string, delta: number) => void;
     removeLine: (key: string) => void;
     removeLines: (keys: string[]) => void;
@@ -56,12 +62,15 @@ type StoreValue = {
     setCheckoutKeys: (keys: string[]) => void;
 
     wishlist: number[];
+    wishlistMeta: WishlistMeta;
     toggleWishlist: (id: number) => void;
+    // Saves (or removes) several products at once with a single message, e.g. a whole ritual.
+    setWishlistFor: (ids: number[], saved: boolean, label: string) => void;
 
     addresses: Address[];
     // Saved on the server for signed-in customers (so they follow the person to any device).
-    addAddress: (label: string, text: string) => Promise<void>;
-    editAddress: (id: number, label: string, text: string) => Promise<void>;
+    addAddress: (label: string, text: string, phone: string) => Promise<void>;
+    editAddress: (id: number, label: string, text: string, phone: string) => Promise<void>;
     removeAddress: (id: number) => Promise<void>;
     setDefaultAddress: (id: number) => Promise<void>;
     checkoutAddress: Address | null;
@@ -86,10 +95,11 @@ type StoreValue = {
     sessionChecked: boolean;
     customerName: string;
     customerEmail: string;
+    customerPhone: string;
     customerAvatar: string;
-    signIn: (customer: { name: string; email: string; avatarUrl?: string | null }) => void;
+    signIn: (customer: { name: string; email: string; avatarUrl?: string | null; phone?: string | null }) => void;
     // Saves to the server, then updates the signed-in customer here. Resolves true on success.
-    updateProfile: (patch: { name?: string; avatarUrl?: string | null }) => Promise<boolean>;
+    updateProfile: (patch: { name?: string; avatarUrl?: string | null; phone?: string }) => Promise<boolean>;
     signOut: () => void;
     // Ends every login of this customer on every device, including this one.
     signOutEverywhere: () => Promise<void>;
@@ -108,6 +118,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const [cart, setCart] = useState<CartMap>({});
     const [checkoutKeys, setCheckoutKeys] = useState<string[]>([]);
     const [wishlist, setWishlist] = useState<number[]>([]);
+    const [wishlistMeta, setWishlistMeta] = useState<WishlistMeta>({});
     const [addresses, setAddresses] = useState<Address[]>([]);
     const [checkoutAddressId, setCheckoutAddressId] = useState<number | null>(null);
     const [hydrated, setHydrated] = useState(false);
@@ -156,6 +167,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }, []);
     const [customerName, setCustomerName] = useState("");
     const [customerEmail, setCustomerEmail] = useState("");
+    const [customerPhone, setCustomerPhone] = useState("");
     const [customerAvatar, setCustomerAvatar] = useState("");
     const [activeModal, setActiveModal] = useState<ModalKey | null>(null);
 
@@ -181,6 +193,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
                 const saved = JSON.parse(raw) as Partial<PersistedStore>;
                 if (saved.cart) setCart(saved.cart);
                 if (saved.wishlist) setWishlist(saved.wishlist);
+                if (saved.wishlistMeta) setWishlistMeta(saved.wishlistMeta);
                 if (saved.checkoutAddressId !== undefined) setCheckoutAddressId(saved.checkoutAddressId);
             }
         } catch {
@@ -195,6 +208,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             .then(({ customer }) => {
                 setCustomerName(customer.name);
                 setCustomerEmail(customer.email);
+                setCustomerPhone(customer.phone ?? "");
                 setCustomerAvatar(customer.avatarUrl ?? "");
                 setIsLoggedIn(true);
             })
@@ -291,13 +305,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             const toSave: PersistedStore = {
                 cart,
                 wishlist,
+                wishlistMeta,
                 checkoutAddressId,
             };
             localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
         } catch {
             // Private-browsing/storage-full — losing persistence is better than crashing the app.
         }
-    }, [hydrated, cart, wishlist, checkoutAddressId]);
+    }, [hydrated, cart, wishlist, wishlistMeta, checkoutAddressId]);
 
     const addToCart = useCallback(
         (id: number, qty: number = 1, sizeId: string | null = null) => {
@@ -323,6 +338,32 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             }
             setCart({ ...cart, [key]: { productId: id, sizeId, qty: current + qty } });
             showToast("success", `Added "${p.title}"${size ? ` (${size.label})` : ""} to your bag.`);
+        },
+        [cart, showToast]
+    );
+
+    const addManyToCart = useCallback(
+        (ids: number[]) => {
+            const next = { ...cart };
+            let added = 0;
+            for (const id of ids) {
+                const p = getProduct(id);
+                if (!p) continue;
+                const sizeId = cheapestSizeId(p);
+                const size = sizeId ? p.sizes?.find((s) => s.id === sizeId) : undefined;
+                const key = cartKey(id, sizeId);
+                const current = next[key]?.qty || 0;
+                const available = size ? size.stock : p.sizes?.length ? 0 : p.stock;
+                const inBagForProduct = Object.values(next)
+                    .filter((line) => line.productId === id)
+                    .reduce((sum, line) => sum + line.qty, 0);
+                if (current + 1 > available || inBagForProduct + 1 > MAX_PER_ITEM) continue;
+                next[key] = { productId: id, sizeId, qty: current + 1 };
+                added++;
+            }
+            if (added > 0) setCart(next);
+            showToast(added > 0 ? "success" : "error", added > 0 ? `Added ${added} item${added === 1 ? "" : "s"} to your bag.` : "Nothing could be added. Items are sold out or already at their limit.");
+            return added;
         },
         [cart, showToast]
     );
@@ -385,6 +426,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             const idx = wishlist.indexOf(id);
             const had = idx > -1;
             setWishlist(had ? wishlist.filter((x) => x !== id) : [...wishlist, id]);
+            setWishlistMeta((m) => {
+                const next = { ...m };
+                if (had || !p) delete next[id];
+                else next[id] = { price: currentPrice(p), soldOut: p.stock <= 0 };
+                return next;
+            });
             showToast("success", had ? `Removed "${p?.title ?? "item"}" from wishlist.` : `Saved "${p?.title ?? "item"}" to your wishlist.`);
             if (isLoggedIn) {
                 (had ? removeFromWishlist(id) : addToWishlist(id)).catch(() => {
@@ -397,13 +444,38 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         [wishlist, showToast, isLoggedIn]
     );
 
+    const setWishlistFor = useCallback(
+        (ids: number[], saved: boolean, label: string) => {
+            const changing = ids.filter((id) => wishlist.includes(id) !== saved);
+            if (changing.length === 0) return;
+            setWishlist((w) => (saved ? [...w, ...changing.filter((id) => !w.includes(id))] : w.filter((x) => !changing.includes(x))));
+            setWishlistMeta((m) => {
+                const next = { ...m };
+                for (const id of changing) {
+                    const p = getProduct(id);
+                    if (!saved || !p) delete next[id];
+                    else next[id] = { price: currentPrice(p), soldOut: p.stock <= 0 };
+                }
+                return next;
+            });
+            showToast("success", saved ? `Saved ${label} to your wishlist.` : `Removed ${label} from your wishlist.`);
+            if (isLoggedIn) {
+                Promise.all(changing.map((id) => (saved ? addToWishlist(id) : removeFromWishlist(id)))).catch(() => {
+                    setWishlist((w) => (saved ? w.filter((x) => !changing.includes(x)) : [...w, ...changing.filter((id) => !w.includes(id))]));
+                    showToast("error", "Couldn't save that to your account. Please try again.");
+                });
+            }
+        },
+        [wishlist, showToast, isLoggedIn]
+    );
+
     const addressError = (err: unknown) => showToast("error", err instanceof ApiError ? err.message : "Couldn't save your address. Please try again.");
 
     // Every change is made on the server and then the list is re-read, so what's shown is always what's saved.
     const addAddress = useCallback(
-        async (label: string, text: string) => {
+        async (label: string, text: string, phone: string) => {
             try {
-                await createAddress({ label, text });
+                await createAddress({ label, text, phone });
                 setAddresses(await listAddresses());
             } catch (err) {
                 addressError(err);
@@ -414,9 +486,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     );
 
     const editAddress = useCallback(
-        async (id: number, label: string, text: string) => {
+        async (id: number, label: string, text: string, phone: string) => {
             try {
-                await updateAddress(id, { label, text });
+                await updateAddress(id, { label, text, phone });
                 setAddresses(await listAddresses());
             } catch (err) {
                 addressError(err);
@@ -457,9 +529,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }, []);
 
     const signIn = useCallback(
-        ({ name, email, avatarUrl }: { name: string; email: string; avatarUrl?: string | null }) => {
+        ({ name, email, avatarUrl, phone }: { name: string; email: string; avatarUrl?: string | null; phone?: string | null }) => {
             setCustomerName(name);
             setCustomerEmail(email);
+            setCustomerPhone(phone ?? "");
             setCustomerAvatar(avatarUrl ?? "");
             setIsLoggedIn(true);
             setActiveModal(null);
@@ -473,6 +546,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         setIsLoggedIn(false);
         setCustomerName("");
         setCustomerEmail("");
+        setCustomerPhone("");
         setCustomerAvatar("");
         setAddresses([]);
         setWishlist([]);
@@ -499,10 +573,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }, [forgetCustomer, showToast]);
 
     const updateProfile = useCallback(
-        async (patch: { name?: string; avatarUrl?: string | null }) => {
+        async (patch: { name?: string; avatarUrl?: string | null; phone?: string }) => {
             try {
                 const { customer } = await updateCustomerProfile(patch);
                 setCustomerName(customer.name);
+                setCustomerPhone(customer.phone ?? "");
                 setCustomerAvatar(customer.avatarUrl ?? "");
                 return true;
             } catch (err) {
@@ -528,6 +603,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         cartCount,
         cartTotal,
         addToCart,
+        addManyToCart,
         changeQty,
         removeLine,
         removeLines,
@@ -535,7 +611,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         checkoutKeys,
         setCheckoutKeys,
         wishlist,
+        wishlistMeta,
         toggleWishlist,
+        setWishlistFor,
         addresses,
         addAddress,
         editAddress,
@@ -557,6 +635,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         sessionChecked,
         customerName,
         customerEmail,
+        customerPhone,
         customerAvatar,
         updateProfile,
         signIn,

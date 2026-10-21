@@ -271,6 +271,7 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
                     category: next.category,
                     expiry: next.expiry,
                     reorderThreshold: next.reorderThreshold ?? null,
+                    description: next.description ?? "",
                     version: old.version,
                     ...(sizes.length ? { sizes: sizesPayload(sizes) } : { price: next.price, salePrice: next.salePrice ?? null, sizes: [] }),
                 };

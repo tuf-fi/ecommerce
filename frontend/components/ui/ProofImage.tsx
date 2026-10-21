@@ -26,7 +26,7 @@ export default function ProofImage({ orderNo, proofId, className = "" }: { order
     }, [orderNo, proofId, key]);
 
     if (state.key !== key) return <div className={`animate-pulse bg-off ${className}`} aria-label="Loading screenshot" />;
-    if (!state.url) return <div className={`flex items-center justify-center bg-off text-[12px] text-grey ${className}`}>Screenshot not available</div>;
+    if (!state.url) return <div className={`flex items-center justify-center bg-off text-meta text-grey ${className}`}>Screenshot not available</div>;
     return (
         <a href={state.url} target="_blank" rel="noreferrer" aria-label="Open screenshot full size">
             {/* eslint-disable-next-line @next/next/no-img-element */}

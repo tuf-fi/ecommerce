@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import EmptyState from "@/components/ui/EmptyState";
+import { useAdminBack } from "@/library/adminHistory";
 import { useContent } from "@/library/content";
 import { Testimonial } from "@/library/admin/types";
 import Tooltip from "@/components/ui/Tooltip";
@@ -30,7 +31,7 @@ function initials(name: string) {
 }
 
 export default function TestimonialsTab() {
-    const router = useRouter();
+    const goBack = useAdminBack("/admin/content?tab=pages");
     const { testimonials, addTestimonial, updateTestimonial, deleteTestimonial, moveTestimonial } = useContent();
     const [editing, setEditing] = useState<Testimonial | null>(null);
     const [modalOpen, setModalOpen] = useState(false);
@@ -55,7 +56,7 @@ export default function TestimonialsTab() {
                 — needs its own way back for the same reason those do, since
                 this route renders with no tab bar above it. */}
             <div className="mb-6">
-                <BackLink label="Pages" onClick={() => router.push("/admin/content?tab=pages")} />
+                <BackLink onClick={goBack} />
             </div>
 
             <div>
@@ -74,12 +75,12 @@ export default function TestimonialsTab() {
                 />
 
                 {testimonials.length === 0 ? (
-                    <div className="border border-ink/10 bg-white px-5 py-16 text-center text-[13px] text-grey">No testimonials yet.</div>
+                    <EmptyState message="No testimonials yet." />
                 ) : (
                     <div className="overflow-x-auto border border-ink/10 bg-white">
                         <div className={`grid ${GRID_COLS} items-center gap-4 border-b border-ink/10 bg-off/50 px-5 py-3`}>
-                            <span className="col-span-3 font-mono text-[11px] font-bold tracking-[.12em] text-grey uppercase">Name</span>
-                            <span className="font-mono text-[11px] font-bold tracking-[.12em] text-grey uppercase">Company</span>
+                            <span className="col-span-3 font-mono text-label font-bold tracking-[.12em] text-grey uppercase">Name</span>
+                            <span className="font-mono text-label font-bold tracking-[.12em] text-grey uppercase">Company</span>
                             <span aria-hidden="true" />
                         </div>
                         <div className="divide-y divide-ink/10">
@@ -101,7 +102,7 @@ export default function TestimonialsTab() {
                                         className={`grid ${GRID_COLS} cursor-pointer items-center gap-4 px-5 py-4 transition hover:bg-off/40`}
                                     >
                                         <ReorderButtons index={i} count={testimonials.length} onMove={(dir) => moveTestimonial(t.id, dir)} />
-                                        <span className="flex h-11 w-11 flex-none items-center justify-center overflow-hidden rounded-full bg-blue-soft font-mono text-[11px] text-ink">
+                                        <span className="flex h-11 w-11 flex-none items-center justify-center overflow-hidden rounded-full bg-blue-soft font-mono text-label text-ink">
                                             {t.image ? (
                                                 // eslint-disable-next-line @next/next/no-img-element
                                                 <img src={t.image} alt="" className="h-full w-full object-cover" />
@@ -109,8 +110,8 @@ export default function TestimonialsTab() {
                                                 initials(t.name)
                                             )}
                                         </span>
-                                        <div className="min-w-0 truncate text-[14px] font-medium text-ink">{t.name}</div>
-                                        <div className="truncate text-[12px] text-grey">{t.company}</div>
+                                        <div className="min-w-0 truncate text-body font-medium text-ink">{t.name}</div>
+                                        <div className="truncate text-meta text-grey">{t.company}</div>
                                         <div className="flex items-center justify-end gap-1.5">
                                             <Tooltip label="Edit">
                                                 <button
@@ -142,7 +143,7 @@ export default function TestimonialsTab() {
                                 );
                             })}
                         </div>
-                        <div className="border-t border-ink/10 bg-off/50 px-5 py-2.5 text-right font-mono text-[11px] text-grey">
+                        <div className="border-t border-ink/10 bg-off/50 px-5 py-2.5 text-right font-mono text-label text-grey">
                             Showing {testimonials.length} of {testimonials.length}
                         </div>
                     </div>

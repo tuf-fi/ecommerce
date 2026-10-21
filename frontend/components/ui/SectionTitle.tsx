@@ -9,10 +9,9 @@ import { SECTION_KEYS, SectionKey } from "@/library/admin/sections";
 const UNNUMBERED: SectionKey[] = ["hero", "philosophy", "newsletter"];
 
 // Pass `section` on the homepage to number by visible position; `num` is the fixed label for standalone pages.
-// The rule draws in only on the home sections that animate; everywhere else it is static.
-const ANIMATED: SectionKey[] = ["bestSellers", "moments", "glossary", "catalogue", "journal"];
+// `animate` draws the rule in on scroll; pass it only on sections that already reveal.
 
-export default function SectionTitle({ num, section, title, action }: { num?: string; section?: SectionKey; title: string; action?: React.ReactNode }) {
+export default function SectionTitle({ num, section, title, action, animate = false }: { num?: string; section?: SectionKey; title: string; action?: React.ReactNode; animate?: boolean }) {
     const { sectionVisibility } = useContent();
     const label = section
         ? String(SECTION_KEYS.filter((k) => !UNNUMBERED.includes(k) && (k === section || sectionVisibility[k])).indexOf(section) + 1).padStart(2, "0")
@@ -20,9 +19,9 @@ export default function SectionTitle({ num, section, title, action }: { num?: st
 
     return (
         <div className="flex flex-row items-center gap-x-4 uppercase mb-8 sm:gap-x-5 md:mb-11">
-            <span className="font-mono text-[10.5px] text-grey">{label}</span>
-            <span className="font-mono text-[10.5px] tracking-[.16em] text-ink">{title}</span>
-            {section && ANIMATED.includes(section) ? (
+            {label && <span className="font-mono text-label text-grey">{label}</span>}
+            <span className="font-mono text-label tracking-[.16em] text-ink">{title}</span>
+            {animate ? (
                 <motion.span
                     className="h-px flex-1 origin-left bg-gradient-to-r from-grey-light to-transparent"
                     initial={{ scaleX: 0 }}

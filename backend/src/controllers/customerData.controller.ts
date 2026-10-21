@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import { z } from "zod";
 import { prisma } from "../lib/prisma";
 import { HttpError } from "../lib/httpError";
+import { phoneField } from "../lib/phone";
 
 const MAX_ADDRESSES = 10;
 const MAX_WISHLIST = 200;
@@ -11,11 +12,12 @@ const MAX_WISHLIST = 200;
 export const addressSchema = z.object({
   label: z.string().trim().min(1, "Give the address a short name").max(40),
   text: z.string().trim().min(5, "Enter the full address").max(300),
+  phone: phoneField,
   makeDefault: z.boolean().optional(),
 });
 export const addressPatchSchema = addressSchema.partial().extend({ isDefault: z.literal(true).optional() });
 
-const pick = { id: true, label: true, text: true, isDefault: true } as const;
+const pick = { id: true, label: true, text: true, phone: true, isDefault: true } as const;
 
 export async function listAddresses(req: Request, res: Response) {
   const rows = await prisma.address.findMany({ where: { customerId: req.customerId }, select: pick, orderBy: [{ isDefault: "desc" }, { id: "asc" }] });
@@ -31,7 +33,7 @@ export async function createAddress(req: Request, res: Response) {
     // The first address is the default automatically.
     const isDefault = existing === 0 || d.makeDefault === true;
     if (isDefault) await tx.address.updateMany({ where: { customerId }, data: { isDefault: false } });
-    return tx.address.create({ data: { customerId, label: d.label, text: d.text, isDefault }, select: pick });
+    return tx.address.create({ data: { customerId, label: d.label, text: d.text, phone: d.phone, isDefault }, select: pick });
   });
   res.status(201).json({ address: created });
 }
@@ -47,7 +49,7 @@ export async function updateAddress(req: Request, res: Response) {
     if (d.isDefault) await tx.address.updateMany({ where: { customerId }, data: { isDefault: false } });
     return tx.address.update({
       where: { id },
-      data: { ...(d.label !== undefined ? { label: d.label } : {}), ...(d.text !== undefined ? { text: d.text } : {}), ...(d.isDefault ? { isDefault: true } : {}) },
+      data: { ...(d.label !== undefined ? { label: d.label } : {}), ...(d.text !== undefined ? { text: d.text } : {}), ...(d.phone !== undefined ? { phone: d.phone } : {}), ...(d.isDefault ? { isDefault: true } : {}) },
       select: pick,
     });
   });

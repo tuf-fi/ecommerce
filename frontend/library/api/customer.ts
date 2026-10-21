@@ -5,8 +5,8 @@ const send = (method: string, body?: unknown): RequestInit => ({ method, body: b
 
 // A signed-in customer's saved delivery addresses and wishlist live on the server, so they follow the person to any device.
 export const listAddresses = async () => (await api<{ addresses: Address[] }>("/addresses")).addresses;
-export const createAddress = (input: { label: string; text: string; makeDefault?: boolean }) => api<{ address: Address }>("/addresses", send("POST", input));
-export const updateAddress = (id: number, patch: { label?: string; text?: string; isDefault?: true }) => api<{ address: Address }>(`/addresses/${id}`, send("PATCH", patch));
+export const createAddress = (input: { label: string; text: string; phone: string; makeDefault?: boolean }) => api<{ address: Address }>("/addresses", send("POST", input));
+export const updateAddress = (id: number, patch: { label?: string; text?: string; phone?: string; isDefault?: true }) => api<{ address: Address }>(`/addresses/${id}`, send("PATCH", patch));
 export const deleteAddress = (id: number) => api<{ ok: true }>(`/addresses/${id}`, send("DELETE"));
 
 export const getWishlist = async () => (await api<{ productIds: number[] }>("/wishlist")).productIds;
@@ -17,7 +17,7 @@ export const mergeWishlist = async (productIds: number[]) => (await api<{ produc
 
 export const customerLogoutAll = () => api<{ ok: true }>("/auth/customer/logout-all", send("POST"));
 export const customerGoogleSignIn = (idToken: string) =>
-    api<{ customer: { id: number; name: string; email: string; avatarUrl?: string | null } }>("/auth/customer/google", send("POST", { idToken }));
+    api<{ customer: { id: number; name: string; email: string; avatarUrl?: string | null; phone?: string | null } }>("/auth/customer/google", send("POST", { idToken }));
 
 export type CustomerNotification = { id: number; type: "order" | "account" | "voucher"; title: string; body: string; href: string | null; read: boolean; createdAt: string };
 export const listMyNotifications = (opts?: { page: number; pageSize: number }) =>

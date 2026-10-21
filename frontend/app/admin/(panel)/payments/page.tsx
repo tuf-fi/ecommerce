@@ -82,7 +82,7 @@ export default function PaymentDetailsSettingsPage() {
             aside="Customers see these after placing an order, then upload a screenshot of their transfer for you to verify. Leave a method's number blank to hide it."
         >
             {!isAdministrator && (
-                <p className="mb-6 border border-ink/10 bg-off/60 px-4 py-3 text-[12.5px] text-ink">
+                <p className="mb-6 border border-ink/10 bg-off/60 px-4 py-3 text-meta text-ink">
                     Only administrators can change these. You can see what customers see.
                 </p>
             )}
@@ -104,8 +104,8 @@ export default function PaymentDetailsSettingsPage() {
                         return (
                             <div key={m.id} className="grid gap-x-5 gap-y-4 border-t border-ink/10 p-6 sm:p-7 lg:grid-cols-[150px_repeat(3,minmax(0,1fr))]">
                                 <div className="lg:pt-6">
-                                    <h3 className="text-[14px] font-medium text-ink">{m.label}</h3>
-                                    <span className={`mt-1.5 flex items-center gap-2 font-mono text-[10.5px] tracking-[.1em] uppercase ${visible ? "text-ink" : "text-grey"}`}>
+                                    <h3 className="text-body font-medium text-ink">{m.label}</h3>
+                                    <span className={`mt-1.5 flex items-center gap-2 font-mono text-label tracking-[.1em] uppercase ${visible ? "text-ink" : "text-grey"}`}>
                                         <span className={`h-1.5 w-1.5 rounded-full ${visible ? "bg-success" : "bg-ink/25"}`} />
                                         {visible ? "Shown" : "Hidden"}
                                     </span>
@@ -149,14 +149,14 @@ export default function PaymentDetailsSettingsPage() {
                     <div>
                         <label htmlFor="ship-flat" className={FIELD_LABEL}>Shipping fee</label>
                         <div className="relative">
-                            <span className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-sm text-grey">₱</span>
+                            <span className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-small text-grey">₱</span>
                             <input id="ship-flat" type="number" min={0} value={shipFlat} onChange={(e) => setShipFlat(e.target.value)} placeholder="0" className={`${FIELD_INPUT} pl-9`} />
                         </div>
                     </div>
                     <div>
                         <label htmlFor="ship-free" className={FIELD_LABEL}>Free shipping from (optional)</label>
                         <div className="relative">
-                            <span className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-sm text-grey">₱</span>
+                            <span className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-small text-grey">₱</span>
                             <input id="ship-free" type="number" min={0} value={shipFreeOver} onChange={(e) => setShipFreeOver(e.target.value)} placeholder="No free-shipping amount" className={`${FIELD_INPUT} pl-9`} />
                         </div>
                     </div>

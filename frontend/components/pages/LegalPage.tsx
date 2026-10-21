@@ -53,12 +53,12 @@ function PolicyBody({ sections, anchors = false }: { sections: Section[]; anchor
                         className={`${section.heading ? `border-t border-ink/10 pt-8 ${si === 0 ? "" : "mt-10"}` : ""} scroll-mt-[calc(var(--navbar-h,68px)+24px)]`}
                     >
                         {section.heading && (
-                            <h2 className="mb-4 flex items-baseline gap-3 font-display text-[18px] font-medium text-ink">
-                                <span className="font-mono text-[11px] tracking-[.08em] text-grey">{String(n).padStart(2, "0")}</span>
+                            <h2 className="mb-4 flex items-baseline gap-3 font-display text-title font-medium text-ink">
+                                <span className="font-mono text-label tracking-[.08em] text-grey">{String(n).padStart(2, "0")}</span>
                                 {section.heading}
                             </h2>
                         )}
-                        <div className={`space-y-4 text-[14.5px] leading-[1.75] ${section.heading ? "text-ink/85" : "text-[15.5px] text-ink/75"}`}>
+                        <div className={`space-y-4 text-body leading-[1.75] ${section.heading ? "text-ink/85" : "text-body text-ink/75"}`}>
                             {section.blocks.map((b, bi) =>
                                 b.kind === "p" ? (
                                     <p key={bi}>{b.text}</p>
@@ -87,7 +87,7 @@ export default function LegalPage({ page, preview = false, embedded = false }: {
         return (
             <div className="px-9 py-6">
                 <span className="eyebrow text-grey!">{page.category}</span>
-                <h1 className="mt-2 text-[22px] font-medium text-ink">{page.name}</h1>
+                <h1 className="mt-2 text-heading font-medium text-ink">{page.name}</h1>
                 <div className="mt-6">
                     <PolicyBody sections={sections} />
                 </div>
@@ -117,13 +117,13 @@ export default function LegalPage({ page, preview = false, embedded = false }: {
                 {headed.length > 0 && (
                     <nav aria-label="On this page" className="hidden lg:block">
                         <div className="sticky top-[calc(var(--navbar-h,68px)+24px)]">
-                            <span className="mb-4 block font-mono text-[10px] uppercase tracking-[.16em] text-grey">On this page</span>
+                            <span className="mb-4 block font-mono text-label uppercase tracking-[.16em] text-grey">On this page</span>
                             <ol className="flex flex-col gap-0.5 border-l border-ink/10">
                                 {headed.map((s, i) => (
                                     <li key={i}>
                                         <a
                                             href={`#${anchor(i)}`}
-                                            className="-ml-px block border-l border-transparent py-1.5 pl-4 text-[12.5px] leading-snug text-grey transition hover:border-pink-btn hover:text-ink"
+                                            className="-ml-px block border-l border-transparent py-1.5 pl-4 text-meta leading-snug text-grey transition hover:border-pink-btn hover:text-ink"
                                         >
                                             {s.heading}
                                         </a>

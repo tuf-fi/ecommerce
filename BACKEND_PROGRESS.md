@@ -149,10 +149,9 @@ A release-candidate `prisma init` left these in `backend/`: `.agents/`, `.claude
 - **Duplicate orders:** there is no protection against a double-click creating two orders (the button disables while placing).
 - **Dev data:** two test customers exist (`cust@test.dev` / `NewPass12345`, `cust2@test.dev` / `CustPass123`).
 
-## Phase 5 — payments (manual verification; replaces the original PayMongo plan)
+## Phase 5 — payments (manual verification)
 
-**Decision:** there is no payment-gateway account. Customers pay by GCash, Maya or bank transfer, upload a screenshot, and an admin verifies it by hand. All PayMongo code, its two tables and the `axios` dependency were removed.
-
+**Decision:** there is no payment-gateway account. Customers pay by GCash, Maya or bank transfer, upload a screenshot, and an admin verifies it by hand.
 **The flow:**
 1. The customer places an order (status PENDING, stock is taken). The cart sends them to My Purchase, where a dialog opens (`?pay=<order>`) showing the payment details and the order total.
 2. They send the money, then upload a screenshot with the method and an optional reference number (`POST /orders/:no/payment-proofs`).

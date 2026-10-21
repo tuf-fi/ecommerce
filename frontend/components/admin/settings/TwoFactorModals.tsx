@@ -52,11 +52,11 @@ export function TwoFactorSetupModal({ onClose, onEnabled }: { onClose: () => voi
             <div className="p-5 sm:p-8">
                 {recoveryCodes ? (
                     <>
-                        <h3 className="mb-1 text-xl font-medium text-ink">Save your recovery codes</h3>
-                        <p className="mb-5 text-[12.5px] leading-relaxed text-grey">
+                        <h3 className="mb-1 text-subhead font-medium text-ink">Save your recovery codes</h3>
+                        <p className="mb-5 text-meta leading-relaxed text-grey">
                             Each code works once if you lose your phone. They won&apos;t be shown again, so store them somewhere safe.
                         </p>
-                        <div className="mb-5 grid grid-cols-2 gap-2 border border-ink/10 bg-off p-4 font-mono text-[13px] text-ink">
+                        <div className="mb-5 grid grid-cols-2 gap-2 border border-ink/10 bg-off p-4 font-mono text-small text-ink">
                             {recoveryCodes.map((c) => (
                                 <span key={c}>{c}</span>
                             ))}
@@ -76,8 +76,8 @@ export function TwoFactorSetupModal({ onClose, onEnabled }: { onClose: () => voi
                     </>
                 ) : !setup ? (
                     <>
-                        <h3 className="mb-1 text-xl font-medium text-ink">Turn on two-factor authentication</h3>
-                        <p className="mb-5 text-[12.5px] leading-relaxed text-grey">
+                        <h3 className="mb-1 text-subhead font-medium text-ink">Turn on two-factor authentication</h3>
+                        <p className="mb-5 text-meta leading-relaxed text-grey">
                             You&apos;ll scan a QR code with an authenticator app (Google Authenticator, 1Password, Authy…) and enter the code it shows each time you sign in.
                         </p>
                         <button type="button" onClick={begin} disabled={busy} className={`w-full ${BTN_PRIMARY}`}>
@@ -86,11 +86,11 @@ export function TwoFactorSetupModal({ onClose, onEnabled }: { onClose: () => voi
                     </>
                 ) : (
                     <form onSubmit={confirm}>
-                        <h3 className="mb-1 text-xl font-medium text-ink">Scan, then confirm</h3>
-                        <p className="mb-4 text-[12.5px] text-grey">Scan this with your authenticator app, then enter the 6-digit code it shows.</p>
+                        <h3 className="mb-1 text-subhead font-medium text-ink">Scan, then confirm</h3>
+                        <p className="mb-4 text-meta text-grey">Scan this with your authenticator app, then enter the 6-digit code it shows.</p>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={setup.qrDataUrl} alt="QR code for your authenticator app" width={180} height={180} className="mx-auto mb-3 border border-ink/10" />
-                        <p className="mb-5 break-all text-center font-mono text-[11px] text-grey">
+                        <p className="mb-5 break-all text-center font-mono text-label text-grey">
                             Can&apos;t scan? Enter this key: <span className="text-ink">{setup.secret}</span>
                         </p>
                         <label htmlFor="twofactor-code" className={FIELD_LABEL}>6-digit code</label>
@@ -136,8 +136,8 @@ export function TwoFactorDisableModal({ onClose, onDisabled }: { onClose: () => 
     return (
         <Modal open onClose={busy ? () => {} : onClose} maxWidth="max-w-[420px]" title="Turn off two-factor authentication">
             <form onSubmit={submit} className="p-5 sm:p-8">
-                <h3 className="mb-1 text-xl font-medium text-ink">Turn off two-factor?</h3>
-                <p className="mb-5 text-[12.5px] leading-relaxed text-grey">Confirm with your password and a current code from your authenticator app.</p>
+                <h3 className="mb-1 text-subhead font-medium text-ink">Turn off two-factor?</h3>
+                <p className="mb-5 text-meta leading-relaxed text-grey">Confirm with your password and a current code from your authenticator app.</p>
                 <label htmlFor="twofactor-off-password" className={FIELD_LABEL}>Password</label>
                 <input
                     id="twofactor-off-password"

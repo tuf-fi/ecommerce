@@ -85,7 +85,8 @@ async function priceLines(db: Prisma.TransactionClient | typeof prisma, lines: C
 export async function checkCart(lines: CartLineInput[], opts: { voucherCode?: string; customer?: { id: number; email: string } | null } = {}) {
   const priced = await priceLines(prisma, lines);
   const subtotal = priced.reduce((sum, l) => sum + l.unitPrice * l.qty, 0);
-  const shippingFee = shippingFor(await getShippingRule(), subtotal);
+  const shippingRule = await getShippingRule();
+  const shippingFee = shippingFor(shippingRule, subtotal);
 
   let discount = 0;
   let voucher: { code: string; description: string; percentOff: number | null } | null = null;
@@ -107,6 +108,8 @@ export async function checkCart(lines: CartLineInput[], opts: { voucherCode?: st
     subtotal,
     discount,
     shippingFee,
+    // Lets the website say how far a bag is from free shipping without knowing the rule itself.
+    freeShippingOver: shippingRule.freeOver,
     total: subtotal - discount + shippingFee,
     voucher,
     voucherError,
@@ -129,6 +132,7 @@ export async function createOrder(input: {
   lines: CartLineInput[];
   shipName: string;
   shipEmail: string;
+  shipPhone: string;
   shipAddress: string;
   customerEmail: string;
   voucherCode?: string;
@@ -148,6 +152,7 @@ export async function createOrder(input: {
         customerId: input.customerId,
         shipName: input.shipName,
         shipEmail: input.shipEmail,
+        shipPhone: input.shipPhone,
         shipAddress: input.shipAddress,
         shipCity: extractLocation(input.shipAddress),
         subtotal,

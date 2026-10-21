@@ -16,11 +16,11 @@ export default function FaqViewModal({
     if (!faq) return null;
 
     return (
-        <Modal open={open} onClose={onClose} maxWidth="max-w-[480px]">
+        <Modal open={open} onClose={onClose} maxWidth="max-w-[480px]" titleInBody>
             <ViewHeader title={faq.q} />
             <DetailBody>
                 <SectionLabel label="Answer" />
-                <p className="text-[13.5px] leading-relaxed whitespace-pre-wrap text-ink/85">{faq.a}</p>
+                <p className="text-small leading-relaxed whitespace-pre-wrap text-ink/85">{faq.a}</p>
             </DetailBody>
         </Modal>
     );

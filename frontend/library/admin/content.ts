@@ -30,7 +30,7 @@ export const PROMOS: Promo[] = [
     {
         id: 1,
         text: "10% off your first order + free shipping on orders over ₱2,000",
-        code: "RITUAL10",
+        code: "",
         image: null,
         active: true,
     },
@@ -51,7 +51,8 @@ export const STATIC_PAGES: StaticPage[] = [
         category: "Support",
         updated: "Jul 30, 2026",
         content:
-            "Orders ship within 1-2 business days. Metro Manila arrives in 2-4 days, provincial addresses in 5-7 days.\n\nUnopened items can be returned within 14 days of delivery for a full refund.",
+            // TODO: owner to confirm this wording (fees, couriers, damaged-item handling) before launch; it only restates what the shop already does.
+            "Everything you need to know about getting your order to you, and sending it back if it isn't right.\n\n## Shipping fee\n\nThe shipping fee is shown in your bag and again at checkout, before you pay. When a free-shipping offer is running, your bag tells you how much more you need to qualify.\n\n## Paying for your order\n\nAfter you place an order, send the exact total by GCash, Maya or bank transfer and upload a screenshot of your receipt. We confirm the payment by hand, so it can take a little while. An order that is still unpaid after 24 hours is cancelled and the items go back on sale, unless a receipt is waiting to be checked.\n\n## Delivery times\n\nOrders ship within 1-2 business days once your payment is confirmed. Metro Manila arrives in 2-4 days and provincial addresses in 5-7 days. These are estimates, not guarantees.\n\n## Returns\n\nUnopened items can be returned within 14 days of delivery for a full refund. To start a return, email hello@cindyrella.ph with your order number.\n\n## Damaged or wrong items\n\nIf something arrives damaged, or isn't what you ordered, email hello@cindyrella.ph with your order number and a photo and we will make it right.\n\n## Refunds\n\nWhen we refund an order, we send the money back to you ourselves and email you to confirm. It may take a little while to show in your account.\n\n## Contact\n\nQuestions about an order: hello@cindyrella.ph.",
     },
     {
         id: 3,
@@ -100,7 +101,7 @@ export const CONTACT_DEFAULT = {
 
 // One plain string instead of headline/accent — the original markup emphasized one mid-sentence word, which no two-field split captured, traded here for a fully editable line.
 export const PHILOSOPHY_DEFAULT = {
-    eyebrow: "N° 002 — Philosophy",
+    eyebrow: "Philosophy",
     headline: "Good skin isn't fixed overnight. It's the sum of small, consistent choices, applied with care.",
     subtext:
         "Every formula is built around fewer, better ingredients — layered in an order that actually works with your skin, not against it.",
@@ -115,13 +116,15 @@ export const NEWSLETTER_DEFAULT = {
     headline: "Join the",
     accent: "ritual.",
     body: "First access to new formulas, routine tips, and members-only offers — straight to your inbox.",
-    socialProof: "Loved by 12,000+ skincare routines",
+    // Left empty on purpose: show a real number here only once there is one.
+    socialProof: "",
 };
 
 // Read by both the Contact section and the Footer, which each used to hardcode their own copy of it.
 export const CONTACT_INFO_DEFAULT = {
     email: "hello@cindyrella.ph",
-    phone: "+63 917 000 0000",
+    // Empty until there is a real number; the footer, Contact section and help page hide the row.
+    phone: "",
     addressLine1: "Makati City,",
     addressLine2: "Metro Manila",
     hoursLine1: "Monday – Saturday",
@@ -171,12 +174,12 @@ export const FOOTER_COMPANY_LINKS_DEFAULT: FooterLinkItem[] = [
     { id: 4, label: "FAQ", href: "/#faq" },
     { id: 5, label: "Contact", href: "/#contact" },
     { id: 6, label: "Shipping & Returns", href: "/pages/shipping-returns" },
+    { id: 9, label: "Help & FAQ", href: "/help" },
     { id: 7, label: "Privacy Policy", href: "/pages/privacy-policy" },
     { id: 8, label: "Terms of Service", href: "/pages/terms" },
 ];
 
-// TODO: display-only until PayMongo is wired up — should reflect the account's actually-enabled methods.
-export const FOOTER_PAYMENT_METHODS_DEFAULT: string[] = ["GCash", "Maya", "Visa", "Mastercard"];
+export const FOOTER_PAYMENT_METHODS_DEFAULT: string[] = ["GCash", "Maya", "Bank transfer"];
 
 const JOURNAL_TITLES = Object.keys(journalImages) as (keyof typeof journalImages)[];
 

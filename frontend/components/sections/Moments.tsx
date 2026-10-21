@@ -16,7 +16,7 @@ export default function Moments(){
 
     return(
         <SectionContainer id="rituals">
-            <SectionTitle section="moments" title="Rituals" />
+            <SectionTitle animate section="moments" title="Rituals" />
 
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-6">
                 {rituals.map((ritual, index) => (
@@ -43,10 +43,10 @@ export default function Moments(){
                             <h3 className="mb-2 text-[clamp(22px,2.4vw,30px)] font-medium text-white">
                                 {ritual.title}
                             </h3>
-                            <p className="mb-5 max-w-[320px] text-[13.5px] leading-relaxed text-white/80">
+                            <p className="mb-5 max-w-[320px] text-small leading-relaxed text-white/80">
                                 {ritual.copy}
                             </p>
-                            <span className="inline-flex w-fit items-center gap-2 text-[12px] font-semibold uppercase tracking-wide text-white underline decoration-white/40 underline-offset-4 group-hover:decoration-white">
+                            <span className="inline-flex w-fit items-center gap-2 text-meta font-semibold uppercase tracking-wide text-white underline decoration-white/40 underline-offset-4 group-hover:decoration-white">
                                 Shop Now →
                             </span>
                         </Link>

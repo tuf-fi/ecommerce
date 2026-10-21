@@ -47,9 +47,9 @@ function FeaturedTestimonial({ pool }: { pool: Testimonial[] }) {
                         exit={{ opacity: 0, x: -SLIDE_DISTANCE }}
                         transition={{ duration: 0.6, ease: EASE }}
                     >
-                        <p className="mb-7 max-w-[720px] text-[21px] leading-relaxed text-ink sm:text-[26px]">{featured.message}</p>
+                        <p className="mb-7 max-w-[720px] text-subhead leading-relaxed text-ink sm:text-display-sm">{featured.message}</p>
                         <div className="flex items-center gap-3.5">
-                            <span className="flex h-11 w-11 flex-none items-center justify-center overflow-hidden rounded-full bg-blue-accent font-mono text-[12px] text-white">
+                            <span className="flex h-11 w-11 flex-none items-center justify-center overflow-hidden rounded-full bg-blue-accent font-mono text-meta text-white">
                                 {featured.image ? (
                                     // eslint-disable-next-line @next/next/no-img-element
                                     <img src={featured.image} alt="" className="h-full w-full object-cover" />
@@ -58,8 +58,8 @@ function FeaturedTestimonial({ pool }: { pool: Testimonial[] }) {
                                 )}
                             </span>
                             <div>
-                                <p className="text-[14px] font-medium text-ink">{featured.name}</p>
-                                <p className="font-mono text-[11px] uppercase tracking-[.08em] text-grey">
+                                <p className="text-body font-medium text-ink">{featured.name}</p>
+                                <p className="font-mono text-label uppercase tracking-[.08em] text-grey">
                                     {featured.position}, {featured.company}
                                 </p>
                             </div>

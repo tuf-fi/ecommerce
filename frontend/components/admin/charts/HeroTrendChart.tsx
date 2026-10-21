@@ -24,7 +24,7 @@ function HeroTooltip({ active, payload, label, formatValue }: { active?: boolean
     const value = Number(payload[0].value ?? 0);
 
     return (
-        <div className="rounded bg-white px-2.5 py-1.5 font-mono text-[11px] whitespace-nowrap text-ink shadow-card">
+        <div className="rounded bg-white px-2.5 py-1.5 font-mono text-label whitespace-nowrap text-ink shadow-card">
             <span className="text-grey">{label}</span>
             <span className="ml-2 font-medium">{formatValue(value)}</span>
         </div>

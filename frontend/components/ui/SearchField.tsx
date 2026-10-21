@@ -1,6 +1,6 @@
 // rounded-none overrides daisyUI's select radius; h-11 (not padding) matches SearchField's height since a <select>'s chrome renders taller.
 export const FILTER_SELECT =
-    "h-11 rounded-none border border-ink/10 bg-off/50 px-3.5 text-[12.5px] text-ink outline-none transition focus:border-navy/30 focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-1";
+    "h-11 rounded-none border border-ink/10 bg-off/50 px-3.5 text-meta text-ink outline-none transition focus:border-navy/30 focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-1";
 
 export default function SearchField({
     value,
@@ -27,7 +27,7 @@ export default function SearchField({
                 onChange={(e) => onChange(e.target.value)}
                 placeholder={placeholder}
                 aria-label={placeholder}
-                className="w-full bg-transparent py-[11px] text-sm text-ink outline-none placeholder:text-grey"
+                className="w-full bg-transparent py-[11px] text-small text-ink outline-none placeholder:text-grey"
             />
         </div>
     );

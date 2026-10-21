@@ -16,24 +16,23 @@ export const countsAsRevenue = (order: AdminOrder) => order.status === "Paid" ||
 export const countsAsOrder = (order: AdminOrder) => order.status !== "Cancelled";
 
 // Uses the most recent `days` dates that appear in the data, not a rolling calendar window — at this order volume a real window would read as mostly zeros.
-export function ordersPerDay(orders: AdminOrder[], days = 8): TrendPoint[] {
-    const counts = new Map<string, number>();
-    for (const order of orders.filter(countsAsOrder)) counts.set(order.date, (counts.get(order.date) ?? 0) + 1);
+// The dates come from every order, so the last point is the same "latest day" the card's headline number is for, even when that day has no counted orders (it plots as 0, not as the day before).
+function perDay(orders: AdminOrder[], days: number, valueOf: (day: AdminOrder[]) => number): TrendPoint[] {
+    const byDate = new Map<string, AdminOrder[]>();
+    for (const order of orders) byDate.set(order.date, [...(byDate.get(order.date) ?? []), order]);
 
-    return [...counts.entries()]
+    return [...byDate.entries()]
         .sort((a, b) => new Date(a[0]).getTime() - new Date(b[0]).getTime())
         .slice(-days)
-        .map(([date, value]) => ({ label: date.replace(/,\s*\d{4}$/, ""), value }));
+        .map(([date, day]) => ({ label: date.replace(/,\s*\d{4}$/, ""), value: valueOf(day) }));
 }
 
-// Same "dates that appear in the data" convention as ordersPerDay, summing revenue instead of counting orders.
-export function revenuePerDay(orders: AdminOrder[], days = 8): TrendPoint[] {
-    const totals = new Map<string, number>();
-    for (const order of orders.filter(countsAsRevenue)) totals.set(order.date, (totals.get(order.date) ?? 0) + orderTotal(order));
+export function ordersPerDay(orders: AdminOrder[], days = 8): TrendPoint[] {
+    return perDay(orders, days, (day) => day.filter(countsAsOrder).length);
+}
 
-    return [...totals.entries()]
-        .sort((a, b) => new Date(a[0]).getTime() - new Date(b[0]).getTime())
-        .slice(-days)
-        .map(([date, value]) => ({ label: date.replace(/,\s*\d{4}$/, ""), value }));
+// Summing revenue instead of counting orders.
+export function revenuePerDay(orders: AdminOrder[], days = 8): TrendPoint[] {
+    return perDay(orders, days, (day) => day.filter(countsAsRevenue).reduce((sum, o) => sum + orderTotal(o), 0));
 }
 

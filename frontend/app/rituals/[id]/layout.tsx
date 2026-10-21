@@ -7,7 +7,7 @@ export async function generateMetadata({ params }: LayoutProps<"/rituals/[id]">)
 
     if (!ritual) {
         return {
-            title: "Ritual Not Found | Cindyrella",
+            title: "Ritual not found",
             description: "That ritual doesn't exist.",
         };
     }
@@ -15,7 +15,7 @@ export async function generateMetadata({ params }: LayoutProps<"/rituals/[id]">)
     const image = typeof ritual.image === "string" ? ritual.image : ritual.image?.src;
 
     return {
-        title: `${ritual.title} | Cindyrella`,
+        title: `${ritual.title}`,
         description: ritual.copy,
         openGraph: {
             title: ritual.title,

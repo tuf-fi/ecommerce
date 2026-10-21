@@ -1,23 +1,15 @@
-// `variant` distinguishes "filtered" (search excludes all items) from "empty" (collection is genuinely empty) even though both render identically today.
-export type EmptyStateVariant = "filtered" | "empty";
+import EmptyState from "@/components/ui/EmptyState";
 
-export function EmptyStateRow({
-    colSpan,
-    message,
-}: {
-    colSpan: number;
-    variant: EmptyStateVariant;
-    message: string;
-}) {
+export function EmptyStateRow({ colSpan, message }: { colSpan: number; message: string }) {
     return (
         <tr>
-            <td colSpan={colSpan} className="px-5 py-16 text-center text-[13px] text-grey">
-                {message}
+            <td colSpan={colSpan}>
+                <EmptyState bare message={message} />
             </td>
         </tr>
     );
 }
 
-export function EmptyStateBlock({ message }: { variant: EmptyStateVariant; message: string }) {
-    return <div className="px-5 py-16 text-center text-[13px] text-grey">{message}</div>;
+export function EmptyStateBlock({ message }: { message: string }) {
+    return <EmptyState bare message={message} />;
 }

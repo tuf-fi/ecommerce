@@ -44,6 +44,7 @@ export async function exportOrders(req: Request, res: Response) {
     Date: o.createdAt.toISOString().slice(0, 10),
     Customer: safeCell(o.shipName),
     Email: safeCell(o.shipEmail),
+    Mobile: safeCell(o.shipPhone ?? ""),
     Address: safeCell(o.shipAddress),
     Items: safeCell(o.items.map((i) => `${i.quantity} x ${i.productName}${i.size ? ` (${i.size.label})` : ""}`).join("; ")),
     "Item count": o.items.reduce((s, i) => s + i.quantity, 0),

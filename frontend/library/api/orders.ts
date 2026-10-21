@@ -10,6 +10,7 @@ export type ApiOrder = {
     status: ApiOrderStatus;
     customerName: string;
     email: string;
+    phone?: string | null;
     address: string;
     location?: string | null;
     total: number;
@@ -30,6 +31,8 @@ export type CartCheckResult = {
     subtotal: number;
     discount: number;
     shippingFee: number;
+    // Bag subtotal at which shipping becomes free, or null when there is no such offer.
+    freeShippingOver: number | null;
     total: number;
     voucher: { code: string; description: string; percentOff: number | null } | null;
     voucherError: string | null;
@@ -41,7 +44,7 @@ const send = (method: string, body?: unknown): RequestInit => ({ method, body: b
 export type CheckoutLine = { productId: number; sizeId: number | null; qty: number };
 
 export const checkCart = (items: CheckoutLine[], voucherCode?: string) => api<CartCheckResult>("/cart/check", send("POST", { items, ...(voucherCode ? { voucherCode } : {}) }));
-export const placeOrder = (input: { items: CheckoutLine[]; address: string; voucherCode?: string }) => api<{ order: ApiOrder }>("/orders", send("POST", input));
+export const placeOrder = (input: { items: CheckoutLine[]; address: string; phone?: string; voucherCode?: string }) => api<{ order: ApiOrder }>("/orders", send("POST", input));
 // The API returns orders in pages of at most 100 (newest first); these walk them, up to 20 pages.
 async function allOrderPages(path: string): Promise<{ orders: ApiOrder[] }> {
     const orders: ApiOrder[] = [];
@@ -188,6 +191,7 @@ export function toAdminOrder(o: ApiOrder): AdminOrder {
         no: o.no,
         customer: o.customerName,
         email: o.email,
+        phone: o.phone ?? undefined,
         address: o.address,
         location: o.location ?? undefined,
         date: new Date(o.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),

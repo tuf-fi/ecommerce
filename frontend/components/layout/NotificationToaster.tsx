@@ -46,8 +46,8 @@ function Popup({ n }: { n: CustomerNotification }) {
                     <NotificationIcon type={n.type} />
                 </span>
                 <span className="min-w-0 flex-1">
-                    <span className="block text-[13px] leading-snug font-semibold text-ink">{n.title}</span>
-                    <span className="mt-0.5 line-clamp-2 block text-[12px] leading-snug text-grey">{n.body}</span>
+                    <span className="block text-small leading-snug font-semibold text-ink">{n.title}</span>
+                    <span className="mt-0.5 line-clamp-2 block text-meta leading-snug text-grey">{n.body}</span>
                 </span>
             </button>
             <button

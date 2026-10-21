@@ -3,6 +3,7 @@
 import { SIDEBAR_WIDTH_COLLAPSED, SIDEBAR_WIDTH_EXPANDED, useAdminStore } from "@/library/adminStore";
 import AdminAuthGate from "@/components/admin/AdminAuthGate";
 import AdminSidebar from "@/components/admin/AdminSidebar";
+import { Suspense } from "react";
 import AdminTopbar from "@/components/admin/AdminTopbar";
 import { FULL_BLEED } from "@/components/admin/formClasses";
 
@@ -21,7 +22,9 @@ export default function AdminPanelLayout({ children }: { children: React.ReactNo
                         } as React.CSSProperties
                     }
                 >
-                    <AdminTopbar />
+                    <Suspense fallback={null}>
+                        <AdminTopbar />
+                    </Suspense>
                     <div className="px-5 pt-6 pb-12 sm:px-10 sm:pt-7 sm:pb-16">{children}</div>
                 </div>
             </div>

@@ -69,8 +69,8 @@ export default function BlogTab() {
                 homepage section — /journal itself stays live. */}
             <div className="mb-6 flex items-center justify-between gap-6 border border-ink/10 bg-white px-5 py-4">
                 <div>
-                    <div className="text-[13.5px] font-medium text-ink">Show the Journal section on the homepage</div>
-                    <p className="mt-0.5 text-[12px] text-grey">
+                    <div className="text-small font-medium text-ink">Show the Journal section on the homepage</div>
+                    <p className="mt-0.5 text-meta text-grey">
                         Hiding it also removes its link from the site navigation. The /journal page and its posts stay published.
                     </p>
                 </div>
@@ -79,8 +79,8 @@ export default function BlogTab() {
 
             <div className="mb-6 flex items-center justify-between gap-6 border border-ink/10 bg-white px-5 py-4">
                 <div>
-                    <div className="text-[13.5px] font-medium text-ink">/journal page heading</div>
-                    <p className="mt-0.5 text-[12px] text-grey">Edit the headline shown at the top of the Journal listing page.</p>
+                    <div className="text-small font-medium text-ink">/journal page heading</div>
+                    <p className="mt-0.5 text-meta text-grey">Edit the headline shown at the top of the Journal listing page.</p>
                 </div>
                 <Link href="/admin/content/pages/journal" className={`flex-none ${ICON_BTN}`} aria-label="Edit Journal page intro">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -116,7 +116,7 @@ export default function BlogTab() {
                     <thead>
                         <tr className="bg-off/50">
                             {["Title", "Status", "Date", ""].map((h) => (
-                                <th key={h} scope="col" className="border-b border-ink/10 px-5 py-3.5 text-left font-mono text-[11px] tracking-[.12em] text-grey uppercase">
+                                <th key={h} scope="col" className="border-b border-ink/10 px-5 py-3.5 text-left font-mono text-label tracking-[.12em] text-grey uppercase">
                                     {h}
                                 </th>
                             ))}
@@ -126,13 +126,12 @@ export default function BlogTab() {
                         {paged.length === 0 && (
                             <EmptyStateRow
                                 colSpan={4}
-                                variant={blogPosts.length === 0 ? "empty" : "filtered"}
                                 message={blogPosts.length === 0 ? "No posts yet." : "No posts match this search."}
                             />
                         )}
                         {paged.map((b) => (
                             <tr key={b.id} className="transition hover:bg-off/40">
-                                <td className="border-b border-ink/10 px-5 py-3.5 text-[13.5px] font-medium text-ink">
+                                <td className="border-b border-ink/10 px-5 py-3.5 text-small font-medium text-ink">
                                     <button onClick={() => setViewing(b)} className="block truncate text-left hover:text-pink-dark">
                                         {b.title}
                                     </button>
@@ -143,7 +142,7 @@ export default function BlogTab() {
                                         onChange={(checked) => updateBlogPost(b.id, { status: checked ? "Published" : "Draft" })}
                                     />
                                 </td>
-                                <td className="border-b border-ink/10 px-5 py-3.5 font-mono text-[12px] text-grey">{b.date}</td>
+                                <td className="border-b border-ink/10 px-5 py-3.5 font-mono text-meta text-grey">{b.date}</td>
                                 <td className="border-b border-ink/10 px-5 py-3.5">
                                     <div className="flex items-center justify-end gap-2">
                                         <Tooltip label="Edit">

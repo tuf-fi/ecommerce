@@ -65,8 +65,8 @@ export default function QuizModal() {
     }
 
     return (
-        <Modal open={open} onClose={closeModal} maxWidth="max-w-[480px]">
-            <div className="p-5 sm:p-8">{open && <QuizContent key={String(open)} onOpenProduct={goToProduct} onDone={closeModal} />}</div>
+        <Modal open={open} onClose={closeModal} maxWidth="max-w-[480px]" eyebrow="Skin quiz" heading="Find your routine">
+            <div>{open && <QuizContent key={String(open)} onOpenProduct={goToProduct} onDone={() => { closeModal(); router.push("/shop"); }} />}</div>
         </Modal>
     );
 }
@@ -128,6 +128,7 @@ function QuizContent({ onOpenProduct, onDone }: { onOpenProduct: (id: number) =>
     useEffect(() => {
         if (done) return;
         function onKey(e: KeyboardEvent) {
+            if (e.target instanceof HTMLElement && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
             const opt = QUIZ_QUESTIONS[step].options[Number(e.key) - 1];
             if (opt) answer(opt.key);
         }
@@ -138,13 +139,13 @@ function QuizContent({ onOpenProduct, onDone }: { onOpenProduct: (id: number) =>
 
     return (
         <div>
-            <div className="mb-7 pr-10">
+            <div className="mb-7">
                 <div className="mb-3 flex h-5 items-center justify-between">
-                    <span className="font-mono text-[11px] tracking-[.14em] text-grey uppercase">
+                    <span className="font-mono text-label tracking-[.14em] text-grey uppercase">
                         {done ? "Your match" : `${String(step + 1).padStart(2, "0")} / ${String(total).padStart(2, "0")}`}
                     </span>
                     {step > 0 && !done && (
-                        <button onClick={back} className="inline-flex items-center gap-1.5 text-[12px] font-medium text-grey transition-colors hover:text-pink-dark focus-visible:ring-2 focus-visible:ring-navy">
+                        <button onClick={back} className="inline-flex items-center gap-1.5 text-meta font-medium text-grey transition-colors hover:text-pink-dark focus-visible:ring-2 focus-visible:ring-navy">
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M19 12H5M11 18l-6-6 6-6" />
                             </svg>
@@ -182,7 +183,7 @@ function Question({ step, picked, onAnswer }: { step: number; picked: string | n
     const q = QUIZ_QUESTIONS[step];
     return (
         <div>
-            <h3 className="mb-6 text-[22px] leading-[1.15] font-medium text-ink sm:text-[26px]">{q.q}</h3>
+            <h3 className="mb-6 text-heading leading-[1.15] font-medium text-ink sm:text-display-sm">{q.q}</h3>
             <div className="flex flex-col gap-2.5">
                 {q.options.map((o, i) => {
                     const isPicked = picked === o.key;
@@ -191,11 +192,11 @@ function Question({ step, picked, onAnswer }: { step: number; picked: string | n
                             key={o.key}
                             whileTap={{ scale: 0.985 }}
                             onClick={() => onAnswer(o.key)}
-                            className={`group flex w-full items-center gap-4 border px-4 py-4 text-left text-[14px] transition-colors focus-visible:ring-2 focus-visible:ring-navy ${
-                                isPicked ? "border-navy bg-navy text-white" : picked ? "border-ink/10 text-ink/40" : "border-ink/15 text-ink hover:border-ink/40 hover:bg-off/70"
+                            className={`group flex w-full items-center gap-4 border px-4 py-4 text-left text-body transition-colors focus-visible:ring-2 focus-visible:ring-navy ${
+                                isPicked ? "border-navy bg-navy text-white" : picked ? "border-ink/10 text-grey" : "border-ink/15 text-ink hover:border-ink/40 hover:bg-off/70"
                             }`}
                         >
-                            <span className={`w-5 flex-none font-mono text-[11px] ${isPicked ? "text-white/60" : "text-grey"}`}>{String(i + 1).padStart(2, "0")}</span>
+                            <span className={`w-5 flex-none font-mono text-label ${isPicked ? "text-white/60" : "text-grey"}`}>{String(i + 1).padStart(2, "0")}</span>
                             <span className="flex-1">{o.label}</span>
                             {isPicked ? (
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -216,8 +217,8 @@ function Results({ answers, onOpenProduct, onDone, onRetake }: { answers: string
     const picks = pickProducts(answers);
     return (
         <div>
-            <h3 className="mb-2 text-[22px] leading-[1.15] font-medium text-ink sm:text-[26px]">Your routine, considered.</h3>
-            <p className="mb-6 text-[13px] text-grey">Based on your answers, here&apos;s where we&apos;d start.</p>
+            <h3 className="mb-2 text-heading leading-[1.15] font-medium text-ink sm:text-display-sm">Your routine, considered.</h3>
+            <p className="mb-6 text-small text-grey">Based on your answers, here&apos;s where we&apos;d start.</p>
             <div className="mb-6 flex flex-col gap-2.5">
                 {picks.map((p, i) => (
                     <motion.button
@@ -232,18 +233,18 @@ function Results({ answers, onOpenProduct, onDone, onRetake }: { answers: string
                             <Image src={p.image} alt="" fill sizes="60px" className="object-cover transition duration-500 group-hover:scale-105" />
                         </span>
                         <span className="min-w-0 flex-1">
-                            <span className="block font-mono text-[10px] tracking-[.14em] text-grey uppercase">{p.category}</span>
-                            <span className="block truncate text-[14px] font-medium text-ink">{p.title}</span>
-                            <PriceTag price={p.price} salePrice={p.salePrice} className="block font-mono text-[12px] text-grey" />
+                            <span className="block font-mono text-label tracking-[.14em] text-grey uppercase">{p.category}</span>
+                            <span className="block truncate text-body font-medium text-ink">{p.title}</span>
+                            <PriceTag price={p.price} salePrice={p.salePrice} className="block font-mono text-meta text-grey" />
                         </span>
                         <span className="-translate-x-1 text-ink/50 opacity-0 transition duration-200 group-hover:translate-x-0 group-hover:opacity-100">{ARROW}</span>
                     </motion.button>
                 ))}
             </div>
-            <button onClick={onDone} className="w-full bg-navy py-3.5 text-[13px] font-semibold tracking-wide text-white transition hover:bg-pink-dark">
-                Shop These Picks
+            <button onClick={onDone} className="ui-btn ui-btn-primary w-full">
+                Browse the shop
             </button>
-            <button onClick={onRetake} className="mt-2.5 w-full border border-ink/15 py-3.5 text-[13px] font-semibold tracking-wide text-ink transition hover:bg-off">
+            <button onClick={onRetake} className="ui-btn ui-btn-secondary mt-2.5 w-full">
                 Retake Quiz
             </button>
         </div>

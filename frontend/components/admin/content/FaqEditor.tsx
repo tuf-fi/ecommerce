@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import EmptyState from "@/components/ui/EmptyState";
+import { useAdminBack } from "@/library/adminHistory";
 import { Faq } from "@/library/admin/types";
 import Tooltip from "@/components/ui/Tooltip";
 import ConfirmModal from "@/components/ui/ConfirmModal";
@@ -18,7 +19,6 @@ import ReorderButtons from "@/components/admin/ReorderButtons";
 const GRID_COLS = "grid-cols-[24px_1fr_100px] min-w-[480px]";
 
 const PAGE_SIZE = 10;
-const BACK_HREF = "/admin/content?tab=pages";
 
 export default function FaqEditor({
     faqs,
@@ -33,7 +33,7 @@ export default function FaqEditor({
     onDelete: (id: number) => void;
     onMove: (id: number, direction: "up" | "down") => void;
 }) {
-    const router = useRouter();
+    const goBack = useAdminBack("/admin/content?tab=pages");
     const [editing, setEditing] = useState<Faq | null>(null);
     const [modalOpen, setModalOpen] = useState(false);
     const [viewing, setViewing] = useState<Faq | null>(null);
@@ -71,7 +71,7 @@ export default function FaqEditor({
                 the same reason those do, since this route renders with no tab
                 bar above it. */}
             <div className="mb-6">
-                <BackLink label="Pages" onClick={() => router.push(BACK_HREF)} />
+                <BackLink onClick={goBack} />
             </div>
 
             <div>
@@ -97,13 +97,13 @@ export default function FaqEditor({
                 />
 
                 {faqs.length === 0 ? (
-                    <div className="border border-ink/10 bg-white px-5 py-16 text-center text-[13px] text-grey">No FAQs yet.</div>
+                    <EmptyState message="No FAQs yet." />
                 ) : paged.length === 0 ? (
-                    <div className="border border-ink/10 bg-white px-5 py-16 text-center text-[13px] text-grey">No FAQs match this search.</div>
+                    <EmptyState title="No matches" message="No FAQs match this search." />
                 ) : (
                     <div className="overflow-x-auto border border-ink/10 bg-white">
                         <div className={`grid ${GRID_COLS} items-center gap-4 border-b border-ink/10 bg-off/50 px-5 py-3`}>
-                            <span className="col-span-2 font-mono text-[11px] font-bold tracking-[.12em] text-grey uppercase">Question</span>
+                            <span className="col-span-2 font-mono text-label font-bold tracking-[.12em] text-grey uppercase">Question</span>
                             <span aria-hidden="true" />
                         </div>
                         <div className="divide-y divide-ink/10">
@@ -125,7 +125,7 @@ export default function FaqEditor({
                                         className={`grid ${GRID_COLS} cursor-pointer items-center gap-4 px-5 py-4 transition hover:bg-off/40`}
                                     >
                                         <ReorderButtons index={i} count={faqs.length} onMove={(dir) => onMove(f.id, dir)} />
-                                        <div className="min-w-0 truncate text-[14px] font-medium text-ink">{f.q}</div>
+                                        <div className="min-w-0 truncate text-body font-medium text-ink">{f.q}</div>
                                         <div className="flex items-center justify-end gap-1.5">
                                             <Tooltip label="Edit">
                                                 <button
@@ -157,7 +157,7 @@ export default function FaqEditor({
                                 );
                             })}
                         </div>
-                        <div className="border-t border-ink/10 bg-off/50 px-5 py-2.5 text-right font-mono text-[11px] text-grey">
+                        <div className="border-t border-ink/10 bg-off/50 px-5 py-2.5 text-right font-mono text-label text-grey">
                             Showing {filtered.length} of {faqs.length}
                         </div>
                     </div>

@@ -56,10 +56,10 @@ export default function JournalArticle({ post, preview = false }: { post: BlogPo
                 </div>
 
                 <div className="px-9 pt-5">
-                    <span className="font-mono text-[10px] uppercase tracking-[.16em] text-grey">{post.date}</span>
-                    <h1 className="mt-2 text-[20px] font-medium leading-snug text-ink">{post.title || "Untitled post"}</h1>
-                    {post.excerpt && <p className="mt-3 text-[12.5px] leading-relaxed text-grey">{post.excerpt}</p>}
-                    <div className="mt-4 space-y-3 text-[12.5px] leading-relaxed text-ink/85">
+                    <span className="font-mono text-label uppercase tracking-[.16em] text-grey">{post.date}</span>
+                    <h1 className="mt-2 text-subhead font-medium leading-snug text-ink">{post.title || "Untitled post"}</h1>
+                    {post.excerpt && <p className="mt-3 text-meta leading-relaxed text-grey">{post.excerpt}</p>}
+                    <div className="mt-4 space-y-3 text-meta leading-relaxed text-ink/85">
                         {(post.content || "").split("\n\n").filter(Boolean).map((para, i) => (
                             <p key={i}>{para}</p>
                         ))}
@@ -81,7 +81,7 @@ export default function JournalArticle({ post, preview = false }: { post: BlogPo
                     )}
                     <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent" />
                     <div className="absolute inset-x-0 bottom-0 px-[var(--gutter)] pb-10 md:px-16 md:pb-12">
-                        <span className="font-mono text-[11px] uppercase tracking-[.16em] text-white/70">{post.date}</span>
+                        <span className="font-mono text-label uppercase tracking-[.16em] text-white/70">{post.date}</span>
                         <h1 className="mt-3 max-w-[820px] text-[clamp(28px,4.2vw,50px)] font-medium leading-[1.1] text-white">
                             {post.title || "Untitled post"}
                         </h1>
@@ -89,7 +89,7 @@ export default function JournalArticle({ post, preview = false }: { post: BlogPo
                 </div>
             ) : (
                 <header className="mx-auto max-w-[680px]">
-                    <span className="font-mono text-[11px] uppercase tracking-[.16em] text-grey">{post.date}</span>
+                    <span className="font-mono text-label uppercase tracking-[.16em] text-grey">{post.date}</span>
                     <h1 className="mt-3 text-[clamp(28px,4.2vw,44px)] font-medium leading-[1.1] text-ink">
                         {post.title || "Untitled post"}
                     </h1>
@@ -98,12 +98,12 @@ export default function JournalArticle({ post, preview = false }: { post: BlogPo
 
             <div className={`mx-auto max-w-[900px] ${post.image ? "pt-10" : "pt-6"}`}>
                 <div className="mb-8 flex items-center justify-between gap-4">
-                    <Link href="/journal" className="inline-block text-[12.5px] font-medium text-grey transition-colors hover:text-pink-dark">
+                    <Link href="/journal" className="inline-block text-meta font-medium text-grey transition-colors hover:text-pink-dark">
                         ← Journal
                     </Link>
                     <button
                         onClick={handleShare}
-                        className={`text-[12px] font-medium transition-colors lg:hidden ${copied ? "text-success-dark" : "text-grey hover:text-pink-dark"}`}
+                        className={`text-meta font-medium transition-colors lg:hidden ${copied ? "text-success-dark" : "text-grey hover:text-pink-dark"}`}
                     >
                         {copyLabel}
                     </button>
@@ -113,33 +113,33 @@ export default function JournalArticle({ post, preview = false }: { post: BlogPo
                 <div className="grid grid-cols-1 gap-x-14 lg:grid-cols-[minmax(0,680px)_1fr]">
                     <div>
                         {post.excerpt && (
-                            <p className="border-l-2 border-pink pl-5 text-[18px] font-medium leading-relaxed text-ink/80">
+                            <p className="border-l-2 border-pink pl-5 text-title font-medium leading-relaxed text-ink/80">
                                 {post.excerpt}
                             </p>
                         )}
-                        <div className="mt-9 space-y-6 border-t border-ink/10 pt-9 text-[15.5px] leading-[1.85] text-ink/85">
+                        <div className="mt-9 space-y-6 border-t border-ink/10 pt-9 text-body leading-[1.85] text-ink/85">
                             {(post.content || "").split("\n\n").filter(Boolean).map((para, i) => (
-                                <p key={i} className={i === 0 ? "text-[17px] leading-[1.75] text-ink" : undefined}>
+                                <p key={i} className={i === 0 ? "text-lead leading-[1.75] text-ink" : undefined}>
                                     {para}
                                 </p>
                             ))}
                         </div>
                     </div>
 
-                    <aside className="hidden lg:sticky lg:top-[calc(var(--navbar-h,72px)+24px)] lg:flex lg:h-fit lg:flex-col lg:gap-7 lg:self-start lg:border-l lg:border-ink/10 lg:pl-10">
+                    <aside className="hidden lg:sticky lg:top-[calc(var(--promo-h,0px)+var(--navbar-h,72px)+24px)] lg:flex lg:h-fit lg:flex-col lg:gap-7 lg:self-start lg:border-l lg:border-ink/10 lg:pl-10">
                         <div>
-                            <span className="block font-mono text-[10px] uppercase tracking-[.16em] text-grey">Published</span>
-                            <span className="mt-1.5 block text-[13px] text-ink">{post.date}</span>
+                            <span className="block font-mono text-label uppercase tracking-[.16em] text-grey">Published</span>
+                            <span className="mt-1.5 block text-small text-ink">{post.date}</span>
                         </div>
                         <div>
-                            <span className="block font-mono text-[10px] uppercase tracking-[.16em] text-grey">Reading Time</span>
-                            <span className="mt-1.5 block text-[13px] text-ink">{readMins} min read</span>
+                            <span className="block font-mono text-label uppercase tracking-[.16em] text-grey">Reading Time</span>
+                            <span className="mt-1.5 block text-small text-ink">{readMins} min read</span>
                         </div>
                         <div>
-                            <span className="block font-mono text-[10px] uppercase tracking-[.16em] text-grey">Share</span>
+                            <span className="block font-mono text-label uppercase tracking-[.16em] text-grey">Share</span>
                             <button
                                 onClick={handleShare}
-                                className={`mt-1.5 text-[13px] transition-colors ${copied ? "text-success-dark" : "text-ink underline decoration-ink/20 underline-offset-2 hover:text-pink-dark hover:decoration-pink-dark/40"}`}
+                                className={`mt-1.5 text-small transition-colors ${copied ? "text-success-dark" : "text-ink underline decoration-ink/20 underline-offset-2 hover:text-pink-dark hover:decoration-pink-dark/40"}`}
                             >
                                 {copyLabel}
                             </button>

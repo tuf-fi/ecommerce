@@ -37,3 +37,11 @@ Other:
 - [x] Email retries
 - [x] Graceful shutdown
 - [x] Automated tests for orders, stock and vouchers (`npm test`, 15 tests, own `cindyrella_test` database)
+
+## 4. Future improvements
+- [ ] Mobile number check by SMS code (OTP). Today the number is only checked for format (Philippine mobile, `09XXXXXXXXX`; see `backend/src/lib/phone.ts` and `frontend/library/phone.ts`), so a wrong but valid-looking number gets through. Plan:
+  - A text-message code costs money per SMS (roughly ₱0.50–1 with Semaphore; check current rates). Email codes can't do this, since they only prove the inbox, not the phone.
+  - Build the flow with one swappable `sendSms(to, text)` function; in development it logs the code to the server console. Then plug in a provider (Semaphore recommended; Twilio trials can only text pre-verified numbers) and add its API key.
+  - Reuse the `OtpCode` model and rate limiting from the email reset flow. Limit code requests per number and per customer so nobody can run up the SMS bill.
+  - Add `Customer.phoneVerifiedAt`; clear it whenever the number changes. Profile page shows a Verified badge and a "Send code" step.
+  - Only enforce "verified number required to order" once an SMS provider is configured, otherwise every order would be blocked.

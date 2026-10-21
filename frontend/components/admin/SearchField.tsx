@@ -46,7 +46,7 @@ export default function SearchField({
                 onChange={(e) => onChange(e.target.value)}
                 placeholder={placeholder}
                 aria-label={ariaLabel ?? placeholder}
-                className="w-full bg-transparent pl-3.5 pr-8 py-[11px] text-[12.5px] text-ink outline-none placeholder:text-grey"
+                className="w-full bg-transparent pl-3.5 pr-8 py-[11px] text-meta text-ink outline-none placeholder:text-grey"
             />
             <svg
                 width="13"

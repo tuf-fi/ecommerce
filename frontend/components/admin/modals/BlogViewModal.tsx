@@ -11,7 +11,7 @@ export default function BlogViewModal({ post, onClose }: { post: BlogPost | null
     if (!post) return null;
 
     return (
-        <Modal open onClose={onClose} maxWidth="max-w-[520px]">
+        <Modal open onClose={onClose} maxWidth="max-w-[520px]" titleInBody>
             <ViewHeader title={post.title} badge={<StatusBadge label="Preview" tone="neutral" />} />
             <div className="pb-2">
                 <JournalArticle post={post} preview />

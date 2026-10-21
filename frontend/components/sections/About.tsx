@@ -21,18 +21,18 @@ export default function AboutSection({
             <div className="flex flex-col gap-y-10 lg:flex-row lg:gap-x-20">
                 <div className="left-info grid grid-cols-2 gap-x-6 gap-y-7 sm:grid-cols-3 lg:flex lg:flex-none lg:flex-col">
                     <div className="info flex flex-col">
-                        <span className="text-[10px] uppercase tracking-[.16em] text-grey">Founder</span>
-                        <span className="text-[13px]">{about.founder}</span>
+                        <span className="text-label uppercase tracking-[.16em] text-grey">Founder</span>
+                        <span className="text-small">{about.founder}</span>
                     </div>
 
                     <div className="info flex flex-col">
-                        <span className="text-[10px] uppercase tracking-[.16em] text-grey">Location</span>
-                        <span className="text-[13px]">{about.location}</span>
+                        <span className="text-label uppercase tracking-[.16em] text-grey">Location</span>
+                        <span className="text-small">{about.location}</span>
                     </div>
 
                     <div className="info flex flex-col">
-                        <span className="text-[10px] uppercase tracking-[.16em] text-grey">Focus</span>
-                        <span className="text-[13px]">{about.focus}</span>
+                        <span className="text-label uppercase tracking-[.16em] text-grey">Focus</span>
+                        <span className="text-small">{about.focus}</span>
                     </div>
                 </div>
 

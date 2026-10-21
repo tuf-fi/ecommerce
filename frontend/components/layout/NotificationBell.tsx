@@ -50,7 +50,7 @@ export default function NotificationBell() {
                         <path d="M13.7 21a2 2 0 0 1-3.4 0" />
                     </svg>
                     {unreadNotifications > 0 && (
-                        <span className="absolute top-0.5 right-0.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-pink-btn px-0.5 text-[9px] font-semibold">
+                        <span className="absolute top-0.5 right-0.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-pink-btn px-0.5 text-label font-semibold">
                             {unreadNotifications > 9 ? "9+" : unreadNotifications}
                         </span>
                     )}
@@ -60,10 +60,10 @@ export default function NotificationBell() {
             {open && (
                 <div className="absolute top-full right-[var(--gutter)] z-70 mt-2 w-[min(340px,calc(100vw-2*var(--gutter)))] overflow-hidden sm:right-0 border border-ink/10 bg-white text-ink shadow-modal">
                     <div className="flex items-center justify-between border-b border-ink/10 px-4 py-3">
-                        <span className="font-display text-[13.5px] font-medium">Notifications</span>
+                        <span className="font-display text-small font-medium">Notifications</span>
                         <div className="flex items-center gap-3">
                             {unreadNotifications > 0 && (
-                                <button onClick={markAllNotificationsRead} className="text-[11px] font-medium text-pink-dark transition hover:text-pink-btn">
+                                <button onClick={markAllNotificationsRead} className="text-label font-medium text-pink-dark transition hover:text-pink-btn">
                                     Mark all read
                                 </button>
                             )}
@@ -83,7 +83,7 @@ export default function NotificationBell() {
                     </div>
                     <div className="thin-scrollbar max-h-[360px] overflow-y-auto">
                         {notifications.length === 0 ? (
-                            <p className="px-4 py-8 text-center text-[12.5px] text-grey">Nothing yet. Order updates and new codes show up here.</p>
+                            <p className="px-4 py-8 text-center text-meta text-grey">Nothing yet. Order updates and new codes show up here.</p>
                         ) : (
                             notifications.slice(0, PREVIEW).map((n) => (
                                 <button
@@ -93,9 +93,9 @@ export default function NotificationBell() {
                                 >
                                     <NotificationIcon type={n.type} className="mt-0.5 flex-none text-grey" />
                                     <span className="min-w-0 flex-1">
-                                        <span className={`block text-[12.5px] leading-snug ${n.read ? "text-ink/75" : "font-medium text-ink"}`}>{n.title}</span>
-                                        <span className="mt-0.5 line-clamp-2 block text-[11.5px] leading-snug text-grey">{n.body}</span>
-                                        <span className="mt-1 block font-mono text-[10px] text-grey">{notificationTime(n.createdAt)}</span>
+                                        <span className={`block text-meta leading-snug ${n.read ? "text-ink/75" : "font-medium text-ink"}`}>{n.title}</span>
+                                        <span className="mt-0.5 line-clamp-2 block text-label leading-snug text-grey">{n.body}</span>
+                                        <span className="mt-1 block font-mono text-label text-grey">{notificationTime(n.createdAt)}</span>
                                     </span>
                                     {!n.read && <span aria-hidden="true" className="mt-1.5 h-1.5 w-1.5 flex-none rounded-full bg-pink-btn" />}
                                 </button>
@@ -107,7 +107,7 @@ export default function NotificationBell() {
                             setOpen(false);
                             router.push("/account/notifications");
                         }}
-                        className="block w-full border-t border-ink/10 px-4 py-3 text-center text-[12px] font-medium text-ink/80 transition hover:bg-ink/5 hover:text-ink"
+                        className="block w-full border-t border-ink/10 px-4 py-3 text-center text-meta font-medium text-ink/80 transition hover:bg-ink/5 hover:text-ink"
                     >
                         View all
                     </button>

@@ -288,11 +288,11 @@ export default function AdminSidebar() {
                     fall out of sync with the rail width. */}
                 <div className={`mb-8 flex gap-3 ${sidebarCollapsed ? "lg:flex-col lg:items-center" : "items-start justify-between"}`}>
                     <div className="min-w-0">
-                        <div className={`font-display text-[19px] font-medium tracking-wide whitespace-nowrap ${sidebarCollapsed ? "lg:text-center" : ""}`}>
+                        <div className={`font-display text-title font-medium tracking-wide whitespace-nowrap ${sidebarCollapsed ? "lg:text-center" : ""}`}>
                             <span className={sidebarCollapsed ? "hidden lg:inline" : "hidden"}>C</span>
                             <span className={sidebarCollapsed ? "lg:hidden" : ""}>Cindyrella</span>
                         </div>
-                        <div className={`mt-1 font-mono text-[10px] tracking-[.08em] text-grey-light uppercase ${sidebarCollapsed ? "lg:hidden" : ""}`}>
+                        <div className={`mt-1 font-mono text-label tracking-[.08em] text-grey-light uppercase ${sidebarCollapsed ? "lg:hidden" : ""}`}>
                             Admin Panel
                         </div>
                     </div>
@@ -310,7 +310,7 @@ export default function AdminSidebar() {
                 <nav ref={navRef} className="flex min-h-0 flex-1 flex-col overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                     {visibleGroups.map((group, i) => (
                         <div key={group.label} className={`mt-5 first:mt-0 ${sidebarCollapsed ? "lg:mt-3 lg:first:mt-0" : ""}`}>
-                            <div className={`mb-1 px-3 font-mono text-[11px] tracking-[.14em] text-white/35 uppercase ${sidebarCollapsed ? "lg:hidden" : ""}`}>
+                            <div className={`mb-1 px-3 font-mono text-label tracking-[.14em] text-white/35 uppercase ${sidebarCollapsed ? "lg:hidden" : ""}`}>
                                 {group.label}
                             </div>
                             {sidebarCollapsed && i > 0 && (
@@ -324,7 +324,7 @@ export default function AdminSidebar() {
                                             href={item.href}
                                             aria-label={item.label}
                                             aria-current={active ? "page" : undefined}
-                                            className={`flex w-full items-center gap-2.5 px-3 py-2.5 text-[13px] whitespace-nowrap transition ${
+                                            className={`flex w-full items-center gap-2.5 px-3 py-2.5 text-small whitespace-nowrap transition ${
                                                 sidebarCollapsed ? "lg:justify-center lg:px-0" : ""
                                             } ${
                                                 active ? "bg-white font-medium text-navy" : "text-white/75 hover:bg-white/10 hover:text-white"
@@ -333,7 +333,7 @@ export default function AdminSidebar() {
                                             <span className={active ? "opacity-100" : "opacity-75"}>{item.icon}</span>
                                             <span className={sidebarCollapsed ? "lg:hidden" : ""}>{item.label}</span>
                                             {item.href === "/admin/orders" && toReview > 0 && (
-                                                <span aria-label={`${toReview} payments to review`} className={`ml-auto bg-pink-btn px-1.5 py-0.5 font-mono text-[10px] leading-none text-white ${sidebarCollapsed ? "lg:hidden" : ""}`}>
+                                                <span aria-label={`${toReview} payments to review`} className={`ml-auto bg-pink-btn px-1.5 py-0.5 font-mono text-label leading-none text-white ${sidebarCollapsed ? "lg:hidden" : ""}`}>
                                                     {toReview}
                                                 </span>
                                             )}
@@ -352,8 +352,8 @@ export default function AdminSidebar() {
                     ))}
                 </nav>
 
-                <div className={`mt-4 border-t border-white/15 pt-4 text-[12px] whitespace-nowrap text-grey-light ${sidebarCollapsed ? "lg:hidden" : ""}`}>
-                    <b className="block text-[13px] font-medium text-white">{adminName || "Admin"}</b>
+                <div className={`mt-4 border-t border-white/15 pt-4 text-meta whitespace-nowrap text-grey-light ${sidebarCollapsed ? "lg:hidden" : ""}`}>
+                    <b className="block text-small font-medium text-white">{adminName || "Admin"}</b>
                     {currentStaffMember?.role ?? "Administrator"}
                 </div>
             </aside>

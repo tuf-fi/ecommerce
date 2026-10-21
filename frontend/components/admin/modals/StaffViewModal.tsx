@@ -17,7 +17,7 @@ export default function StaffViewModal({
     if (!staff) return null;
 
     return (
-        <Modal open={open} onClose={onClose} maxWidth="max-w-[380px]">
+        <Modal open={open} onClose={onClose} maxWidth="max-w-[380px]" titleInBody>
             <ViewHeader
                 title={staff.name}
                 caption={staff.access}
@@ -28,7 +28,7 @@ export default function StaffViewModal({
                             // eslint-disable-next-line @next/next/no-img-element
                             <img src={staff.photo} alt="" className="h-full w-full object-cover" />
                         ) : (
-                            <span className="flex h-full w-full items-center justify-center text-sm font-semibold text-ink/60">
+                            <span className="flex h-full w-full items-center justify-center text-small font-semibold text-ink/60">
                                 {staff.name.charAt(0).toUpperCase()}
                             </span>
                         )}

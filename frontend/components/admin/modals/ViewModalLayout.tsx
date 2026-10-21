@@ -1,3 +1,4 @@
+import { ModalTitle } from "@/components/ui/Modal";
 // Shared chrome for read-only "view" modals — a hairline spec-sheet, no boxed/shadowed "card". Heading always leads.
 
 export function ViewHeader({
@@ -14,11 +15,13 @@ export function ViewHeader({
     thumbnail?: React.ReactNode;
 }) {
     return (
-        <div className="sticky top-0 z-10 flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-ink/10 bg-white py-5 pl-5 pr-14 sm:pl-8 sm:pr-16">
+        <div className="sticky top-0 z-10 flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-ink/10 bg-white py-5 pl-5 pr-16 sm:pl-8 sm:pr-16">
             {thumbnail}
             <div className="min-w-0 flex-1 basis-[140px]">
-                <h3 className="truncate text-lg font-medium text-ink">{title}</h3>
-                {caption && <div className="mt-1 truncate text-[12px] text-grey">{caption}</div>}
+                <ModalTitle asChild>
+                    <h3 className="line-clamp-3 break-words text-title font-medium text-ink">{title}</h3>
+                </ModalTitle>
+                {caption && <div className="mt-1 truncate text-meta text-grey">{caption}</div>}
             </div>
             {badge && <div className="order-last flex-none basis-full pt-0.5 sm:order-none sm:basis-auto sm:self-start">{badge}</div>}
         </div>
@@ -29,7 +32,7 @@ export function ViewHeader({
 export function SectionLabel({ label }: { label: string }) {
     return (
         <div className="mb-3 flex items-center gap-3 pt-1 first:pt-0">
-            <span className="flex-none font-mono text-[10px] uppercase tracking-[.14em] text-grey">{label}</span>
+            <span className="flex-none font-mono text-label uppercase tracking-[.14em] text-grey">{label}</span>
             <span className="h-px flex-1 bg-ink/10" />
         </div>
     );
@@ -54,9 +57,9 @@ export function FactCell({
     const toneClass = tone === "alert" ? "text-alert" : tone === "warning" ? "text-amber-dark" : "text-ink";
     return (
         <div className="min-w-[45%] flex-1 border-r border-ink/10 px-5 py-4 last:border-r-0 sm:min-w-0 sm:px-8">
-            <span className="block font-mono text-[10px] uppercase tracking-[.14em] text-grey">{label}</span>
+            <span className="block font-mono text-label uppercase tracking-[.14em] text-grey">{label}</span>
             <span
-                className={`mt-1.5 block break-words sm:truncate ${size === "lg" ? "font-display text-xl font-medium sm:text-2xl" : "text-[13.5px]"} ${toneClass}`}
+                className={`mt-1.5 block break-words sm:truncate ${size === "lg" ? "font-display text-subhead font-medium sm:text-heading" : "text-small"} ${toneClass}`}
             >
                 {value}
             </span>
@@ -67,7 +70,7 @@ export function FactCell({
 // Plain "Label: value" lines, for the few facts a view modal leads with.
 export function DetailList({ items }: { items: { label: string; value: React.ReactNode; tone?: "default" | "alert" | "warning" }[] }) {
     return (
-        <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-3 border-b border-ink/10 px-5 py-5 text-[13.5px] sm:px-8">
+        <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-3 border-b border-ink/10 px-5 py-5 text-small sm:px-8">
             {items.map((it) => (
                 <div key={it.label} className="contents">
                     <dt className="text-grey">{it.label}:</dt>
@@ -81,8 +84,8 @@ export function DetailList({ items }: { items: { label: string; value: React.Rea
 export function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
     return (
         <div className="flex items-start justify-between gap-4 border-b border-ink/10 py-3.5 sm:gap-6 last:border-0">
-            <span className="flex-none pt-0.5 font-mono text-[10px] uppercase tracking-[.14em] text-grey">{label}</span>
-            <span className="min-w-0 text-right text-[13px] break-words text-ink/85">{value}</span>
+            <span className="flex-none pt-0.5 font-mono text-label uppercase tracking-[.14em] text-grey">{label}</span>
+            <span className="min-w-0 text-right text-small break-words text-ink/85">{value}</span>
         </div>
     );
 }
@@ -97,9 +100,9 @@ export function SizeTable({ sizes }: { sizes: SizeRowData[] }) {
     return (
         <div className="border border-ink/10">
             <div className="flex gap-4 border-b border-ink/10 bg-off/60 px-4 py-2.5">
-                <span className="flex-1 font-mono text-[10px] uppercase tracking-[.14em] text-grey">Size</span>
-                <span className="w-20 flex-none text-right font-mono text-[10px] uppercase tracking-[.14em] text-grey">Price</span>
-                <span className="w-14 flex-none text-right font-mono text-[10px] uppercase tracking-[.14em] text-grey">Stock</span>
+                <span className="flex-1 font-mono text-label uppercase tracking-[.14em] text-grey">Size</span>
+                <span className="w-20 flex-none text-right font-mono text-label uppercase tracking-[.14em] text-grey">Price</span>
+                <span className="w-14 flex-none text-right font-mono text-label uppercase tracking-[.14em] text-grey">Stock</span>
             </div>
             {sizes.map((s, i) => {
                 const toneClass = s.tone === "alert" ? "text-alert" : s.tone === "warning" ? "text-amber-dark" : "text-ink";
@@ -108,18 +111,18 @@ export function SizeTable({ sizes }: { sizes: SizeRowData[] }) {
                         key={s.id}
                         className={`flex items-center gap-4 px-4 py-2.5 ${i < sizes.length - 1 ? "border-b border-ink/10" : ""}`}
                     >
-                        <span className="flex-1 truncate text-[13px] text-ink">{s.label}</span>
-                        <span className="w-20 flex-none text-right font-mono text-[12.5px] text-ink">
+                        <span className="flex-1 truncate text-small text-ink">{s.label}</span>
+                        <span className="w-20 flex-none text-right font-mono text-meta text-ink">
                             {s.salePrice != null && s.salePrice < s.price ? (
                                 <>
                                     <span className="text-pink-dark">₱{s.salePrice.toLocaleString()}</span>
-                                    <s className="ml-1 text-[11px] text-grey/70">₱{s.price.toLocaleString()}</s>
+                                    <s className="ml-1 text-label text-grey/70">₱{s.price.toLocaleString()}</s>
                                 </>
                             ) : (
                                 <>₱{s.price.toLocaleString()}</>
                             )}
                         </span>
-                        <span className={`w-14 flex-none text-right font-mono text-[12.5px] ${toneClass}`}>{s.stock}</span>
+                        <span className={`w-14 flex-none text-right font-mono text-meta ${toneClass}`}>{s.stock}</span>
                     </div>
                 );
             })}

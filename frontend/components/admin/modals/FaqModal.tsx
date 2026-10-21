@@ -1,11 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { toast } from "sonner";
 import Modal from "@/components/ui/Modal";
-import ConfirmModal from "@/components/ui/ConfirmModal";
 import { Faq } from "@/library/admin/types";
-import { BTN_PRIMARY, FIELD_INPUT, FIELD_INPUT_INVALID, FIELD_LABEL, FIELD_ERROR } from "@/components/admin/formClasses";
+import { FIELD_INPUT, FIELD_INPUT_INVALID, FIELD_LABEL, FIELD_ERROR, focusFirstInvalid } from "@/components/admin/formClasses";
 import { useIsDirty } from "@/components/admin/useIsDirty";
 import { useAsyncAction, wait } from "@/library/useAsyncAction";
 
@@ -22,14 +20,9 @@ export default function FaqModal({
     const [q, setQ] = useState(item?.q ?? "");
     const [a, setA] = useState(item?.a ?? "");
     const [errors, setErrors] = useState<{ q?: string; a?: string }>({});
-    const [confirmCloseOpen, setConfirmCloseOpen] = useState(false);
 
     const isDirty = useIsDirty({ q, a });
 
-    function requestClose() {
-        if (isDirty) setConfirmCloseOpen(true);
-        else onClose();
-    }
 
     const [submitting, handleSubmit] = useAsyncAction(async () => {
         const nextErrors: { q?: string; a?: string } = {};
@@ -37,7 +30,7 @@ export default function FaqModal({
         if (!a.trim()) nextErrors.a = "An answer is required.";
         if (nextErrors.q || nextErrors.a) {
             setErrors(nextErrors);
-            toast.error("Fix the highlighted fields before saving.");
+            focusFirstInvalid("faq-form");
             return;
         }
         setErrors({});
@@ -47,12 +40,22 @@ export default function FaqModal({
     });
 
     return (
-        <>
-        <Modal open onClose={submitting ? () => {} : requestClose} maxWidth="max-w-[460px]">
-            <div className="sticky top-0 z-10 border-b border-ink/10 bg-white px-5 sm:px-8 py-5">
-                <h3 className="text-xl font-medium text-ink">{item ? "Edit FAQ" : "Add FAQ"}</h3>
-            </div>
-            <div className="px-5 sm:px-8 pt-6 pb-4">
+        <Modal
+            open
+            onClose={submitting ? () => {} : onClose}
+            maxWidth="max-w-[460px]"
+            heading={item ? "Edit FAQ" : "Add FAQ"}
+            dirty={isDirty && !submitting}
+            footer={
+                <button type="submit" form="faq-form" disabled={submitting} className="ui-btn ui-btn-primary w-full sm:w-auto">
+                    {submitting ? "Saving…" : "Save FAQ"}
+                </button>
+            }
+        >
+            <form id="faq-form" onSubmit={(e) => {
+                e.preventDefault();
+                handleSubmit();
+            }}>
                 <div className="mb-4">
                     <label htmlFor="faq-question" className={FIELD_LABEL}>Question</label>
                     <input
@@ -64,9 +67,10 @@ export default function FaqModal({
                         }}
                         placeholder="e.g. How long does delivery take?"
                         aria-invalid={errors.q ? true : undefined}
+                        aria-describedby={errors.q ? "faq-q-error" : undefined}
                         className={`${FIELD_INPUT} ${errors.q ? FIELD_INPUT_INVALID : ""}`}
                     />
-                    {errors.q && <p className={FIELD_ERROR}>{errors.q}</p>}
+                    {errors.q && <p id="faq-q-error" role="alert" className={FIELD_ERROR}>{errors.q}</p>}
                 </div>
 
                 <div>
@@ -81,25 +85,12 @@ export default function FaqModal({
                         }}
                         placeholder="A clear, direct answer"
                         aria-invalid={errors.a ? true : undefined}
+                        aria-describedby={errors.a ? "faq-a-error" : undefined}
                         className={`${FIELD_INPUT} resize-y leading-relaxed ${errors.a ? FIELD_INPUT_INVALID : ""}`}
                     />
-                    {errors.a && <p className={FIELD_ERROR}>{errors.a}</p>}
+                    {errors.a && <p id="faq-a-error" role="alert" className={FIELD_ERROR}>{errors.a}</p>}
                 </div>
-            </div>
-            <div className="sticky bottom-0 border-t border-ink/10 bg-white px-5 sm:px-8 py-5">
-                <button onClick={handleSubmit} disabled={submitting} className={`w-full ${BTN_PRIMARY}`}>
-                    {submitting ? "Saving…" : "Save FAQ"}
-                </button>
-            </div>
+            </form>
         </Modal>
-        <ConfirmModal
-            open={confirmCloseOpen}
-            title="Discard changes?"
-            description="Your edits to this FAQ entry haven't been saved."
-            confirmLabel="Discard"
-            onConfirm={onClose}
-            onClose={() => setConfirmCloseOpen(false)}
-        />
-        </>
     );
 }

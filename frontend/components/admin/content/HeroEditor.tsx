@@ -69,14 +69,14 @@ export default function HeroEditor() {
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={draft.image} alt="" className="h-full w-full object-cover" />
                     ) : (
-                        <span className="text-center font-mono text-[10px] tracking-[.08em] text-ink/60 uppercase">+ Set image</span>
+                        <span className="text-center font-mono text-label tracking-[.08em] text-ink/60 uppercase">+ Set image</span>
                     )}
                     {draft.image && (
-                        <span className="absolute inset-0 flex items-center justify-center bg-navy/60 text-[11.5px] font-medium text-white opacity-0 transition group-hover:opacity-100">
+                        <span className="absolute inset-0 flex items-center justify-center bg-navy/60 text-label font-medium text-white opacity-0 transition group-hover:opacity-100">
                             Replace
                         </span>
                     )}
-                    <input id="hero-image" type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
+                    <input id="hero-image" type="file" accept="image/*" onChange={handleImageChange} className="sr-only" />
                 </label>
             }
         >
@@ -87,9 +87,10 @@ export default function HeroEditor() {
                     value={draft.headline}
                     onChange={(e) => handleChange({ headline: e.target.value })}
                     aria-invalid={errors.headline ? true : undefined}
+                    aria-describedby={errors.headline ? "hero-headline-error" : undefined}
                     className={`${FIELD_INPUT} ${errors.headline ? FIELD_INPUT_INVALID : ""}`}
                 />
-                {errors.headline && <p className={FIELD_ERROR}>{errors.headline}</p>}
+                {errors.headline && <p id="hero-headline-error" role="alert" className={FIELD_ERROR}>{errors.headline}</p>}
             </div>
             <div className="mb-4">
                 <label htmlFor="hero-cta" className={FIELD_LABEL}>Hero CTA Button Text</label>
@@ -98,9 +99,10 @@ export default function HeroEditor() {
                     value={draft.cta}
                     onChange={(e) => handleChange({ cta: e.target.value })}
                     aria-invalid={errors.cta ? true : undefined}
+                    aria-describedby={errors.cta ? "hero-cta-error" : undefined}
                     className={`${FIELD_INPUT} ${errors.cta ? FIELD_INPUT_INVALID : ""}`}
                 />
-                {errors.cta && <p className={FIELD_ERROR}>{errors.cta}</p>}
+                {errors.cta && <p id="hero-cta-error" role="alert" className={FIELD_ERROR}>{errors.cta}</p>}
             </div>
             <div>
                 <label htmlFor="hero-subtext" className={FIELD_LABEL}>Hero Subtext</label>

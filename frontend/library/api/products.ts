@@ -87,6 +87,7 @@ export function toAdminProduct(p: ApiProduct): AdminProduct {
         image: imageFor(p),
         sizes: p.sizes.length ? p.sizes.map((s) => ({ id: String(s.id), label: s.label, price: s.price, salePrice: s.salePrice ?? undefined, stock: s.stock })) : undefined,
         reorderThreshold: p.reorderThreshold ?? undefined,
+        description: p.description,
         version: p.version,
     };
 }
@@ -139,6 +140,7 @@ export type ProductPayload = {
     expiry?: string | null;
     image?: string | null;
     reorderThreshold?: number | null;
+    description?: string;
     // Required when editing an existing product.
     version?: number;
     sizes?: { id?: number; label: string; price: number; salePrice?: number | null; stock?: number; reorderThreshold?: number | null }[];

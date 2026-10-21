@@ -22,8 +22,8 @@ function BlockHeading({ title, description, action }: { title: string; descripti
     return (
         <div className="mb-5 flex items-end justify-between gap-6">
             <div>
-                <h3 className="m-0 text-[15px] font-medium text-ink">{title}</h3>
-                <p className="mt-1 max-w-[560px] text-[12px] text-grey">{description}</p>
+                <h3 className="m-0 text-body font-medium text-ink">{title}</h3>
+                <p className="mt-1 max-w-[560px] text-meta text-grey">{description}</p>
             </div>
             {action}
         </div>
@@ -127,8 +127,8 @@ export default function LinksTab() {
                             onClick={() => setSection(s.key)}
                             className={`flex-none px-4 py-3.5 text-left whitespace-nowrap transition sm:px-5 sm:py-4 sm:whitespace-normal ${active ? "bg-navy" : "hover:bg-off/60"}`}
                         >
-                            <div className={`text-[13.5px] font-medium ${active ? "text-white" : "text-ink"}`}>{s.label}</div>
-                            <div className={`mt-0.5 hidden text-[11.5px] sm:block ${active ? "text-white/70" : "text-grey"}`}>{s.caption}</div>
+                            <div className={`text-small font-medium ${active ? "text-white" : "text-ink"}`}>{s.label}</div>
+                            <div className={`mt-0.5 hidden text-label sm:block ${active ? "text-white/70" : "text-grey"}`}>{s.caption}</div>
                         </button>
                     );
                 })}
@@ -160,7 +160,7 @@ export default function LinksTab() {
                                     <th
                                         key={h}
                                         scope="col"
-                                        className="border-b border-ink/10 px-5 py-3.5 text-left font-mono text-[11px] tracking-[.12em] text-grey uppercase"
+                                        className="border-b border-ink/10 px-5 py-3.5 text-left font-mono text-label tracking-[.12em] text-grey uppercase"
                                     >
                                         {h}
                                     </th>
@@ -169,16 +169,16 @@ export default function LinksTab() {
                         </thead>
                         <tbody>
                             {navLinks.length === 0 && (
-                                <EmptyStateRow colSpan={5} variant="empty" message="No navigation links yet." />
+                                <EmptyStateRow colSpan={5} message="No navigation links yet." />
                             )}
                             {navLinks.map((link, i) => (
                                 <tr key={link.id} className="transition hover:bg-off/40">
                                     <td className="border-b border-ink/10 px-5 py-3">
                                         <ReorderButtons index={i} count={navLinks.length} onMove={(dir) => moveNavLink(link.id, dir)} />
                                     </td>
-                                    <td className="border-b border-ink/10 px-5 py-3 text-[13.5px] font-medium text-ink">{link.label}</td>
-                                    <td className="border-b border-ink/10 px-5 py-3 text-[13px] text-grey">{SECTION_LABELS[link.section]}</td>
-                                    <td className="border-b border-ink/10 px-5 py-3 font-mono text-[11.5px] text-grey">
+                                    <td className="border-b border-ink/10 px-5 py-3 text-small font-medium text-ink">{link.label}</td>
+                                    <td className="border-b border-ink/10 px-5 py-3 text-small text-grey">{SECTION_LABELS[link.section]}</td>
+                                    <td className="border-b border-ink/10 px-5 py-3 font-mono text-label text-grey">
                                         {link.group === "more" ? "More dropdown" : "Main row"}
                                     </td>
                                     <td className="border-b border-ink/10 px-5 py-3">
@@ -220,7 +220,7 @@ export default function LinksTab() {
                     {footerGroups.map(({ group, heading, links }) => (
                         <div key={group}>
                             <div className="mb-3 flex items-end justify-between gap-6">
-                                <h4 className="m-0 text-[15px] font-medium text-ink">{heading}</h4>
+                                <h4 className="m-0 text-body font-medium text-ink">{heading}</h4>
                                 <button onClick={() => setFooterModal({ group, link: null })} className={`flex-none ${BTN_ADD}`}>
                                     + Add
                                 </button>
@@ -232,7 +232,7 @@ export default function LinksTab() {
                                                 <th
                                                     key={h}
                                                     scope="col"
-                                                    className="border-b border-ink/10 px-5 py-3.5 text-left font-mono text-[11px] tracking-[.12em] text-grey uppercase"
+                                                    className="border-b border-ink/10 px-5 py-3.5 text-left font-mono text-label tracking-[.12em] text-grey uppercase"
                                                 >
                                                     {h}
                                                 </th>
@@ -242,15 +242,15 @@ export default function LinksTab() {
                                     <tbody>
                                         {links.length === 0 && (
                                             <tr>
-                                                <td colSpan={3} className="border-b border-ink/10 px-5 py-10 text-center text-[13px] text-grey">
+                                                <td colSpan={3} className="border-b border-ink/10 px-5 py-10 text-center text-small text-grey">
                                                     No links yet.
                                                 </td>
                                             </tr>
                                         )}
                                         {links.map((link) => (
                                             <tr key={link.id} className="transition hover:bg-off/40">
-                                                <td className="border-b border-ink/10 px-5 py-3 text-[13.5px] font-medium text-ink">{link.label}</td>
-                                                <td className="border-b border-ink/10 px-5 py-3 font-mono text-[11.5px] text-grey">{link.href}</td>
+                                                <td className="border-b border-ink/10 px-5 py-3 text-small font-medium text-ink">{link.label}</td>
+                                                <td className="border-b border-ink/10 px-5 py-3 font-mono text-label text-grey">{link.href}</td>
                                                 <td className="border-b border-ink/10 px-5 py-3">
                                                     <div className="flex items-center justify-end gap-2">
                                                         <Tooltip label="Edit">
@@ -292,7 +292,7 @@ export default function LinksTab() {
                                     <th
                                         key={h}
                                         scope="col"
-                                        className="border-b border-ink/10 px-5 py-3.5 text-left font-mono text-[11px] tracking-[.12em] text-grey uppercase"
+                                        className="border-b border-ink/10 px-5 py-3.5 text-left font-mono text-label tracking-[.12em] text-grey uppercase"
                                     >
                                         {h}
                                     </th>
@@ -305,7 +305,7 @@ export default function LinksTab() {
                                 const error = socialErrors[p.urlKey];
                                 return (
                                     <tr key={p.urlKey} className="transition hover:bg-off/40">
-                                        <td className="border-b border-ink/10 px-5 py-3 text-[13.5px] font-medium text-ink">{p.label}</td>
+                                        <td className="border-b border-ink/10 px-5 py-3 text-small font-medium text-ink">{p.label}</td>
                                         <td className="border-b border-ink/10 px-5 py-3">
                                             <Toggle
                                                 checked={socialDraft[p.enabledKey] as boolean}
@@ -318,9 +318,10 @@ export default function LinksTab() {
                                                 onChange={(e) => handleSocialChange({ [p.urlKey]: e.target.value } as Partial<SocialLinks>)}
                                                 aria-label={`${p.label} URL`}
                                                 aria-invalid={error ? true : undefined}
+                                                aria-describedby={error ? `links-error-${p.urlKey}` : undefined}
                                                 className={`${FIELD_INPUT} h-9 max-w-[360px] py-1.5 ${error ? FIELD_INPUT_INVALID : ""}`}
                                             />
-                                            {error && <p className={FIELD_ERROR}>{error}</p>}
+                                            {error && <p id={`links-error-${p.urlKey}`} role="alert" className={FIELD_ERROR}>{error}</p>}
                                         </td>
                                     </tr>
                                 );

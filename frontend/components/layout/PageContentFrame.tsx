@@ -8,8 +8,8 @@ export default function PageContentFrame({ children }: { children: React.ReactNo
     const isAdmin = pathname.startsWith("/admin");
 
     return (
-        <div style={{ paddingTop: isAdmin ? 0 : "var(--promo-h, 0px)" }} className="flex flex-1 flex-col">
+        <main id="main" tabIndex={-1} style={{ paddingTop: isAdmin ? 0 : "var(--promo-h, 0px)" }} className="flex flex-1 flex-col outline-none">
             {children}
-        </div>
+        </main>
     );
 }

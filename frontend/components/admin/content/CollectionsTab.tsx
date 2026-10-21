@@ -75,22 +75,22 @@ export default function CollectionsTab() {
                 <thead>
                     <tr className="bg-off/50">
                         {["Collection", "Items", "Visible", ""].map((h) => (
-                            <th key={h} scope="col" className="border-b border-ink/10 px-5 py-3.5 text-left font-mono text-[11px] tracking-[.12em] text-grey uppercase">
+                            <th key={h} scope="col" className="border-b border-ink/10 px-5 py-3.5 text-left font-mono text-label tracking-[.12em] text-grey uppercase">
                                 {h}
                             </th>
                         ))}
                     </tr>
                 </thead>
                 <tbody>
-                    {filtered.length === 0 && <EmptyStateRow colSpan={4} variant="filtered" message="No collections match this search." />}
+                    {filtered.length === 0 && <EmptyStateRow colSpan={4} message="No collections match this search." />}
                     {filtered.map((row) => (
                         <tr key={row.slug} className="transition hover:bg-off/40">
-                            <td className="border-b border-ink/10 px-5 py-3.5 text-[13.5px] font-medium text-ink">
+                            <td className="border-b border-ink/10 px-5 py-3.5 text-small font-medium text-ink">
                                 <Link href={rowHref(row)} className="block">
                                     {row.name}
                                 </Link>
                             </td>
-                            <td className="border-b border-ink/10 px-5 py-3.5 font-mono text-[12px] text-grey">
+                            <td className="border-b border-ink/10 px-5 py-3.5 font-mono text-meta text-grey">
                                 {row.count} item{row.count === 1 ? "" : "s"}
                             </td>
                             <td className="border-b border-ink/10 px-5 py-3.5">

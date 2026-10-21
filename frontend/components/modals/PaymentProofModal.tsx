@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Modal from "../ui/Modal";
+import Modal, { ModalClose } from "../ui/Modal";
 import { ApiError } from "@/library/api/client";
 import { submitPaymentProof } from "@/library/api/orders";
 import { EMPTY_PAYMENT_INSTRUCTIONS, getPaymentInstructions, PaymentInstructions, PaymentMethodId } from "@/library/api/payments";
@@ -9,8 +9,8 @@ import { EMPTY_PAYMENT_INSTRUCTIONS, getPaymentInstructions, PaymentInstructions
 const MAX_BYTES = 3 * 1024 * 1024;
 const ACCEPTED = ["image/jpeg", "image/png", "image/webp"];
 
-const input = "w-full border border-ink/15 bg-white p-3 text-sm text-ink outline-none transition focus:border-pink-dark focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-1";
-const label = "mb-1.5 block font-mono text-[11px] uppercase tracking-[.14em] text-grey";
+const input = "ui-input";
+const label = "ui-label";
 
 // Mounted only while open, so the form starts fresh every time. Shows where to send the money, then takes the screenshot.
 export default function PaymentProofModal({
@@ -82,104 +82,105 @@ export default function PaymentProofModal({
         }
     }
 
+    const dirty = !!file || reference.trim() !== "" || senderName.trim() !== "";
+
     return (
-        <Modal open onClose={busy ? () => {} : onClose} maxWidth="max-w-[480px]" title={`Pay for order ${orderNo}`}>
-            <form onSubmit={submit} className="p-5 sm:p-8">
-                <div className="mb-1 font-mono text-[10px] uppercase tracking-[.16em] text-grey">Order {orderNo}</div>
-                <h3 className="mb-1 text-xl font-medium text-ink">Send ₱{total.toLocaleString()}</h3>
-                <p className="mb-5 text-[12.5px] leading-relaxed text-grey">{(instructions ?? EMPTY_PAYMENT_INSTRUCTIONS).intro}</p>
+        <Modal
+            open
+            onClose={busy ? () => {} : onClose}
+            maxWidth="max-w-[480px]"
+            eyebrow={`Order ${orderNo}`}
+            heading={`Send ₱${total.toLocaleString()}`}
+            dirty={dirty && !busy}
+            footer={
+                <>
+                    <ModalClose asChild>
+                        <button type="button" disabled={busy} className="ui-btn ui-btn-secondary">
+                            Later
+                        </button>
+                    </ModalClose>
+                    <button type="submit" form="proof-form" disabled={busy || !file} className="ui-btn ui-btn-primary">
+                        {busy ? "Uploading…" : "Send for verification"}
+                    </button>
+                </>
+            }
+        >
+            <form id="proof-form" onSubmit={submit}>
+                <p className="mb-5 text-meta leading-relaxed text-grey">{(instructions ?? EMPTY_PAYMENT_INSTRUCTIONS).intro}</p>
 
                 {instructions && !configured && (
-                    <p className="mb-5 border-l-2 border-pink-dark bg-pink-soft/40 px-3 py-2 text-[12.5px] text-ink">
+                    <p role="status" className="mb-5 border border-pink-dark/30 bg-pink-soft/40 px-3 py-2 text-meta text-ink">
                         Payment details haven&apos;t been set up yet. Please contact us and we&apos;ll tell you where to send your payment.
                     </p>
                 )}
 
                 {configured && (
-                    <div className="mb-5 flex flex-col gap-2">
-                        {methods.map((m) => (
-                            <div key={m.id} className={`border p-3.5 ${m.id === activeMethod ? "border-navy" : "border-ink/10"}`}>
-                                <div className="flex items-center justify-between gap-3">
-                                    <span className="text-[13px] font-medium text-ink">{m.label}</span>
-                                    <button
-                                        type="button"
-                                        onClick={() => navigator.clipboard.writeText(m.accountNumber).then(() => showToast("success", "Number copied."))}
-                                        className="text-[11.5px] text-pink-dark underline underline-offset-2"
-                                    >
-                                        Copy number
-                                    </button>
-                                </div>
-                                <div className="mt-1 font-mono text-[13px] text-ink">{m.accountNumber}</div>
-                                {m.accountName && <div className="text-[12px] text-grey">{m.accountName}</div>}
-                                {m.notes && <div className="mt-1 text-[11.5px] text-grey">{m.notes}</div>}
-                            </div>
-                        ))}
-                    </div>
+                    <fieldset className="mb-5 flex flex-col gap-2 border-0 p-0">
+                        <legend className={label}>Pay with</legend>
+                        {methods.map((m) => {
+                            const active = m.id === activeMethod;
+                            return (
+                                <label key={m.id} className={`block cursor-pointer border p-3.5 transition has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-navy ${active ? "border-navy" : "border-ink/10 hover:border-ink/30"}`}>
+                                    <input type="radio" name="proof-method" value={m.id} checked={active} onChange={() => setMethod(m.id)} className="sr-only" />
+                                    <div className="flex items-center justify-between gap-3">
+                                        <span className="text-small font-medium text-ink">{m.label}</span>
+                                        <button
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                navigator.clipboard.writeText(m.accountNumber).then(() => showToast("success", "Number copied."));
+                                            }}
+                                            className="inline-flex min-h-11 items-center px-1 text-label text-pink-dark underline underline-offset-2"
+                                        >
+                                            Copy number
+                                        </button>
+                                    </div>
+                                    <div className="font-mono text-small text-ink">{m.accountNumber}</div>
+                                    {m.accountName && <div className="text-meta text-grey">{m.accountName}</div>}
+                                    {m.notes && <div className="mt-1 text-label text-grey">{m.notes}</div>}
+                                </label>
+                            );
+                        })}
+                    </fieldset>
                 )}
 
-                <div className="mb-4 grid gap-4 sm:grid-cols-2">
-                    <div>
-                        <label htmlFor="proof-method" className={label}>I paid with</label>
-                        <select id="proof-method" value={activeMethod} onChange={(e) => setMethod(e.target.value as PaymentMethodId)} className={input}>
-                            {(configured ? methods : EMPTY_PAYMENT_INSTRUCTIONS.methods).map((m) => (
-                                <option key={m.id} value={m.id}>{m.label}</option>
-                            ))}
-                        </select>
-                    </div>
-                    <div>
-                        <label htmlFor="proof-ref" className={label}>Reference no.</label>
-                        <input id="proof-ref" value={reference} onChange={(e) => setReference(e.target.value)} maxLength={60} placeholder="Optional" className={input} />
-                    </div>
-                </div>
-
-                <div className="mb-4 grid gap-4 sm:grid-cols-2">
-                    <div>
-                        <label htmlFor="proof-amount" className={label}>Amount sent (₱)</label>
-                        <input id="proof-amount" type="number" inputMode="numeric" min={1} value={amount} onChange={(e) => setAmount(e.target.value)} className={input} />
-                    </div>
-                    <div>
-                        <label htmlFor="proof-sender" className={label}>Sender name</label>
-                        <input id="proof-sender" value={senderName} onChange={(e) => setSenderName(e.target.value)} maxLength={100} placeholder="Optional" className={input} />
-                    </div>
-                </div>
-
-                <label className={label}>Screenshot of your receipt</label>
+                <label className={label}>
+                    Screenshot of your receipt <span className="normal-case tracking-normal text-pink-dark">· required</span>
+                </label>
                 <input ref={picker} type="file" accept={ACCEPTED.join(",")} onChange={pick} className="hidden" />
                 <button
                     type="button"
                     onClick={() => picker.current?.click()}
-                    className="mb-5 flex w-full items-center gap-4 border border-dashed border-ink/25 p-3 text-left transition hover:border-pink-dark"
+                    className="mb-5 flex w-full items-center gap-4 border border-dashed border-ink/25 p-3 text-left transition hover:border-navy focus-visible:ring-2 focus-visible:ring-navy"
                 >
                     {file && preview ? (
                         <>
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img src={preview} alt="Your screenshot" className="h-16 w-16 flex-none object-cover" />
-                            <span className="min-w-0 text-[12.5px] text-ink">
+                            <span className="min-w-0 text-meta text-ink">
                                 <span className="block truncate">{file.name}</span>
                                 <span className="text-grey">Tap to choose a different one</span>
                             </span>
                         </>
                     ) : (
-                        <span className="text-[12.5px] text-grey">Choose a JPG, PNG or WEBP image (max 3MB)</span>
+                        <span className="text-meta text-grey">Choose a JPG, PNG or WEBP image (max 3MB)</span>
                     )}
                 </button>
 
-                <div className="flex gap-2">
-                    <button
-                        type="submit"
-                        disabled={busy || !file}
-                        className="flex-1 bg-navy py-3 text-[13px] font-semibold text-white transition hover:bg-pink-dark disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-navy"
-                    >
-                        {busy ? "Uploading…" : "Send for verification"}
-                    </button>
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        disabled={busy}
-                        className="border border-ink/15 px-4 text-[13px] text-ink transition hover:bg-off disabled:opacity-60"
-                    >
-                        Later
-                    </button>
+                <div className="mb-4 font-mono text-label uppercase tracking-[.16em] text-grey">Optional details</div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                        <label htmlFor="proof-ref" className={label}>Reference no.</label>
+                        <input id="proof-ref" value={reference} onChange={(e) => setReference(e.target.value)} maxLength={60} className={input} />
+                    </div>
+                    <div>
+                        <label htmlFor="proof-sender" className={label}>Sender name</label>
+                        <input id="proof-sender" value={senderName} onChange={(e) => setSenderName(e.target.value)} maxLength={100} className={input} />
+                    </div>
+                    <div>
+                        <label htmlFor="proof-amount" className={label}>Amount sent (₱)</label>
+                        <input id="proof-amount" type="number" inputMode="numeric" min={1} value={amount} onChange={(e) => setAmount(e.target.value)} className={input} />
+                    </div>
                 </div>
             </form>
         </Modal>

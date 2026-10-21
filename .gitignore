@@ -44,3 +44,6 @@ id_ed25519*
 credentials.json
 service-account*.json
 secrets/
+
+# Scratch output from local searches
+.sel.txt

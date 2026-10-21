@@ -22,8 +22,8 @@ function ProductTooltip({ active, payload }: { active?: boolean; payload?: Toolt
 
     return (
         <div className="rounded bg-ink px-3 py-2 whitespace-nowrap shadow-card">
-            <div className="text-[11.5px] text-grey-light">{entry.payload?.name}</div>
-            <div className="font-mono text-[12px] font-medium text-white tabular-nums">
+            <div className="text-label text-grey-light">{entry.payload?.name}</div>
+            <div className="font-mono text-meta font-medium text-white tabular-nums">
                 {units} {units === 1 ? "unit" : "units"} sold
             </div>
         </div>

@@ -63,7 +63,7 @@ export default function AdminSettingsLayout({ children }: { children: React.Reac
                         <Link
                             key={item.href}
                             href={item.href}
-                            className={`flex flex-none items-center gap-2 px-3 py-2 text-[12.5px] whitespace-nowrap transition ${
+                            className={`flex flex-none items-center gap-2 px-3 py-2 text-meta whitespace-nowrap transition ${
                                 active ? "bg-off font-semibold text-ink" : "text-grey hover:bg-off/70 hover:text-ink"
                             }`}
                         >
@@ -82,7 +82,7 @@ export default function AdminSettingsLayout({ children }: { children: React.Reac
                 <nav className="flex flex-col gap-5 p-7">
                     {groups.map((group) => (
                         <div key={group.label}>
-                            <div className="mb-1 px-2.5 font-mono text-[10px] uppercase tracking-[.16em] text-grey">
+                            <div className="mb-1 px-2.5 font-mono text-label uppercase tracking-[.16em] text-grey">
                                 {group.label}
                             </div>
                             <div className="flex flex-col gap-px">
@@ -93,7 +93,7 @@ export default function AdminSettingsLayout({ children }: { children: React.Reac
                                             key={item.href}
                                             href={item.href}
                                             aria-current={active ? "page" : undefined}
-                                            className={`flex items-center gap-2.5 px-2.5 py-2 text-[12.5px] transition ${
+                                            className={`flex items-center gap-2.5 px-2.5 py-2 text-meta transition ${
                                                 active ? "bg-off font-semibold text-ink" : "text-grey hover:bg-off/70 hover:text-ink"
                                             }`}
                                         >

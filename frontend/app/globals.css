@@ -129,6 +129,10 @@ body::before {
     font-family: var(--font-space-grotesk), sans-serif;
   }
 
+  h2, h3, h4 {
+    line-height: 1.15;
+  }
+
   h1{
     font-size: clamp(38px,6.2vw,60px);
     line-height: .98;
@@ -150,6 +154,40 @@ body::before {
   }
 }
 
+/* Shared control language. Prefixed ui- because daisyUI already owns .btn. */
+@layer components {
+  .ui-btn {
+    @apply inline-flex min-h-11 items-center justify-center gap-2 px-6 text-small font-semibold tracking-wide whitespace-nowrap transition focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-2 disabled:cursor-not-allowed;
+  }
+  .ui-btn-sm { @apply px-4 text-meta; }
+  .ui-btn-lg { @apply px-8; }
+  .ui-btn-block { @apply w-full; }
+  .ui-btn-primary { @apply bg-navy text-white hover:bg-pink-dark disabled:opacity-50 disabled:hover:bg-navy; }
+  .ui-btn-secondary { @apply border border-ink/20 bg-transparent text-ink hover:border-ink hover:bg-off disabled:border-ink/10 disabled:bg-off disabled:text-grey disabled:hover:border-ink/10; }
+  .ui-btn-accent { @apply bg-pink-btn text-white hover:bg-pink-btn-hover disabled:opacity-50; }
+  .ui-btn-destructive { @apply bg-alert text-white hover:bg-alert/90 disabled:opacity-50; }
+  .ui-btn-ghost { @apply bg-transparent text-ink hover:bg-off disabled:text-grey; }
+  .ui-btn-danger { @apply border border-alert/40 bg-transparent text-alert hover:border-alert hover:bg-alert hover:text-white disabled:opacity-50; }
+
+  .ui-label { @apply mb-1.5 block font-mono text-label uppercase tracking-[.14em] text-grey; }
+  .ui-input { @apply w-full rounded-none border border-ink/15 bg-white px-4 py-3 text-small text-ink outline-none transition placeholder:text-grey focus:border-navy/50 focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-1 disabled:bg-off disabled:text-grey; }
+  .ui-input-invalid { @apply border-alert/60 focus:border-alert/60; }
+  /* Keeps an inline text link on its line while giving it a 44px-tall hit area. */
+  .tap-area { position: relative; }
+  .tap-area::after { content: ""; position: absolute; inset: -0.75rem -0.25rem; }
+  /* Editorial underline field, used where a form sits on the page surface itself (the Contact section). */
+  .ui-input-line { @apply w-full rounded-none border-0 border-b border-ink/25 bg-transparent px-0.5 py-2 text-body text-ink outline-none transition placeholder:text-grey focus:border-pink-dark focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-1 disabled:text-grey; }
+  .ui-select {
+    @apply w-full rounded-none border border-ink/15 bg-white py-3 pr-10 pl-4 text-small text-ink outline-none transition focus:border-navy/50 focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-1 disabled:bg-off disabled:text-grey;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2312233A' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.8rem center;
+    background-size: 11px 11px;
+  }
+  .ui-error { @apply mt-1.5 text-meta text-alert; }
+}
+
 .eyebrow{
   font-family: var(--font-ibm-plex-mono), monospace;
   font-size: 11px;
@@ -168,13 +206,24 @@ body::before {
 /* A visible but minimal scrollbar — used where a panel needs its own
    independent scroll (e.g. a sticky sidebar) without the browser's
    default-width scrollbar competing for attention. */
+/* daisyUI sets scrollbar-color on :root, and in Chrome any non-auto scrollbar-color/width switches off the
+   ::-webkit-scrollbar styling below (leaving a thick native bar with arrow buttons). Reset both to auto here so the 3px
+   webkit bar applies; Firefox has no webkit pseudo-elements, so it gets the standard thin bar instead. */
 .thin-scrollbar {
-  scrollbar-width: thin;
-  scrollbar-color: var(--color-grey-light) transparent;
+  scrollbar-width: auto;
+  scrollbar-color: auto;
+}
+
+@supports not selector(::-webkit-scrollbar) {
+  .thin-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-grey-light) transparent;
+  }
 }
 
 .thin-scrollbar::-webkit-scrollbar {
-  width: 4px;
+  width: 3px;
+  height: 3px;
 }
 
 .thin-scrollbar::-webkit-scrollbar-track {

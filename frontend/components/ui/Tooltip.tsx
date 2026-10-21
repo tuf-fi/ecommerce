@@ -68,7 +68,7 @@ export default function Tooltip({
                     <span
                         role="tooltip"
                         style={{ top: coords.top, left: coords.left, right: coords.right }}
-                        className={`pointer-events-none fixed z-[70] rounded-[3px] border border-white/10 bg-ink px-3 py-1.5 font-mono text-[10px] tracking-[.08em] whitespace-nowrap text-white uppercase shadow-tooltip transition-[transform,opacity] duration-150 ease-out ${
+                        className={`pointer-events-none fixed z-[70] rounded-[3px] border border-white/10 bg-ink px-3 py-1.5 font-mono text-label tracking-[.08em] whitespace-nowrap text-white uppercase shadow-tooltip transition-[transform,opacity] duration-150 ease-out ${
                             side === "right"
                                 ? `-translate-y-1/2 ${visible ? "translate-x-0 scale-100 opacity-100" : "-translate-x-1 scale-95 opacity-0"}`
                                 : side === "left"

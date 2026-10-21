@@ -14,22 +14,22 @@ export default function Footer({ preview = false }: { preview?: boolean } = {}) 
                 <div className="grid grid-cols-1 gap-8 border-b border-white/10 py-10 md:grid-cols-3 md:divide-x md:divide-white/10 md:py-12">
                     <div className="md:pr-8">
                         <h4 className="eyebrow mb-2 uppercase text-pink">Contact Us</h4>
-                        <p className="text-[13px] leading-relaxed text-grey-light">{contactInfo.email}<br />{contactInfo.phone}</p>
+                        <p className="text-small leading-relaxed text-grey-light">{contactInfo.email}{contactInfo.phone && <><br />{contactInfo.phone}</>}</p>
                     </div>
                     <div className="md:px-8">
                         <h4 className="eyebrow mb-2 uppercase text-pink">Based In</h4>
-                        <p className="text-[13px] leading-relaxed text-grey-light">{contactInfo.addressLine1}<br />{contactInfo.addressLine2}</p>
+                        <p className="text-small leading-relaxed text-grey-light">{contactInfo.addressLine1}<br />{contactInfo.addressLine2}</p>
                     </div>
                     <div className="md:pl-8">
                         <h4 className="eyebrow mb-2 uppercase text-pink">Customer Care Hours</h4>
-                        <p className="text-[13px] leading-relaxed text-grey-light">{contactInfo.hoursLine1}<br />{contactInfo.hoursLine2}</p>
+                        <p className="text-small leading-relaxed text-grey-light">{contactInfo.hoursLine1}<br />{contactInfo.hoursLine2}</p>
                     </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-x-8 gap-y-12 border-b border-white/10 py-12 md:py-16 lg:grid-cols-[1.2fr_.8fr_.8fr_.9fr] lg:gap-14">
                     <div className="col-span-2 max-w-[300px] lg:col-span-1">
-                        <h3 className="mb-4 text-xl font-normal text-white">Cindyrella</h3>
-                        <p className="mb-7 text-[12.5px] leading-relaxed text-grey-light">
+                        <h3 className="mb-4 text-subhead font-normal text-white">Cindyrella</h3>
+                        <p className="mb-7 text-meta leading-relaxed text-grey-light">
                             Skin care built on fewer, better ingredients — and a routine designed to actually stick.
                         </p>
                         <div className="flex gap-2.5">
@@ -82,7 +82,7 @@ export default function Footer({ preview = false }: { preview?: boolean } = {}) 
                         <ul className="flex flex-col gap-3">
                             {footerShopLinks.map((link) => (
                                 <li key={link.id}>
-                                    <a href={safeHref(link.href)} className="text-[13px] text-grey-light transition hover:text-white">{link.label}</a>
+                                    <a href={safeHref(link.href)} className="text-small text-grey-light transition hover:text-white">{link.label}</a>
                                 </li>
                             ))}
                         </ul>
@@ -93,7 +93,7 @@ export default function Footer({ preview = false }: { preview?: boolean } = {}) 
                         <ul className="flex flex-col gap-3">
                             {footerCompanyLinks.map((link) => (
                                 <li key={link.id}>
-                                    <a href={safeHref(link.href)} className="text-[13px] text-grey-light transition hover:text-white">{link.label}</a>
+                                    <a href={safeHref(link.href)} className="text-small text-grey-light transition hover:text-white">{link.label}</a>
                                 </li>
                             ))}
                         </ul>
@@ -103,7 +103,7 @@ export default function Footer({ preview = false }: { preview?: boolean } = {}) 
                         <h4 className="eyebrow mb-5 uppercase">We Accept</h4>
                         <ul className="flex flex-wrap gap-2">
                             {footerPaymentMethods.map((label) => (
-                                <li key={label} className="border border-white/15 px-3 py-1.5 text-[11.5px] text-grey-light">
+                                <li key={label} className="border border-white/15 px-3 py-1.5 text-label text-grey-light">
                                     {label}
                                 </li>
                             ))}
@@ -111,7 +111,7 @@ export default function Footer({ preview = false }: { preview?: boolean } = {}) 
                     </div>
                 </div>
 
-                <div className="flex flex-col gap-3 pt-7 text-[11.5px] text-grey sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-col gap-3 pt-7 text-label text-grey sm:flex-row sm:items-center sm:justify-between">
                     <span>&copy; 2026 Cindyrella. All rights reserved.</span>
                     <span>Considered skin care, made in Metro Manila.</span>
                 </div>

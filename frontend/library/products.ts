@@ -1,6 +1,21 @@
 import { StaticImageData } from "next/image";
 import { PlaceholderVariant } from "@/components/ui/Placeholder";
 
+export type ProductSection = { title: string; body: string };
+
+// A description is an intro paragraph followed by optional `## Title` sections (Ingredients, How to use, Suitable for...).
+export function parseDescription(desc: string): { intro: string; sections: ProductSection[] } {
+    const parts = desc.split(/^##\s+/m);
+    const intro = (parts.shift() ?? "").trim();
+    const sections = parts
+        .map((part) => {
+            const [title, ...rest] = part.split("\n");
+            return { title: title.trim(), body: rest.join("\n").trim() };
+        })
+        .filter((s) => s.title && s.body);
+    return { intro, sections };
+}
+
 export type ProductSize = {
     id: string;
     label: string;

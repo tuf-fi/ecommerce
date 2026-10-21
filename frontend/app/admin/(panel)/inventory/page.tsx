@@ -324,7 +324,7 @@ export default function InventoryPage() {
                                     />
                                 </th>
                                 {["Product", "Category", "Price", "Stock", "Status", ""].map((h) => (
-                                    <th key={h} scope="col" className="border-b border-ink/10 px-5 py-3.5 text-left font-mono text-[11px] tracking-[.12em] text-grey uppercase">
+                                    <th key={h} scope="col" className="border-b border-ink/10 px-5 py-3.5 text-left font-mono text-label tracking-[.12em] text-grey uppercase">
                                         {h}
                                     </th>
                                 ))}
@@ -332,7 +332,7 @@ export default function InventoryPage() {
                         </thead>
                         <tbody>
                             {paged.length === 0 && (
-                                <EmptyStateRow colSpan={7} variant="filtered" message="No products match this filter." />
+                                <EmptyStateRow colSpan={7} message="No products match this filter." />
                             )}
                             {paged.map((p) => {
                                 const status = productStockStatus(p);
@@ -368,21 +368,21 @@ export default function InventoryPage() {
                                                     <Image src={p.image} alt="" fill sizes="44px" unoptimized={typeof p.image === "string"} className="object-cover" />
                                                 </div>
                                                 <div className="min-w-0">
-                                                    <div className="truncate text-[13.5px] font-medium text-ink">{p.name}</div>
-                                                    <div className="font-mono text-[11px] text-grey">{p.sku}</div>
+                                                    <div className="truncate text-small font-medium text-ink">{p.name}</div>
+                                                    <div className="font-mono text-label text-grey">{p.sku}</div>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="border-b border-ink/10 px-5 py-3.5 text-[13px] text-ink">{p.category}</td>
-                                        <td className="border-b border-ink/10 px-5 py-3.5 font-mono text-[12.5px] text-ink">
+                                        <td className="border-b border-ink/10 px-5 py-3.5 text-small text-ink">{p.category}</td>
+                                        <td className="border-b border-ink/10 px-5 py-3.5 font-mono text-meta text-ink">
                                             {min === max ? `₱${min.toLocaleString()}` : `₱${min.toLocaleString()}–₱${max.toLocaleString()}`}
                                             {sale !== null && (
-                                                <span className="mt-0.5 block text-[11px] text-pink-dark">
+                                                <span className="mt-0.5 block text-label text-pink-dark">
                                                     {p.sizes?.length ? "Sale from" : "Sale"} ₱{sale.toLocaleString()}
                                                 </span>
                                             )}
                                         </td>
-                                        <td className="border-b border-ink/10 px-5 py-3.5 font-mono text-[12.5px] text-ink">{productStock(p)}</td>
+                                        <td className="border-b border-ink/10 px-5 py-3.5 font-mono text-meta text-ink">{productStock(p)}</td>
                                         <td className="border-b border-ink/10 px-5 py-3.5">
                                             <div className="flex flex-wrap items-center gap-1.5">
                                                 <StatusBadge label={status === "in" ? "In stock" : status === "low" ? "Low stock" : "Out of stock"} tone={STOCK_TONE[status]} />
@@ -426,11 +426,11 @@ export default function InventoryPage() {
             <Pagination page={currentPage} totalPages={totalPages} onChange={setPage} />
 
             <BulkActionBar count={selected.size} onClear={clearSelection}>
-                <button onClick={() => setBulkEditOpen(true)} className={BTN_BULK_PRIMARY}>
-                    Bulk Edit
-                </button>
                 <button onClick={() => setBulkDeleteOpen(true)} className={BTN_BULK_DANGER}>
                     Delete selected
+                </button>
+                <button onClick={() => setBulkEditOpen(true)} className={BTN_BULK_PRIMARY}>
+                    Bulk Edit
                 </button>
                 <button onClick={exportSelected} className={BTN_BULK_SECONDARY}>
                     Export CSV

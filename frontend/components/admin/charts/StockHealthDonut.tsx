@@ -22,8 +22,8 @@ function StockTooltip({ active, payload, total }: { active?: boolean; payload?: 
 
     return (
         <div className="rounded bg-ink px-3 py-2 whitespace-nowrap shadow-card">
-            <div className="text-[11.5px] text-grey-light">{row.payload?.label}</div>
-            <div className="font-mono text-[12px] font-medium text-white tabular-nums">
+            <div className="text-label text-grey-light">{row.payload?.label}</div>
+            <div className="font-mono text-meta font-medium text-white tabular-nums">
                 {count} of {total} ({Math.round((count / total) * 100)}%)
             </div>
         </div>
@@ -77,8 +77,8 @@ export default function StockHealthDonut({
                     </PieChart>
                 </ResponsiveContainer>
                 <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-                    <div className="font-display text-[22px] font-semibold text-ink">{products.length}</div>
-                    <div className="font-mono text-[9px] tracking-[.06em] text-grey uppercase">Products</div>
+                    <div className="font-display text-heading font-semibold text-ink">{products.length}</div>
+                    <div className="font-mono text-label tracking-[.06em] text-grey uppercase">Products</div>
                 </div>
             </div>
 
@@ -87,7 +87,7 @@ export default function StockHealthDonut({
                     <button
                         key={r.key}
                         onClick={() => onSelect?.(r.key)}
-                        className="flex items-center justify-between px-1.5 py-1.5 text-[12.5px] transition hover:bg-off"
+                        className="flex items-center justify-between px-1.5 py-1.5 text-meta transition hover:bg-off"
                     >
                         <span className="flex items-center gap-2">
                             <span className="h-2.5 w-2.5 flex-none rounded-full" style={{ background: r.color }} />

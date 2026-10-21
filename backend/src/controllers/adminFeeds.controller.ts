@@ -43,6 +43,11 @@ const listQuery = z.object({
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(50),
   search: z.string().trim().max(100).optional(),
+  sort: z.enum(["newest", "oldest"]).default("newest"),
+  // Only people / messages from the last 7, 30 or 90 days; left out for all time.
+  days: z.coerce.number().int().refine((n) => [7, 30, 90].includes(n)).optional(),
+  // Subscribers only: where they signed up.
+  source: z.enum(["newsletter", "promo"]).optional(),
 });
 
 function parseList(req: Request) {
@@ -51,22 +56,29 @@ function parseList(req: Request) {
   return q.data;
 }
 
+const since = (days?: number) => (days ? { createdAt: { gte: new Date(Date.now() - days * 24 * 60 * 60 * 1000) } } : {});
+
 export async function listSubscribers(req: Request, res: Response) {
-  const { page, pageSize, search } = parseList(req);
-  const where = search ? { email: { contains: search, mode: "insensitive" as const } } : {};
+  const { page, pageSize, search, sort, days, source } = parseList(req);
+  const where = { ...(search ? { email: { contains: search, mode: "insensitive" as const } } : {}), ...(source ? { source } : {}), ...since(days) };
+  const dir = sort === "oldest" ? ("asc" as const) : ("desc" as const);
   const [total, rows] = await Promise.all([
     prisma.subscriber.count({ where }),
-    prisma.subscriber.findMany({ where, orderBy: [{ createdAt: "desc" }, { id: "desc" }], skip: (page - 1) * pageSize, take: pageSize }),
+    prisma.subscriber.findMany({ where, orderBy: [{ createdAt: dir }, { id: dir }], skip: (page - 1) * pageSize, take: pageSize }),
   ]);
   res.json({ total, page, pageSize, subscribers: rows.map((s) => ({ id: s.id, email: s.email, source: s.source, createdAt: s.createdAt.toISOString() })) });
 }
 
 export async function listMessages(req: Request, res: Response) {
-  const { page, pageSize, search } = parseList(req);
-  const where = search ? { OR: [{ name: { contains: search, mode: "insensitive" as const } }, { email: { contains: search, mode: "insensitive" as const } }, { message: { contains: search, mode: "insensitive" as const } }] } : {};
+  const { page, pageSize, search, sort, days } = parseList(req);
+  const where = {
+    ...(search ? { OR: [{ name: { contains: search, mode: "insensitive" as const } }, { email: { contains: search, mode: "insensitive" as const } }, { message: { contains: search, mode: "insensitive" as const } }] } : {}),
+    ...since(days),
+  };
+  const dir = sort === "oldest" ? ("asc" as const) : ("desc" as const);
   const [total, rows] = await Promise.all([
     prisma.contactMessage.count({ where }),
-    prisma.contactMessage.findMany({ where, orderBy: [{ createdAt: "desc" }, { id: "desc" }], skip: (page - 1) * pageSize, take: pageSize }),
+    prisma.contactMessage.findMany({ where, orderBy: [{ createdAt: dir }, { id: dir }], skip: (page - 1) * pageSize, take: pageSize }),
   ]);
   res.json({ total, page, pageSize, messages: rows.map((m) => ({ id: m.id, name: m.name, email: m.email, message: m.message, createdAt: m.createdAt.toISOString() })) });
 }

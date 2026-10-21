@@ -38,6 +38,8 @@ model Customer {
   wishlist      WishlistItem[]
   voucherUses   VoucherUse[]
   avatarUrl     String?
+  // Philippine mobile number (09XXXXXXXXX); required to place an order.
+  phone         String?
   id            Int                    @id @default(autoincrement())
   email         String                 @unique
   passwordHash  String
@@ -79,6 +81,8 @@ model Address {
   customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
   label      String
   text       String
+  // Contact number for this address; null only on addresses saved before it was required.
+  phone      String?
   isDefault  Boolean  @default(false)
 
   @@index([customerId])
@@ -158,6 +162,8 @@ model Order {
   // Snapshot at checkout so later address edits don't rewrite history.
   shipName      String
   shipEmail     String
+  // Null only on orders placed before a mobile number was required.
+  shipPhone     String?
   shipAddress   String
   // Where the order is going (city, or town and province), worked out from the address at checkout for the dashboard.
   shipCity      String?
@@ -210,9 +216,23 @@ model Review {
   customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
   rating     Int
   text       String
+  // Photos the customer attached (up to MAX_REVIEW_PHOTOS); the bytes live in ReviewPhoto and are only loaded when served.
+  photos     ReviewPhoto[]
   createdAt  DateTime @default(now())
 
   @@unique([productId, customerId])
+}
+
+// A customer's photo of the product, re-encoded to WEBP (no EXIF) and shown beside their review.
+model ReviewPhoto {
+  id       Int    @id @default(autoincrement())
+  reviewId Int
+  review   Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  position Int    @default(0)
+  mimeType String
+  data     Bytes
+
+  @@index([reviewId])
 }
 
 model Voucher {

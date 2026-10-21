@@ -16,7 +16,7 @@ The code for the original roadmap (Phases 0–8) is built. What remains is mostl
 ### 2. Gaps in the shop itself — Part C
 - [x] **Vouchers (C2):** done. Customers type a code in the cart; the server applies it, uses it up exactly once, and gives it back if an unpaid order is cancelled. Administrators manage codes in Settings → Discount Codes.
 - [x] **Shipping fee (C4):** done. Administrators set a flat fee and an optional free-shipping amount in Settings → Payment Details → Shipping. Until they do, shipping is free.
-- [x] **Refunds (C3):** done. Administrators record a refund on a paid order (amount + note); the customer is emailed and it shows in the order, the audit log and the CSV export. The money itself is still sent back by hand.
+- [x] **Refunds (C3):** done. Administrators record a refund on a paid order (amount + note); the customer is emailed and it shows in the order, the audit log and the zs export. The money itself is still sent back by hand.
 - [x] **Customer addresses and wishlists (C5):** done. Both are saved on the server per customer and follow them to any device; a wishlist built before signing in is merged in at sign-in.
 - [x] **"Custom" access level (C1):** removed from the Staff dropdown and the server. The four remaining levels are Full access, Inventory & orders only, Inventory only, Orders only.
 
@@ -116,7 +116,7 @@ Nothing in the frontend has been clicked through in a browser yet. Do B1 first; 
 - [ ] Account → Change Password: change it, sign out, sign in with the new one.
 - [ ] Newsletter box, Contact form and the welcome pop-up (scroll down the home page): submit each, confirm the "email" shows in the API terminal.
 
-**Admin side** (use a private window at http://localhost:3000/admin/login):
+**Admin side** (use a private window at http://localhost:3000/staff-access (the private sign-in address; /admin itself shows "not found" unless you are signed in. Change it with NEXT_PUBLIC_ADMIN_LOGIN_PATH in frontend/.env.local)):
 - [ ] Sign in as the administrator. Visiting /admin pages while signed out should bounce you to login.
 - [ ] Inventory: add a product, edit it, change its stock (you should be asked for a **reason**), delete it. Open Stock Movements and check each change appears.
 - [ ] Edit the same product in two browser windows, save in window 1, then save in window 2 — window 2 should be refused with a "someone else changed this" message.

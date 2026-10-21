@@ -38,7 +38,7 @@ Key traits to reproduce:
 - **Frontend:** Next.js (App Router) + TypeScript + Tailwind
 - **Backend:** Node/Express API, separate from the Next.js app
 - **DB:** PostgreSQL + Prisma
-- **Payments:** PayMongo (GCash, Maya, cards)
+- **Payments:** manual verification (GCash, Maya, bank transfer + screenshot)
 - **Media:** Cloudinary
 - **Auth:** JWT + httpOnly cookies, separate customer/admin roles
 
@@ -55,7 +55,7 @@ Brand identity runs on four colors: a deep saturated **blue** (`ink`/`navy`, tex
 | `ink` | `#12233A` | body text — deep saturated blue, **not literally black** |
 | `navy` | `#0F2036` | fixed solid dark surfaces (scrolled nav, Philosophy band, dark buttons/icons) — pairs with white text, never flips |
 | `footer` | `#1B1230` | the footer only — deliberately distinct from `navy` so the translucent scrolled navbar still reads as glass on top of it |
-| `pink-btn` / `pink-btn-hover` | `#CC195B` / `#AD154D` | primary buttons/CTAs only |
+| `pink-btn` / `pink-btn-hover` | `#CC195B` / `#AD154D` | the one accent action on a page (Add, Pay now: `ui-btn-accent`). Default primary in forms and modals is navy `ui-btn-primary`. |
 | `pink` / `pink-dark` / `pink-soft` | `#E56C94` / `#9C0D48` / `#F8D9E8` | badges, accents, light backgrounds |
 | `blue-accent` / `blue-accent-hover` | `#2866BD` / `#205298` | the one place blue is used as a real, visible color — links, secondary CTAs, icon accents, chart highlights. Never a substitute for `ink`/`navy` (text/dark-surfaces) or `pink-btn` (primary CTA). |
 | `blue-soft` | `#E3F1F8` | light backgrounds, paired with `pink-soft` |

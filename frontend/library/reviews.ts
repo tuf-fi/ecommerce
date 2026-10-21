@@ -5,4 +5,6 @@ export type Review = {
     rating: number;
     text: string;
     date: string;
+    // Full addresses of the photos the customer attached, in order.
+    photos?: string[];
 };

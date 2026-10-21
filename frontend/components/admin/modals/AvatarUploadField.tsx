@@ -27,22 +27,22 @@ export default function AvatarUploadField({
 
     return (
         <div className="mb-5 flex items-center gap-4">
-            <label className="relative h-16 w-16 flex-none cursor-pointer overflow-hidden rounded-full bg-blue-soft">
+            <label className="focus-within:ring-2 focus-within:ring-navy focus-within:ring-offset-2 relative h-16 w-16 flex-none cursor-pointer overflow-hidden rounded-full bg-blue-soft">
                 {photo ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={photo} alt="" className="h-full w-full object-cover" />
                 ) : (
-                    <span className="flex h-full w-full items-center justify-center text-lg font-semibold text-ink/60">
+                    <span className="flex h-full w-full items-center justify-center text-title font-semibold text-ink/60">
                         {name.charAt(0).toUpperCase() || "+"}
                     </span>
                 )}
-                <input type="file" accept="image/*" onChange={handleChange} className="hidden" />
+                <input type="file" aria-label="Upload image" accept="image/*" onChange={handleChange} className="sr-only" />
             </label>
             <div>
-                <div className="text-[13.5px] font-medium text-ink">{name || placeholder}</div>
-                <label className="mt-1 block cursor-pointer text-[12px] text-pink-dark underline decoration-1 underline-offset-2 hover:text-pink-dark/80">
+                <div className="text-small font-medium text-ink">{name || placeholder}</div>
+                <label className="focus-within:ring-2 focus-within:ring-navy focus-within:ring-offset-2 mt-1 block cursor-pointer text-meta text-pink-dark underline decoration-1 underline-offset-2 hover:text-pink-dark/80">
                     Change photo
-                    <input type="file" accept="image/*" onChange={handleChange} className="hidden" />
+                    <input type="file" aria-label="Upload image" accept="image/*" onChange={handleChange} className="sr-only" />
                 </label>
             </div>
         </div>

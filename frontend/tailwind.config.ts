@@ -56,6 +56,19 @@ const config: Config = {
         body: ["var(--font-inter)", "sans-serif"],
         mono: ["var(--font-ibm-plex-mono)", "monospace"],
       },
+      // Named steps replace ~900 arbitrary text-[Npx] values; display sizes (16px+) stay inline.
+      fontSize: {
+        label: "11px",
+        meta: "12px",
+        small: "13px",
+        body: "15px",
+        lead: "16px",
+        title: "18px",
+        subhead: "20px",
+        heading: "22px",
+        "display-sm": "26px",
+        "display-md": "36px",
+      },
       borderRadius: {
         // For badges/chips/tags/the toggle switch track — small status
         // indicators, not clickable CTAs. Buttons are flat (no radius
@@ -68,7 +81,6 @@ const config: Config = {
         "card-hover": "0 16px 28px rgba(61,90,115,.14)",
         modal: "0 24px 60px rgba(61,90,115,.22)",
         tooltip: "0 8px 20px -4px rgba(61,90,115,.32)",
-        glow: "0 20px 50px rgba(61,90,115,.16)",
       },
       backgroundImage: {
         // The recurring diagonal placeholder/decorative gradient used

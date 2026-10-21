@@ -22,14 +22,14 @@ Mainly a design-led experience: most PH skincare ecommerce sites are visually cr
 
 - Customer surfaces: homepage (numbered editorial sections incl. Philosophy, Best Sellers/Catalogue), shop/PDP, cart/checkout, account (addresses, password, purchases, notifications), wishlist, journal (blog).
 - Admin surfaces: dashboard, orders, inventory (incl. stock movement log), staff, content/CMS (blog, pages, promotions, hero), settings (incl. sessions, notifications), with Administrator vs Staff roles as a data field.
-- Payments via PayMongo (GCash, Maya, cards); media via Cloudinary; auth via JWT + httpOnly cookies with separate customer/admin roles.
+- Payments by manual verification (GCash, Maya, bank transfer + screenshot); media via Cloudinary; auth via JWT + httpOnly cookies with separate customer/admin roles.
 
 ## Capabilities and Constraints
 
 - Stack: Next.js (App Router) + TypeScript + Tailwind frontend; Node/Express API backend; PostgreSQL + Prisma.
 - RBAC is not yet enforced — `StaffMember.role` exists as data but no page/action checks it (flagged in `frontend/TODO.md`, open).
 - Audit trail currently covers inventory stock movements only; order status, staff, and content-edit history are not logged.
-- Admin settings security features (password change, 2FA enrollment) are intentionally faked placeholders (`// TODO`) pending go-live.
+- Admin settings security: password change and two-factor enrollment are real (backed by the API); verify against `frontend/TODO.md` before relying on them.
 - CMS content wiring is in progress: homepage sections are being connected to `useContent()` + admin live preview; not all sections are wired yet.
 
 ## Brand Commitments

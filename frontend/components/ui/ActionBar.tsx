@@ -18,26 +18,30 @@ export default function ActionBar({ children, inFlow = false }: { children: Reac
 
 // Total on one line, with shipping and what was saved in a single small line beneath it.
 // `shipping`: a number, or null while it's still being worked out; leave it undefined to hide the line.
-export function BarTotal({ amount, saved = 0, shipping, note }: { amount: number; saved?: number; shipping?: number | null; note?: React.ReactNode }) {
+export function BarTotal({ amount, saved = 0, shipping, note }: { amount: number | null; saved?: number; shipping?: number | null; note?: React.ReactNode }) {
     return (
         <div className="min-w-0">
             <div className="flex items-baseline gap-2 leading-none">
-                <span className="font-mono text-[10px] uppercase tracking-[.16em] text-grey">Total</span>
-                <span className="font-mono text-[16px] font-semibold text-ink sm:text-[18px]">₱{amount.toLocaleString()}</span>
+                <span className="font-mono text-label uppercase tracking-[.16em] text-grey">Total</span>
+                <span className="font-mono text-lead font-semibold text-ink sm:text-title">{amount === null ? "—" : `₱${amount.toLocaleString()}`}</span>
             </div>
             {(shipping !== undefined || saved > 0) && (
-                <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 font-mono text-[10.5px] leading-none text-grey">
-                    {shipping !== undefined && <span>Shipping {shipping === null ? "—" : shipping > 0 ? `₱${shipping.toLocaleString()}` : "Free"}</span>}
+                <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 font-mono text-label leading-none text-grey">
+                    {shipping !== undefined && (
+                        <span>
+                            Shipping {shipping === null ? "at checkout" : shipping > 0 ? `₱${shipping.toLocaleString()}` : <span className="text-success-dark">Free</span>}
+                        </span>
+                    )}
                     {saved > 0 && <span className="text-success-dark">Saved ₱{saved.toLocaleString()}</span>}
                 </div>
             )}
-            {note && <div className="mt-1.5 hidden max-w-[320px] text-[11px] leading-snug text-grey sm:block">{note}</div>}
+            {note && <div className="mt-1.5 max-w-[320px] text-meta leading-snug text-grey">{note}</div>}
         </div>
     );
 }
 
 export const BAR_BUTTON =
-    "group inline-flex h-11 flex-none items-center justify-center gap-2 bg-navy px-4 text-[12px] font-semibold tracking-[.06em] whitespace-nowrap text-white uppercase transition hover:bg-pink-dark disabled:cursor-not-allowed disabled:bg-off disabled:text-grey disabled:hover:bg-off sm:px-6";
+    "ui-btn ui-btn-primary group flex-none disabled:bg-off disabled:text-grey disabled:opacity-100 disabled:hover:bg-off";
 
 export function BarArrow() {
     return (

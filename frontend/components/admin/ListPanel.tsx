@@ -18,7 +18,7 @@ export default function ListPanel({
                 </table>
             </div>
             {footer && (
-                <div className="border-t border-ink/10 bg-off/50 px-5 py-2.5 text-right font-mono text-[11px] text-grey">
+                <div className="border-t border-ink/10 bg-off/50 px-5 py-2.5 text-right font-mono text-label text-grey">
                     {footer}
                 </div>
             )}

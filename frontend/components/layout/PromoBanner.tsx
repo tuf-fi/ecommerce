@@ -41,7 +41,7 @@ export default function PromoBanner({ promo: previewPromo }: { promo?: Promo } =
 
     return (
         <div
-            className={`flex h-10 items-center justify-center gap-2 bg-pink-btn px-10 text-center text-[11.5px] leading-tight text-white sm:px-12 sm:text-[12.5px] ${
+            className={`flex h-10 items-center justify-center gap-2 bg-pink-btn px-10 text-center text-label leading-tight text-white sm:px-12 sm:text-meta ${
                 isPreview ? "relative" : "fixed top-0 inset-x-0 z-[51]"
             }`}
         >

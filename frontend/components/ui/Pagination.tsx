@@ -40,12 +40,12 @@ export default function Pagination({
             }
             breakLabel="…"
             containerClassName="mt-8 flex list-none items-center justify-center gap-1.5"
-            pageLinkClassName="flex h-8 min-w-8 items-center justify-center border border-ink/10 px-2.5 text-[12px] text-ink transition hover:border-ink/25 hover:bg-off"
+            pageLinkClassName="flex h-8 min-w-8 items-center justify-center border border-ink/10 px-2.5 text-meta text-ink transition hover:border-ink/25 hover:bg-off"
             activeLinkClassName="!border-navy !bg-navy !font-semibold !text-white hover:!border-navy hover:!bg-navy"
-            previousLinkClassName="flex h-8 items-center justify-center gap-1 border border-ink/10 px-2.5 text-[12px] text-ink transition hover:border-ink/25 hover:bg-off"
-            nextLinkClassName="flex h-8 items-center justify-center gap-1 border border-ink/10 px-2.5 text-[12px] text-ink transition hover:border-ink/25 hover:bg-off"
+            previousLinkClassName="flex h-8 items-center justify-center gap-1 border border-ink/10 px-2.5 text-meta text-ink transition hover:border-ink/25 hover:bg-off"
+            nextLinkClassName="flex h-8 items-center justify-center gap-1 border border-ink/10 px-2.5 text-meta text-ink transition hover:border-ink/25 hover:bg-off"
             disabledLinkClassName="!pointer-events-none !opacity-30 hover:!border-ink/10 hover:!bg-transparent"
-            breakLinkClassName="flex h-8 min-w-8 items-center justify-center text-[12px] text-grey"
+            breakLinkClassName="flex h-8 min-w-8 items-center justify-center text-meta text-grey"
             ariaLabelBuilder={(pageIndex) => `Page ${pageIndex}`}
         />
     );

@@ -25,7 +25,7 @@ export default function TestimonialViewModal({
     if (!testimonial) return null;
 
     return (
-        <Modal open={open} onClose={onClose} maxWidth="max-w-[420px]">
+        <Modal open={open} onClose={onClose} maxWidth="max-w-[420px]" titleInBody>
             <ViewHeader
                 title={testimonial.name}
                 caption={
@@ -40,7 +40,7 @@ export default function TestimonialViewModal({
                             // eslint-disable-next-line @next/next/no-img-element
                             <img src={testimonial.image} alt="" className="h-full w-full object-cover" />
                         ) : (
-                            <span className="flex h-full w-full items-center justify-center text-sm font-semibold text-ink/60">
+                            <span className="flex h-full w-full items-center justify-center text-small font-semibold text-ink/60">
                                 {initials(testimonial.name)}
                             </span>
                         )}
@@ -49,7 +49,7 @@ export default function TestimonialViewModal({
             />
             <DetailBody>
                 <SectionLabel label="Message" />
-                <p className="text-[13.5px] leading-relaxed whitespace-pre-wrap text-ink/85">{testimonial.message}</p>
+                <p className="text-small leading-relaxed whitespace-pre-wrap text-ink/85">{testimonial.message}</p>
             </DetailBody>
         </Modal>
     );

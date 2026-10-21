@@ -38,18 +38,18 @@ export type AuditEntry = {
     details: unknown;
     createdAt: string;
 };
-export const listAuditLog = (p: { page: number; entityType?: string; entityId?: string }) => api<Paged<AuditEntry>>(`/audit-log${qs({ ...p, pageSize: 50 })}`);
+export const listAuditLog = (p: { page: number; entityType?: string; entityId?: string }) => api<Paged<AuditEntry>>(`/audit-log${qs({ ...p, pageSize: 10 })}`);
 
 // ---- Subscribers and contact messages (staff with full access, and administrators) ----
 export type SubscriberRow = { id: number; email: string; source: string; createdAt: string };
-export const listSubscribers = async (p: { page: number; search?: string }) => {
-    const r = await api<{ total: number; page: number; pageSize: number; subscribers: SubscriberRow[] }>(`/subscribers${qs({ ...p, pageSize: 50 })}`);
+export const listSubscribers = async (p: { page: number; search?: string; sort?: "newest" | "oldest"; days?: number; source?: "newsletter" | "promo" }) => {
+    const r = await api<{ total: number; page: number; pageSize: number; subscribers: SubscriberRow[] }>(`/subscribers${qs({ ...p, pageSize: 10 })}`);
     return { total: r.total, page: r.page, pageSize: r.pageSize, items: r.subscribers } satisfies Paged<SubscriberRow>;
 };
 
 export type ContactMessageRow = { id: number; name: string; email: string; message: string; createdAt: string };
-export const listContactMessages = async (p: { page: number; search?: string }) => {
-    const r = await api<{ total: number; page: number; pageSize: number; messages: ContactMessageRow[] }>(`/contact-messages${qs({ ...p, pageSize: 50 })}`);
+export const listContactMessages = async (p: { page: number; search?: string; sort?: "newest" | "oldest"; days?: number }) => {
+    const r = await api<{ total: number; page: number; pageSize: number; messages: ContactMessageRow[] }>(`/contact-messages${qs({ ...p, pageSize: 10 })}`);
     return { total: r.total, page: r.page, pageSize: r.pageSize, items: r.messages } satisfies Paged<ContactMessageRow>;
 };
 

@@ -2,9 +2,9 @@
 export default function Pager({ page, pageSize, total, onPage }: { page: number; pageSize: number; total: number; onPage: (p: number) => void }) {
     const pages = Math.max(1, Math.ceil(total / pageSize));
     if (pages <= 1) return null;
-    const btn = "border border-ink/15 px-4 py-2 text-[12.5px] text-ink transition hover:bg-off disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent";
+    const btn = "ui-btn ui-btn-secondary ui-btn-sm";
     return (
-        <div className="mt-5 flex items-center justify-between gap-3 text-[12.5px] text-grey">
+        <div className="mt-5 flex items-center justify-between gap-3 text-meta text-grey">
             <span>
                 Page {page} of {pages} · {total.toLocaleString()} total
             </span>

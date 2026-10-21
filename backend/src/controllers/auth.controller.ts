@@ -4,7 +4,7 @@ import bcrypt from "bcrypt";
 import crypto from "node:crypto";
 import { z } from "zod";
 import { prisma } from "../lib/prisma";
-import { clearAuthCookie, COOKIE_NAMES, readToken, setAuthCookie, signTwoFactorChallenge } from "../lib/jwt";
+import { clearAuthCookie, COOKIE_NAMES, readToken, rememberOfToken, setAuthCookie, signTwoFactorChallenge } from "../lib/jwt";
 import { startAdminSession } from "../services/adminSession.service";
 import { GoogleProfile, verifyGoogleIdToken } from "../services/google.service";
 
@@ -14,18 +14,21 @@ const OTP_MAX_ATTEMPTS = 5;
 // Compared against when the email is unknown so response time doesn't reveal which emails exist.
 const DUMMY_HASH = bcrypt.hashSync("not-a-real-password", BCRYPT_ROUNDS);
 
+import { phoneField } from "../lib/phone";
+
 const email = z.string().trim().toLowerCase().email();
 const password = z.string().min(8).max(200);
 
 const registerSchema = z.object({ name: z.string().trim().min(1).max(100), email, password });
-const loginSchema = z.object({ email, password: z.string().min(1).max(200) });
+const loginSchema = z.object({ email, password: z.string().min(1).max(200), remember: z.boolean().optional() });
 const profileSchema = z
   .object({
     name: z.string().trim().min(1).max(100).optional(),
     // Only images hosted on our Cloudinary account (or cleared with null) can be used as an avatar.
     avatarUrl: z.string().url().max(500).nullable().optional(),
+    phone: phoneField.optional(),
   })
-  .refine((v) => v.name !== undefined || v.avatarUrl !== undefined, "Nothing to update");
+  .refine((v) => v.name !== undefined || v.avatarUrl !== undefined || v.phone !== undefined, "Nothing to update");
 const changePasswordSchema = z.object({ currentPassword: z.string().min(1).max(200), newPassword: password });
 const otpRequestSchema = z.object({ email });
 const otpVerifySchema = z.object({ email, code: z.string().regex(/^\d{6}$/), newPassword: password });
@@ -61,20 +64,20 @@ export async function customerRegister(req: Request, res: Response) {
 export async function customerLogin(req: Request, res: Response) {
   const parsed = loginSchema.safeParse(req.body);
   if (!parsed.success) return invalid(res, parsed.error);
-  const { email, password } = parsed.data;
+  const { email, password, remember } = parsed.data;
 
   const customer = await prisma.customer.findUnique({ where: { email } });
   if (!(await passwordMatches(password, customer?.passwordHash)) || !customer) {
     return res.status(401).json({ error: "Invalid email or password" });
   }
-  setAuthCookie(res, "customer", customer.id, undefined, customer.tokenVersion);
-  res.json({ customer: { id: customer.id, name: customer.name, email: customer.email } });
+  setAuthCookie(res, "customer", customer.id, undefined, customer.tokenVersion, remember);
+  res.json({ customer: { id: customer.id, name: customer.name, email: customer.email, avatarUrl: customer.avatarUrl, phone: customer.phone } });
 }
 
 export async function customerSession(req: Request, res: Response) {
   const customer = await prisma.customer.findUnique({
     where: { id: req.customerId },
-    select: { id: true, name: true, email: true, avatarUrl: true },
+    select: { id: true, name: true, email: true, avatarUrl: true, phone: true },
   });
   if (!customer) return res.status(401).json({ error: "Not signed in" });
   res.json({ customer });
@@ -95,7 +98,7 @@ export async function customerChangePassword(req: Request, res: Response) {
     where: { id: customer.id },
     data: { passwordHash: await bcrypt.hash(newPassword, BCRYPT_ROUNDS), tokenVersion: { increment: 1 } },
   });
-  setAuthCookie(res, "customer", updated.id, undefined, updated.tokenVersion);
+  setAuthCookie(res, "customer", updated.id, undefined, updated.tokenVersion, rememberOfToken(req.cookies?.[COOKIE_NAMES.customer]));
   void notifyPasswordChanged(updated.id);
   res.json({ ok: true });
 }
@@ -116,7 +119,7 @@ export async function customerGoogle(req: Request, res: Response) {
   const profile = await verifyGoogleIdToken(parsed.data.idToken);
   const customer = await findOrCreateGoogleCustomer(profile);
   setAuthCookie(res, "customer", customer.id, undefined, customer.tokenVersion);
-  res.json({ customer: { id: customer.id, name: customer.name, email: customer.email, avatarUrl: customer.avatarUrl } });
+  res.json({ customer: { id: customer.id, name: customer.name, email: customer.email, avatarUrl: customer.avatarUrl, phone: customer.phone } });
 }
 
 export async function findOrCreateGoogleCustomer(profile: GoogleProfile) {
@@ -130,7 +133,7 @@ export async function findOrCreateGoogleCustomer(profile: GoogleProfile) {
 export async function customerUpdateProfile(req: Request, res: Response) {
   const parsed = profileSchema.safeParse(req.body);
   if (!parsed.success) return invalid(res, parsed.error);
-  const { name, avatarUrl } = parsed.data;
+  const { name, avatarUrl, phone } = parsed.data;
   if (avatarUrl) {
     const cloud = process.env.CLOUDINARY_CLOUD_NAME;
     if (!cloud || !avatarUrl.startsWith(`https://res.cloudinary.com/${cloud}/`)) {
@@ -139,8 +142,8 @@ export async function customerUpdateProfile(req: Request, res: Response) {
   }
   const customer = await prisma.customer.update({
     where: { id: req.customerId },
-    data: { ...(name !== undefined ? { name } : {}), ...(avatarUrl !== undefined ? { avatarUrl } : {}) },
-    select: { id: true, name: true, email: true, avatarUrl: true },
+    data: { ...(name !== undefined ? { name } : {}), ...(avatarUrl !== undefined ? { avatarUrl } : {}), ...(phone !== undefined ? { phone } : {}) },
+    select: { id: true, name: true, email: true, avatarUrl: true, phone: true },
   });
   if (name !== undefined || avatarUrl !== undefined) void notifyProfileUpdated(customer.id, name !== undefined && avatarUrl !== undefined ? "name and photo" : name !== undefined ? "name" : "photo");
   res.json({ customer });

@@ -7,6 +7,7 @@ import ScrollToTop from "@/components/layout/ScrollToTop";
 import ConditionalModalRoot from "@/components/modals/ConditionalModalRoot";
 import ConditionalPromoBanner from "@/components/layout/ConditionalPromoBanner";
 import PageContentFrame from "@/components/layout/PageContentFrame";
+import MotionProvider from "@/components/layout/MotionProvider";
 import NotificationToaster from "@/components/layout/NotificationToaster";
 import DevToolsFab from "@/components/dev/DevToolsFab";
 import { StoreProvider } from "@/library/store";
@@ -41,6 +42,14 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: { default: "Cindyrella", template: "%s | Cindyrella" },
   description: "Skincare built around a considered routine, not a haul — cleanse, treat, moisturize.",
+  openGraph: {
+    type: "website",
+    siteName: "Cindyrella",
+    locale: "en_PH",
+    title: "Cindyrella",
+    description: "Skincare built around a considered routine, not a haul — cleanse, treat, moisturize.",
+  },
+  twitter: { card: "summary", title: "Cindyrella", description: "Skincare built around a considered routine, not a haul." },
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
@@ -58,10 +67,15 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         <ProductsProvider initial={catalog}>
         <StoreProvider>
         <ContentProvider initial={content.sections} versions={content.versions}>
+          <a href="#main" className="sr-only z-[100] bg-navy px-4 py-3 text-small font-semibold text-white focus:not-sr-only focus:fixed focus:top-2 focus:left-2">
+            Skip to content
+          </a>
           <ScrollToTop />
           <ConditionalPromoBanner />
           <ConditionalNavbar />
-          <PageContentFrame>{children}</PageContentFrame>
+          <MotionProvider>
+            <PageContentFrame>{children}</PageContentFrame>
+          </MotionProvider>
           <ConditionalFooter />
           <ConditionalModalRoot />
           <NotificationToaster />

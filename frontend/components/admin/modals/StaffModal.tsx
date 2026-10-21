@@ -1,11 +1,11 @@
 "use client";
 
+import Checkbox from "@/components/ui/Checkbox";
 import { useState } from "react";
 import Modal from "@/components/ui/Modal";
-import ConfirmModal from "@/components/ui/ConfirmModal";
 import AvatarUploadField from "@/components/admin/modals/AvatarUploadField";
 import { StaffMember, StaffRole } from "@/library/admin/types";
-import { BTN_PRIMARY, FIELD_INPUT, FIELD_INPUT_INVALID, FIELD_LABEL, FIELD_ERROR } from "@/components/admin/formClasses";
+import { FIELD_INPUT, FIELD_INPUT_INVALID, FIELD_LABEL, FIELD_ERROR, focusFirstInvalid } from "@/components/admin/formClasses";
 import { useIsDirty } from "@/components/admin/useIsDirty";
 import { useAsyncAction } from "@/library/useAsyncAction";
 import type { StaffPatch } from "@/library/api/admin";
@@ -35,7 +35,6 @@ export default function StaffModal({
     const [active, setActive] = useState(staff?.active ?? true);
     const [resetTwoFactor, setResetTwoFactor] = useState(false);
     const [errors, setErrors] = useState<{ name?: string; email?: string }>({});
-    const [confirmCloseOpen, setConfirmCloseOpen] = useState(false);
     const { currentStaffMember } = useAdminStore();
     // Cosmetic-only defense in depth — sidebar already hides this page from non-Administrators, this covers direct navigation.
     const canEditRole = isAdministrator(currentStaffMember);
@@ -44,10 +43,6 @@ export default function StaffModal({
     const isSelf = staff !== null && currentStaffMember?.id === staff.id;
     const isDirty = useIsDirty({ name, email, role, access, photo, password, active, resetTwoFactor });
 
-    function requestClose() {
-        if (isDirty) setConfirmCloseOpen(true);
-        else onClose();
-    }
 
     function handleRoleChange(nextRole: StaffRole) {
         setRole(nextRole);
@@ -62,7 +57,7 @@ export default function StaffModal({
         else if (!trimmedEmail.includes("@") || !trimmedEmail.includes(".")) nextErrors.email = "Enter a valid email address.";
         if (nextErrors.name || nextErrors.email) {
             setErrors(nextErrors);
-            toast.error("Fix the highlighted fields before saving.");
+            focusFirstInvalid("staff-form");
             return;
         }
         if (!staff && password.length < 8) {
@@ -96,12 +91,22 @@ export default function StaffModal({
     });
 
     return (
-        <>
-        <Modal open onClose={submitting ? () => {} : requestClose} maxWidth="max-w-[460px]">
-            <div className="sticky top-0 z-10 border-b border-ink/10 bg-white px-5 sm:px-8 py-5">
-                <h3 className="text-xl font-medium text-ink">{staff ? "Edit Staff" : "Add Staff"}</h3>
-            </div>
-            <div className="px-5 sm:px-8 pt-6 pb-4">
+        <Modal
+            open
+            onClose={submitting ? () => {} : onClose}
+            maxWidth="max-w-[460px]"
+            heading={staff ? "Edit Staff" : "Add Staff"}
+            dirty={isDirty && !submitting}
+            footer={
+                <button type="submit" form="staff-form" disabled={submitting} className="ui-btn ui-btn-primary w-full sm:w-auto">
+                    {submitting ? "Saving…" : "Save Staff Account"}
+                </button>
+            }
+        >
+            <form id="staff-form" onSubmit={(e) => {
+                e.preventDefault();
+                handleSubmit();
+            }}>
                 <AvatarUploadField photo={photo} onPhotoChange={setPhoto} name={name} placeholder="New staff member" />
 
                 <div className="mb-4">
@@ -115,9 +120,10 @@ export default function StaffModal({
                         }}
                         placeholder="e.g. Andrea Cruz"
                         aria-invalid={errors.name ? true : undefined}
+                        aria-describedby={errors.name ? "staff-name-error" : undefined}
                         className={`${FIELD_INPUT} ${errors.name ? FIELD_INPUT_INVALID : ""}`}
                     />
-                    {errors.name && <p className={FIELD_ERROR}>{errors.name}</p>}
+                    {errors.name && <p id="staff-name-error" role="alert" className={FIELD_ERROR}>{errors.name}</p>}
                 </div>
 
                 <div className="mb-4">
@@ -132,9 +138,10 @@ export default function StaffModal({
                         }}
                         placeholder="name@cindyrella.ph"
                         aria-invalid={errors.email ? true : undefined}
+                        aria-describedby={errors.email ? "staff-email-error" : undefined}
                         className={`${FIELD_INPUT} ${errors.email ? FIELD_INPUT_INVALID : ""}`}
                     />
-                    {errors.email && <p className={FIELD_ERROR}>{errors.email}</p>}
+                    {errors.email && <p id="staff-email-error" role="alert" className={FIELD_ERROR}>{errors.email}</p>}
                 </div>
 
                 {/* Paired, not stacked — Access is disabled/derived the moment Role is Administrator (see handleRoleChange). */}
@@ -146,7 +153,7 @@ export default function StaffModal({
                             value={role}
                             onChange={(e) => handleRoleChange(e.target.value as StaffRole)}
                             disabled={!canEditRole || isSelf}
-                            className={FIELD_INPUT}
+                            className="ui-select"
                         >
                             <option>Administrator</option>
                             <option>Staff</option>
@@ -160,7 +167,7 @@ export default function StaffModal({
                             value={access}
                             onChange={(e) => setAccess(e.target.value)}
                             disabled={role === "Administrator" || !canEditRole || isSelf}
-                            className={FIELD_INPUT}
+                            className="ui-select"
                         >
                             {ACCESS_OPTIONS.map((a) => (
                                 <option key={a}>{a}</option>
@@ -180,40 +187,20 @@ export default function StaffModal({
                         placeholder={staff ? "Leave blank to keep the current one" : "At least 8 characters"}
                         className={FIELD_INPUT}
                     />
-                    <p className="mt-1.5 text-[11.5px] text-grey">
+                    <p className="mt-1.5 text-label text-grey">
                         {staff ? "Setting a password signs them out everywhere." : "Share it with them securely; they can change it under Settings → Security."}
                     </p>
                 </div>
 
                 {staff && (
                     <div className="mt-5 flex flex-col gap-3 border-t border-ink/10 pt-5">
-                        <label className={`flex items-center gap-2.5 text-[13px] text-ink ${isSelf ? "opacity-50" : ""}`}>
-                            <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} disabled={isSelf} className="accent-pink-btn" />
-                            Account is active (unticked accounts can&apos;t sign in)
-                        </label>
+                        <Checkbox checked={active} onChange={setActive} disabled={isSelf} className="text-small text-ink" label="Account is active (unticked accounts can&apos;t sign in)" />
                         {staff.twoFactorEnabled && (
-                            <label className="flex items-center gap-2.5 text-[13px] text-ink">
-                                <input type="checkbox" checked={resetTwoFactor} onChange={(e) => setResetTwoFactor(e.target.checked)} className="accent-pink-btn" />
-                                Turn off their two-factor (they lost their phone and recovery codes)
-                            </label>
+                            <Checkbox checked={resetTwoFactor} onChange={setResetTwoFactor} className="text-small text-ink" label="Turn off their two-factor (they lost their phone and recovery codes)" />
                         )}
                     </div>
                 )}
-            </div>
-            <div className="sticky bottom-0 border-t border-ink/10 bg-white px-5 sm:px-8 py-5">
-                <button onClick={handleSubmit} disabled={submitting} className={`w-full ${BTN_PRIMARY}`}>
-                    {submitting ? "Saving…" : "Save Staff Account"}
-                </button>
-            </div>
+            </form>
         </Modal>
-        <ConfirmModal
-            open={confirmCloseOpen}
-            title="Discard changes?"
-            description="Your edits to this staff account haven't been saved."
-            confirmLabel="Discard"
-            onConfirm={onClose}
-            onClose={() => setConfirmCloseOpen(false)}
-        />
-        </>
     );
 }

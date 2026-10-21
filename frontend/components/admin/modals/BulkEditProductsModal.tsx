@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Modal from "@/components/ui/Modal";
-import { BTN_PRIMARY, FIELD_INPUT, FIELD_LABEL } from "@/components/admin/formClasses";
+import { FIELD_INPUT, FIELD_LABEL } from "@/components/admin/formClasses";
 import { useAsyncAction, wait } from "@/library/useAsyncAction";
 
 export default function BulkEditProductsModal({
@@ -35,12 +35,26 @@ export default function BulkEditProductsModal({
     });
 
     return (
-        <Modal open={open} onClose={submitting ? () => {} : onClose} maxWidth="max-w-[420px]">
-            <div className="p-5 sm:p-8">
-                <h3 className="mb-1 text-xl font-medium text-ink">
-                    Bulk Edit {count} Product{count === 1 ? "" : "s"}
-                </h3>
-                <p className="mb-6 text-[12.5px] leading-relaxed text-grey">
+        <Modal
+            open={open}
+            onClose={submitting ? () => {} : onClose}
+            maxWidth="max-w-[420px]"
+            heading={`Bulk edit ${count} product${count === 1 ? "" : "s"}`}
+            dirty={(stockDelta.trim() !== "" || setPriceValue.trim() !== "") && !submitting}
+            footer={
+                <button type="submit" form="bulk-edit-form" disabled={submitting} className="ui-btn ui-btn-primary w-full sm:w-auto">
+                    {submitting ? "Applying…" : "Apply"}
+                </button>
+            }
+        >
+            <form
+                id="bulk-edit-form"
+                onSubmit={(e) => {
+                    e.preventDefault();
+                    handleSubmit();
+                }}
+            >
+                <p className="mb-6 text-meta leading-relaxed text-grey">
                     Leave a field blank to leave it unchanged. Products with size variants are skipped —
                     edit those individually since price/stock is set per size.
                 </p>
@@ -71,10 +85,7 @@ export default function BulkEditProductsModal({
                         className={FIELD_INPUT}
                     />
                 </div>
-                <button onClick={handleSubmit} disabled={submitting} className={`w-full ${BTN_PRIMARY}`}>
-                    {submitting ? "Applying…" : "Apply"}
-                </button>
-            </div>
+            </form>
         </Modal>
     );
 }

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import EmptyState from "@/components/ui/EmptyState";
+import { useAdminBack } from "@/library/adminHistory";
 import { useContent } from "@/library/content";
 import { Ritual } from "@/library/admin/types";
 import Tooltip from "@/components/ui/Tooltip";
@@ -16,7 +17,7 @@ import { Toolbar } from "@/components/admin/Toolbar";
 const GRID_COLS = "grid-cols-[24px_44px_1fr_110px_100px] min-w-[560px]";
 
 export default function RitualsTab() {
-    const router = useRouter();
+    const goBack = useAdminBack("/admin/content?tab=pages");
     const { rituals, addRitual, updateRitual, deleteRitual, moveRitual } = useContent();
     const [editing, setEditing] = useState<Ritual | null>(null);
     const [modalOpen, setModalOpen] = useState(false);
@@ -35,7 +36,7 @@ export default function RitualsTab() {
                 needs its own way back for the same reason, since this route
                 renders with no tab bar above it. */}
             <div className="mb-6">
-                <BackLink label="Pages" onClick={() => router.push("/admin/content?tab=pages")} />
+                <BackLink onClick={goBack} />
             </div>
 
             <div>
@@ -54,12 +55,12 @@ export default function RitualsTab() {
                 />
 
                 {rituals.length === 0 ? (
-                    <div className="border border-ink/10 bg-white px-5 py-16 text-center text-[13px] text-grey">No rituals yet.</div>
+                    <EmptyState message="No rituals yet." />
                 ) : (
                     <div className="overflow-x-auto border border-ink/10 bg-white">
                         <div className={`grid ${GRID_COLS} items-center gap-4 border-b border-ink/10 bg-off/50 px-5 py-3`}>
-                            <span className="col-span-3 font-mono text-[11px] font-bold tracking-[.12em] text-grey uppercase">Ritual</span>
-                            <span className="font-mono text-[11px] font-bold tracking-[.12em] text-grey uppercase">Items</span>
+                            <span className="col-span-3 font-mono text-label font-bold tracking-[.12em] text-grey uppercase">Ritual</span>
+                            <span className="font-mono text-label font-bold tracking-[.12em] text-grey uppercase">Items</span>
                             <span aria-hidden="true" />
                         </div>
                         <div className="divide-y divide-ink/10">
@@ -72,8 +73,8 @@ export default function RitualsTab() {
                                             <img src={typeof r.image === "string" ? r.image : r.image.src} alt="" className="h-full w-full object-cover" />
                                         )}
                                     </span>
-                                    <div className="min-w-0 truncate text-[14px] font-medium text-ink">{r.title}</div>
-                                    <div className="text-[12px] text-grey">
+                                    <div className="min-w-0 truncate text-body font-medium text-ink">{r.title}</div>
+                                    <div className="text-meta text-grey">
                                         {r.productIds.length} product{r.productIds.length === 1 ? "" : "s"}
                                     </div>
                                     <div className="flex items-center justify-end gap-1.5">
@@ -98,7 +99,7 @@ export default function RitualsTab() {
                                 </div>
                             ))}
                         </div>
-                        <div className="border-t border-ink/10 bg-off/50 px-5 py-2.5 text-right font-mono text-[11px] text-grey">
+                        <div className="border-t border-ink/10 bg-off/50 px-5 py-2.5 text-right font-mono text-label text-grey">
                             Showing {rituals.length} of {rituals.length}
                         </div>
                     </div>

@@ -50,13 +50,13 @@ export function ExportIcon() {
 }
 
 // Takes a click handler rather than an href since some call sites need an unsaved-changes guard before navigating.
-export function BackLink({ label, onClick }: { label: string; onClick: () => void }) {
+export function BackLink({ onClick }: { onClick: () => void }) {
     return (
         <button
             onClick={onClick}
-            className="flex items-center gap-1.5 text-[12.5px] font-medium text-ink transition hover:text-pink-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-1"
+            className="flex items-center gap-1.5 text-meta font-medium text-ink transition hover:text-pink-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-1"
         >
-            <BackIcon /> Back to {label}
+            <BackIcon /> Back
         </button>
     );
 }

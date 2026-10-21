@@ -37,12 +37,12 @@ function SalesTooltip({ active, payload, label, colorOf }: { active?: boolean; p
 
     return (
         <div className="rounded bg-ink px-3 py-2 whitespace-nowrap shadow-card">
-            <div className="mb-1.5 font-mono text-[10px] tracking-[.08em] text-grey-light uppercase">{label}</div>
+            <div className="mb-1.5 font-mono text-label tracking-[.08em] text-grey-light uppercase">{label}</div>
             {rows.map((row) => (
                 <div key={row.name} className="flex items-center gap-2.5 py-[1px]">
                     <span className="h-[2px] w-3 flex-none rounded-full" style={{ backgroundColor: colorOf(row.name) }} />
-                    <span className="flex-1 text-[11px] text-grey-light">{row.name}</span>
-                    <span className="font-mono text-[11.5px] font-medium text-white tabular-nums">₱{row.value.toLocaleString()}</span>
+                    <span className="flex-1 text-label text-grey-light">{row.name}</span>
+                    <span className="font-mono text-label font-medium text-white tabular-nums">₱{row.value.toLocaleString()}</span>
                 </div>
             ))}
         </div>
@@ -56,7 +56,7 @@ function LineKeyLegend({ series }: { series: Series[] }) {
             {series.map((s) => (
                 <span key={s.name} className="flex items-center gap-1.5">
                     <span className="h-[2px] w-4 flex-none rounded-full" style={{ backgroundColor: s.color }} />
-                    <span className="font-mono text-[10.5px] tracking-[.06em] text-ink uppercase">{s.name}</span>
+                    <span className="font-mono text-label tracking-[.06em] text-ink uppercase">{s.name}</span>
                 </span>
             ))}
         </div>

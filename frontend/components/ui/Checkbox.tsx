@@ -7,6 +7,7 @@ export default function Checkbox({
     onChange,
     label,
     ariaLabel,
+    disabled = false,
     className = "",
 }: {
     checked: boolean;
@@ -14,16 +15,18 @@ export default function Checkbox({
     onChange: (next: boolean) => void;
     label?: React.ReactNode;
     ariaLabel?: string;
+    disabled?: boolean;
     className?: string;
 }) {
     const on = checked || indeterminate;
 
     return (
-        <label className={`inline-flex min-h-11 cursor-pointer items-center gap-2.5 ${className}`}>
+        <label className={`inline-flex min-h-11 cursor-pointer items-center gap-2.5 ${disabled ? "cursor-not-allowed opacity-50" : ""} ${className}`}>
             <input
                 type="checkbox"
                 className="peer sr-only"
                 checked={checked}
+                disabled={disabled}
                 aria-label={ariaLabel}
                 aria-checked={indeterminate ? "mixed" : checked}
                 onChange={(e) => onChange(e.target.checked)}

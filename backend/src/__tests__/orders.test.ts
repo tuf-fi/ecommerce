@@ -30,6 +30,7 @@ function place(customer: { id: number; name: string; email: string }, productId:
     lines: [{ productId, qty }],
     shipName: customer.name,
     shipEmail: customer.email,
+    shipPhone: "09171234567",
     shipAddress: "1 Test St, Makati City, Metro Manila",
     customerEmail: customer.email,
     voucherCode,

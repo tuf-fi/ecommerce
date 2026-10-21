@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useAdminStore } from "@/library/adminStore";
 import Tooltip from "@/components/ui/Tooltip";
 import { canManageStaff } from "@/library/admin/permissions";
+import { ADMIN_LOGIN_PATH } from "@/library/adminPaths";
 
 const TITLES: Record<string, string> = {
     dashboard: "Dashboard",
@@ -18,6 +19,16 @@ const TITLES: Record<string, string> = {
     messages: "Contact Messages",
 };
 
+// The Content screen is tabbed; the breadcrumb names the tab you are on.
+const CONTENT_TABS: Record<string, string> = {
+    pages: "Pages",
+    collections: "Content Collections",
+    blog: "Blog",
+    promotions: "Promotions",
+    links: "Links",
+    contact: "Contact Information",
+};
+
 function humanize(segment: string) {
     if (segment === "new") return "New";
     return segment
@@ -28,6 +39,7 @@ function humanize(segment: string) {
 
 function useAdminTitle() {
     const pathname = usePathname();
+    const tab = useSearchParams().get("tab") ?? "pages";
     const segments = pathname.replace(/^\/admin\/?/, "").split("/").filter(Boolean);
     const first = segments[0] ?? "dashboard";
 
@@ -36,7 +48,8 @@ function useAdminTitle() {
     }
 
     const title = TITLES[first] ?? humanize(first);
-    const path = ["Admin", title, ...segments.slice(1).map(humanize)].join(" / ");
+    const rest = first === "content" && segments.length === 1 ? [CONTENT_TABS[tab] ?? humanize(tab)] : segments.slice(1).map(humanize);
+    const path = ["Admin", title, ...rest].join(" / ");
     return { title, path };
 }
 
@@ -94,7 +107,7 @@ export default function AdminTopbar() {
     function handleLogout() {
         setProfileOpen(false);
         logout();
-        router.push("/admin/login");
+        router.push(ADMIN_LOGIN_PATH);
     }
 
     return (
@@ -110,8 +123,8 @@ export default function AdminTopbar() {
                     </svg>
                 </button>
                 <div className="min-w-0">
-                    <h1 className="m-0 truncate font-display text-[21px] font-normal text-ink">{title}</h1>
-                    <div className="mt-0.5 truncate font-mono text-[11px] text-grey">{path}</div>
+                    <h1 className="m-0 truncate font-display text-subhead font-normal text-ink">{title}</h1>
+                    <div className="mt-0.5 truncate font-mono text-label text-grey">{path}</div>
                 </div>
             </div>
 
@@ -133,7 +146,7 @@ export default function AdminTopbar() {
                                 <path d="M13.7 21a2 2 0 0 1-3.4 0" />
                             </svg>
                             {unreadCount > 0 && (
-                                <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-alert px-1 font-mono text-[9px] font-semibold text-white">
+                                <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-alert px-1 font-mono text-label font-semibold text-white">
                                     {unreadCount > 9 ? "9+" : unreadCount}
                                 </span>
                             )}
@@ -142,17 +155,17 @@ export default function AdminTopbar() {
 
                     {notifOpen && (
                         <div className="absolute top-[calc(100%+14px)] right-0 z-70 min-w-[300px] overflow-hidden border border-ink/10 bg-white shadow-modal">
-                            <div className="flex items-center justify-between border-b border-ink/10 px-4 py-3.5 font-display text-[13.5px] font-medium">
+                            <div className="flex items-center justify-between border-b border-ink/10 px-4 py-3.5 font-display text-small font-medium">
                                 Notifications
                                 {unreadCount > 0 && (
-                                    <button onClick={markAllNotificationsRead} className="font-body text-[11px] font-medium text-pink hover:text-pink-dark">
+                                    <button onClick={markAllNotificationsRead} className="font-body text-label font-medium text-pink hover:text-pink-dark">
                                         Mark all read
                                     </button>
                                 )}
                             </div>
                             <div className="thin-scrollbar max-h-80 overflow-y-auto">
                                 {notifications.length === 0 && (
-                                    <div className="p-6 text-center text-[12.5px] text-grey">No notifications yet.</div>
+                                    <div className="p-6 text-center text-meta text-grey">No notifications yet.</div>
                                 )}
                                 {notifications.map((n) => (
                                     <button
@@ -162,8 +175,8 @@ export default function AdminTopbar() {
                                             !n.read ? "bg-blue-soft" : ""
                                         }`}
                                     >
-                                        <div className="mb-1 text-[12.5px] leading-snug text-ink">{n.text}</div>
-                                        <div className="font-mono text-[10.5px] text-grey">{n.time}</div>
+                                        <div className="mb-1 text-meta leading-snug text-ink">{n.text}</div>
+                                        <div className="font-mono text-label text-grey">{n.time}</div>
                                     </button>
                                 ))}
                             </div>
@@ -181,12 +194,12 @@ export default function AdminTopbar() {
                         }}
                         className="flex items-center gap-2.5"
                     >
-                        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-navy font-display text-[13px] text-white">
+                        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-navy font-display text-small text-white">
                             {initials(adminName)}
                         </span>
                         <span className="hidden text-left sm:block">
-                            <span className="block text-[12.5px] font-semibold text-ink">{adminName || "Admin"}</span>
-                            <span className="block font-mono text-[10.5px] tracking-[.04em] text-grey uppercase">{currentStaffMember?.role ?? "Administrator"}</span>
+                            <span className="block text-meta font-semibold text-ink">{adminName || "Admin"}</span>
+                            <span className="block font-mono text-label tracking-[.04em] text-grey uppercase">{currentStaffMember?.role ?? "Administrator"}</span>
                         </span>
                     </button>
 
@@ -197,7 +210,7 @@ export default function AdminTopbar() {
                                     setProfileOpen(false);
                                     router.push("/admin/settings");
                                 }}
-                                className="block w-full px-4 py-3 text-left text-[13px] text-ink transition hover:bg-off"
+                                className="block w-full px-4 py-3 text-left text-small text-ink transition hover:bg-off"
                             >
                                 Account Settings
                             </button>
@@ -207,13 +220,13 @@ export default function AdminTopbar() {
                                         setProfileOpen(false);
                                         router.push("/admin/staff");
                                     }}
-                                    className="block w-full px-4 py-3 text-left text-[13px] text-ink transition hover:bg-off"
+                                    className="block w-full px-4 py-3 text-left text-small text-ink transition hover:bg-off"
                                 >
                                     Staff & Roles
                                 </button>
                             )}
                             <div className="h-px bg-ink/10" />
-                            <button onClick={handleLogout} className="block w-full px-4 py-3 text-left text-[13px] text-alert transition hover:bg-off">
+                            <button onClick={handleLogout} className="block w-full px-4 py-3 text-left text-small text-alert transition hover:bg-off">
                                 Log out
                             </button>
                         </div>

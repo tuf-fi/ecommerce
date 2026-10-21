@@ -38,17 +38,17 @@ export default function JournalCard({
                     />
                 )}
             </div>
-            <span className={`font-mono uppercase tracking-[.16em] text-grey ${large ? "mt-6 text-[11px]" : "mt-5 text-[10.5px]"}`}>
+            <span className={`font-mono uppercase tracking-[.16em] text-grey ${large ? "mt-6 text-label" : "mt-5 text-label"}`}>
                 {post.date}
             </span>
             <h3
                 className={`font-medium leading-snug text-ink transition group-hover:text-pink-dark ${
-                    large ? "mt-2.5 text-[24px] sm:text-[28px]" : "mt-2 text-[19px]"
+                    large ? "mt-2.5 text-[24px] sm:text-display-sm" : "mt-2 text-title"
                 }`}
             >
                 {post.title}
             </h3>
-            <p className={`leading-relaxed text-grey ${large ? "mt-3 max-w-[520px] text-[14.5px] line-clamp-2" : "mt-2.5 text-[13.5px] line-clamp-2"}`}>
+            <p className={`leading-relaxed text-grey ${large ? "mt-3 max-w-[520px] text-body line-clamp-2" : "mt-2.5 text-small line-clamp-2"}`}>
                 {post.excerpt}
             </p>
         </Link>

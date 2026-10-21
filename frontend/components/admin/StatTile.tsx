@@ -39,8 +39,8 @@ export default function StatTile({
                 active ? "-translate-y-0.5 ring-2 ring-inset ring-white/70" : ""
             }`}
         >
-            <div className="mb-2 font-mono text-[10px] tracking-[.08em] text-white/80 uppercase">{label}</div>
-            <div className="font-display text-[26px] font-semibold tabular-nums text-white">{count}</div>
+            <div className="mb-2 font-mono text-label tracking-[.08em] text-white/80 uppercase">{label}</div>
+            <div className="font-display text-display-sm font-semibold tabular-nums text-white">{count}</div>
         </button>
     );
 }

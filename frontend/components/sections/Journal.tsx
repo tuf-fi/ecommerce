@@ -19,7 +19,7 @@ export default function Journal(){
 
     return(
         <SectionContainer id="journal">
-            <SectionTitle section="journal" title="Journal" />
+            <SectionTitle animate section="journal" title="Journal" />
 
             <div className="grid grid-cols-1 gap-10 lg:grid-cols-[1.1fr_1fr] lg:gap-14">
                 <RevealIn direction="bottom">
@@ -38,7 +38,7 @@ export default function Journal(){
 
                         <span className="eyebrow mb-3 text-white/70">Featured</span>
                         <h3 className="mb-3 max-w-[420px] text-[clamp(22px,2.4vw,32px)] font-medium text-white">{featured.title}</h3>
-                        <span className="text-[12px] font-semibold uppercase tracking-wide text-white underline decoration-white/40 underline-offset-4 group-hover:decoration-white">
+                        <span className="text-meta font-semibold uppercase tracking-wide text-white underline decoration-white/40 underline-offset-4 group-hover:decoration-white">
                             Read more →
                         </span>
                     </Link>
@@ -61,8 +61,8 @@ export default function Journal(){
                                     )}
                                 </div>
                                 <div className="min-w-0">
-                                    <h4 className="text-[15px] font-medium leading-snug text-ink transition group-hover:text-blue-accent">{post.title}</h4>
-                                    <p className="mt-2 line-clamp-2 max-w-[280px] text-[12.5px] leading-relaxed text-grey">{post.excerpt}</p>
+                                    <h4 className="text-body font-medium leading-snug text-ink transition group-hover:text-blue-accent">{post.title}</h4>
+                                    <p className="mt-2 line-clamp-2 max-w-[280px] text-meta leading-relaxed text-grey">{post.excerpt}</p>
                                 </div>
                             </Link>
                         </RevealIn>
@@ -74,7 +74,7 @@ export default function Journal(){
                 <div className="mt-10 flex justify-center md:mt-14">
                     <Link
                         href="/journal"
-                        className="group/cta inline-flex w-full items-center justify-center gap-2.5 bg-navy px-8 py-4 sm:w-auto text-[13px] font-semibold uppercase tracking-wide text-white transition hover:bg-pink-dark"
+                        className="ui-btn ui-btn-primary ui-btn-lg group/cta w-full sm:w-auto"
                     >
                         View All Journal Entries
                         <span className="transition-transform duration-200 group-hover/cta:translate-x-1">→</span>

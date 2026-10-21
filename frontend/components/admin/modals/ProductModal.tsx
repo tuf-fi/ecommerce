@@ -4,12 +4,11 @@ import { useState } from "react";
 import Image from "next/image";
 import { toast } from "sonner";
 import Modal from "@/components/ui/Modal";
-import ConfirmModal from "@/components/ui/ConfirmModal";
 import { SectionLabel as FormSection } from "@/components/admin/modals/ViewModalLayout";
 import { AdminProduct } from "@/library/admin/types";
 import { CATEGORY_DEFAULT_IMAGE, DEFAULT_PRODUCT_IMAGE, LOW_STOCK_THRESHOLD } from "@/library/admin/products";
 import { CATEGORIES, ProductSize } from "@/library/products";
-import { BTN_PRIMARY, FIELD_INPUT, FIELD_INPUT_INVALID, FIELD_LABEL, FIELD_ERROR, ICON_BTN_DANGER } from "@/components/admin/formClasses";
+import { FIELD_INPUT, FIELD_INPUT_INVALID, FIELD_LABEL, FIELD_ERROR, ICON_BTN_DANGER, focusFirstInvalid } from "@/components/admin/formClasses";
 import { TrashIcon } from "@/components/admin/icons";
 import { useIsDirty } from "@/components/admin/useIsDirty";
 import { useAsyncAction } from "@/library/useAsyncAction";
@@ -54,6 +53,7 @@ export default function ProductModal({
         product?.reorderThreshold != null ? String(product.reorderThreshold) : ""
     );
     const [expiry, setExpiry] = useState(product?.expiry ?? "");
+    const [description, setDescription] = useState(product?.description ?? "");
     const [photo, setPhoto] = useState<string | null>(null);
     const [sizes, setSizes] = useState<SizeRow[]>(
         () => product?.sizes?.map((s) => ({ id: s.id, label: s.label, price: String(s.price), salePrice: s.salePrice != null ? String(s.salePrice) : "", stock: String(s.stock) })) ?? []
@@ -74,14 +74,9 @@ export default function ProductModal({
     const [chosenReason, setChosenReason] = useState<StockReason | null>(null);
     const stockReason: StockReason = chosenReason ?? (stockDelta > 0 ? "RESTOCK" : "CORRECTION");
     const [errors, setErrors] = useState<{ name?: string; sku?: string }>({});
-    const [confirmCloseOpen, setConfirmCloseOpen] = useState(false);
 
-    const isDirty = useIsDirty({ name, category, sku, price, salePrice, stock, reorderThreshold, expiry, photo, sizes });
+    const isDirty = useIsDirty({ name, category, sku, price, salePrice, stock, reorderThreshold, expiry, photo, sizes, description });
 
-    function requestClose() {
-        if (isDirty) setConfirmCloseOpen(true);
-        else onClose();
-    }
 
     function addSizeRow() {
         setSizes((rows) => [...rows, newSizeRow()]);
@@ -115,7 +110,7 @@ export default function ProductModal({
         if (dupe) nextErrors.sku = `SKU "${trimmedSku}" is already used by another product.`;
         if (nextErrors.name || nextErrors.sku) {
             setErrors(nextErrors);
-            toast.error("Fix the highlighted fields before saving.");
+            focusFirstInvalid("product-form");
             return;
         }
         const saleProblem = hasSizes
@@ -146,6 +141,7 @@ export default function ProductModal({
                 image: photo ?? product?.image ?? CATEGORY_DEFAULT_IMAGE[category] ?? DEFAULT_PRODUCT_IMAGE,
                 sizes: parsedSizes.length ? parsedSizes : undefined,
                 reorderThreshold: reorderThreshold.trim() ? nonNegativeNumber(reorderThreshold) : undefined,
+                description: description.trim(),
             },
             product?.id,
             stockDelta !== 0 ? stockReason : undefined
@@ -156,28 +152,38 @@ export default function ProductModal({
     const previewSrc = photo ?? (typeof product?.image === "string" ? product.image : product?.image);
 
     return (
-        <>
-        <Modal open onClose={submitting ? () => {} : requestClose} maxWidth="max-w-[520px]">
-            <div className="sticky top-0 z-10 border-b border-ink/10 bg-white px-5 sm:px-8 py-5">
-                <h3 className="text-xl font-medium text-ink">{product ? "Edit Product" : "Add Product"}</h3>
-            </div>
-            <div className="px-5 sm:px-8 pt-6 pb-4">
+        <Modal
+            open
+            onClose={submitting ? () => {} : onClose}
+            maxWidth="max-w-[520px]"
+            heading={product ? "Edit Product" : "Add Product"}
+            dirty={isDirty && !submitting}
+            footer={
+                <button type="submit" form="product-form" disabled={submitting} className="ui-btn ui-btn-primary w-full sm:w-auto">
+                    {submitting ? "Saving…" : "Save Product"}
+                </button>
+            }
+        >
+            <form id="product-form" onSubmit={(e) => {
+                e.preventDefault();
+                handleSubmit();
+            }}>
                 <div className="mb-5 flex items-center gap-4">
-                    <label className="relative h-16 w-16 flex-none cursor-pointer overflow-hidden border border-ink/10 bg-gradient-to-br from-blue-soft to-pink-soft">
+                    <label className="focus-within:ring-2 focus-within:ring-navy focus-within:ring-offset-2 relative h-16 w-16 flex-none cursor-pointer overflow-hidden border border-ink/10 bg-gradient-to-br from-blue-soft to-pink-soft">
                         {previewSrc ? (
                             <Image src={previewSrc} alt="" fill sizes="64px" unoptimized={typeof previewSrc === "string"} className="object-cover" />
                         ) : (
-                            <span className="flex h-full w-full items-center justify-center text-lg font-semibold text-ink/60">
+                            <span className="flex h-full w-full items-center justify-center text-title font-semibold text-ink/60">
                                 {name.charAt(0).toUpperCase() || "+"}
                             </span>
                         )}
-                        <input type="file" accept="image/*" onChange={handlePhotoChange} className="hidden" aria-label="Upload product photo" />
+                        <input type="file" accept="image/*" onChange={handlePhotoChange} className="sr-only" aria-label="Upload product photo" />
                     </label>
                     <div>
-                        <div className="text-[13.5px] font-medium text-ink">{name || "New product"}</div>
-                        <label className="mt-1 block cursor-pointer text-[12px] text-pink-dark underline decoration-1 underline-offset-2 hover:text-pink-dark/80">
+                        <div className="text-small font-medium text-ink">{name || "New product"}</div>
+                        <label className="focus-within:ring-2 focus-within:ring-navy focus-within:ring-offset-2 mt-1 block cursor-pointer text-meta text-pink-dark underline decoration-1 underline-offset-2 hover:text-pink-dark/80">
                             Change photo
-                            <input type="file" accept="image/*" onChange={handlePhotoChange} className="hidden" aria-label="Change product photo" />
+                            <input type="file" accept="image/*" onChange={handlePhotoChange} className="sr-only" aria-label="Change product photo" />
                         </label>
                     </div>
                 </div>
@@ -193,15 +199,16 @@ export default function ProductModal({
                         }}
                         placeholder="e.g. Barrier Repair Cream"
                         aria-invalid={errors.name ? true : undefined}
+                        aria-describedby={errors.name ? "product-name-error" : undefined}
                         className={`${FIELD_INPUT} ${errors.name ? FIELD_INPUT_INVALID : ""}`}
                     />
-                    {errors.name && <p className={FIELD_ERROR}>{errors.name}</p>}
+                    {errors.name && <p id="product-name-error" role="alert" className={FIELD_ERROR}>{errors.name}</p>}
                 </div>
 
                 <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div>
                         <label htmlFor="product-category" className={FIELD_LABEL}>Category</label>
-                        <select id="product-category" value={category} onChange={(e) => setCategory(e.target.value)} className={FIELD_INPUT}>
+                        <select id="product-category" value={category} onChange={(e) => setCategory(e.target.value)} className="ui-select">
                             {EDITABLE_CATEGORIES.map((c) => (
                                 <option key={c} value={c}>
                                     {c}
@@ -220,9 +227,10 @@ export default function ProductModal({
                             }}
                             placeholder="LM-0000"
                             aria-invalid={errors.sku ? true : undefined}
+                            aria-describedby={errors.sku ? "product-sku-error" : undefined}
                             className={`${FIELD_INPUT} ${errors.sku ? FIELD_INPUT_INVALID : ""}`}
                         />
-                        {errors.sku && <p className={FIELD_ERROR}>{errors.sku}</p>}
+                        {errors.sku && <p id="product-sku-error" role="alert" className={FIELD_ERROR}>{errors.sku}</p>}
                     </div>
                 </div>
 
@@ -269,7 +277,7 @@ export default function ProductModal({
                         />
                     </div>
                 </div>
-                {hasSizes && <p className="mb-4 text-[11.5px] text-grey">Price, discounted price and stock are set per size below. Leave a discounted price empty for no discount.</p>}
+                {hasSizes && <p className="mb-4 text-label text-grey">Price, discounted price and stock are set per size below. Leave a discounted price empty for no discount.</p>}
 
                 {stockDelta !== 0 && (
                     <div className="mb-4">
@@ -280,7 +288,7 @@ export default function ProductModal({
                             id="product-stock-reason"
                             value={stockReason}
                             onChange={(e) => setChosenReason(e.target.value as StockReason)}
-                            className={FIELD_INPUT}
+                            className="ui-select"
                         >
                             {(Object.keys(STOCK_REASON_LABEL) as StockReason[]).map((r) => (
                                 <option key={r} value={r}>{STOCK_REASON_LABEL[r]}</option>
@@ -305,12 +313,12 @@ export default function ProductModal({
                 <div className={hasSizes ? "mb-4" : "mb-6"}>
                     <div className="mb-2 flex items-center justify-between">
                         <span className={FIELD_LABEL}>Sizes (optional)</span>
-                        <button type="button" onClick={addSizeRow} className="text-[11.5px] text-pink-dark underline decoration-1 underline-offset-2 hover:text-pink-dark/80">
+                        <button type="button" onClick={addSizeRow} className="text-label text-pink-dark underline decoration-1 underline-offset-2 hover:text-pink-dark/80">
                             + Add Size
                         </button>
                     </div>
                     {sizes.length === 0 ? (
-                        <p className="text-[11.5px] text-grey">No size options — this product sells as a single item using the price/stock above.</p>
+                        <p className="text-label text-grey">No size options — this product sells as a single item using the price/stock above.</p>
                     ) : (
                         <div className="flex flex-col gap-2">
                             {sizes.map((s, i) => (
@@ -363,27 +371,32 @@ export default function ProductModal({
                     )}
                 </div>
 
+                <FormSection label="Details" />
+
+                <div className="mb-4">
+                    <label htmlFor="product-description" className={FIELD_LABEL}>Description</label>
+                    <textarea
+                        id="product-description"
+                        rows={7}
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        maxLength={5000}
+                        aria-describedby="product-description-hint"
+                        placeholder={"A short intro for the product page.\n\n## Ingredients\n...\n\n## How to use\n...\n\n## Suitable for\n..."}
+                        className={`${FIELD_INPUT} resize-y leading-relaxed`}
+                    />
+                    <p id="product-description-hint" className="m-0 mt-1.5 text-label text-grey">
+                        The first paragraph is the intro. Add ## Ingredients, ## How to use and ## Suitable for sections to show them as a spec list.
+                    </p>
+                </div>
+
                 <FormSection label="Availability" />
 
                 <div>
                     <label htmlFor="product-expiry" className={FIELD_LABEL}>Expiry Date (optional)</label>
                     <input id="product-expiry" type="date" value={expiry} onChange={(e) => setExpiry(e.target.value)} className={FIELD_INPUT} />
                 </div>
-            </div>
-            <div className="sticky bottom-0 border-t border-ink/10 bg-white px-5 sm:px-8 py-5">
-                <button onClick={handleSubmit} disabled={submitting} className={`w-full ${BTN_PRIMARY}`}>
-                    {submitting ? "Saving…" : "Save Product"}
-                </button>
-            </div>
+            </form>
         </Modal>
-        <ConfirmModal
-            open={confirmCloseOpen}
-            title="Discard changes?"
-            description="Your edits to this product haven't been saved."
-            confirmLabel="Discard"
-            onConfirm={onClose}
-            onClose={() => setConfirmCloseOpen(false)}
-        />
-        </>
     );
 }

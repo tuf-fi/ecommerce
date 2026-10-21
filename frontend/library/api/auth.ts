@@ -1,6 +1,6 @@
 import { api } from "./client";
 
-export type SessionCustomer = { id: number; name: string; email: string; avatarUrl?: string | null };
+export type SessionCustomer = { id: number; name: string; email: string; avatarUrl?: string | null; phone?: string | null };
 export type SessionStaff = { id: number; name: string; email: string; role: "ADMINISTRATOR" | "STAFF"; access?: string; twoFactorEnabled?: boolean };
 
 // With 2FA on, the password step returns a challenge to exchange for a session once a code is entered.
@@ -13,12 +13,12 @@ const post = (body: unknown): RequestInit => ({ method: "POST", body: JSON.strin
 export const customerRegister = (input: { name: string; email: string; password: string }) =>
     api<{ customer: SessionCustomer }>("/auth/customer/register", post(input));
 
-export const customerLogin = (input: { email: string; password: string }) =>
+export const customerLogin = (input: { email: string; password: string; remember?: boolean }) =>
     api<{ customer: SessionCustomer }>("/auth/customer/login", post(input));
 
 export const customerSession = () => api<{ customer: SessionCustomer }>("/auth/customer/session");
 
-export const updateCustomerProfile = (patch: { name?: string; avatarUrl?: string | null }) =>
+export const updateCustomerProfile = (patch: { name?: string; avatarUrl?: string | null; phone?: string }) =>
     api<{ customer: SessionCustomer }>("/auth/customer/profile", { method: "PATCH", body: JSON.stringify(patch) });
 
 export const changeCustomerPassword = (input: { currentPassword: string; newPassword: string }) =>

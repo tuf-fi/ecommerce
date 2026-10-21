@@ -37,12 +37,12 @@ export default function Hero({
                     <p className={`text-white/80 ${preview ? "max-w-[480px]" : "max-w-[400px]"}`}>{hero.subtext}</p>
 
                     <div className="flex flex-col items-stretch gap-3 mt-7 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4 sm:mt-8">
-                        <button onClick={() => (preview ? undefined : scrollTo("bestsellers"))} className="group/cta flex items-center justify-center gap-2.5 bg-white px-6 py-4 text-ink text-[13.5px] font-semibold uppercase tracking-wide transition hover:bg-off">
+                        <button onClick={() => (preview ? undefined : scrollTo("bestsellers"))} className="group/cta flex items-center justify-center gap-2.5 bg-white px-6 py-4 text-ink text-small font-semibold uppercase tracking-wide transition hover:bg-off">
                             {hero.cta}
                             <span className="transition-transform duration-200 group-hover/cta:translate-x-1">→</span>
                         </button>
                         {!preview && (
-                            <button onClick={() => openModal("quiz")} className="border border-white/40 px-6 py-4 text-center text-[13.5px] font-semibold uppercase tracking-wide text-white transition hover:border-white hover:bg-white/10">
+                            <button onClick={() => openModal("quiz")} className="border border-white/40 px-6 py-4 text-center text-small font-semibold uppercase tracking-wide text-white transition hover:border-white hover:bg-white/10">
                                 Find your Routine
                             </button>
                         )}

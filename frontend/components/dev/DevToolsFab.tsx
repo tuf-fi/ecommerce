@@ -49,11 +49,11 @@ export default function DevToolsFab() {
         <div ref={ref} className="fixed bottom-4 left-4 z-[90]">
             {open && (
                 <div className="absolute bottom-[calc(100%+10px)] left-0 w-52 border border-ink/10 bg-white py-1.5 shadow-modal">
-                    <div className="px-4 pt-2 pb-1.5 font-mono text-[10px] tracking-[.14em] text-grey uppercase">Developer tools</div>
+                    <div className="px-4 pt-2 pb-1.5 font-mono text-label tracking-[.14em] text-grey uppercase">Developer tools</div>
                     <button
                         onClick={test}
                         disabled={!isLoggedIn || sending}
-                        className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-[12.5px] text-ink transition hover:bg-off disabled:cursor-not-allowed disabled:text-grey disabled:hover:bg-transparent"
+                        className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-meta text-ink transition hover:bg-off disabled:cursor-not-allowed disabled:text-grey disabled:hover:bg-transparent"
                     >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="flex-none">
                             <path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
@@ -61,7 +61,7 @@ export default function DevToolsFab() {
                         </svg>
                         {sending ? "Sending…" : "Test Notification"}
                     </button>
-                    {!isLoggedIn && <p className="px-4 pb-2 text-[11px] text-grey">Sign in as a customer to use this.</p>}
+                    {!isLoggedIn && <p className="px-4 pb-2 text-label text-grey">Sign in as a customer to use this.</p>}
                 </div>
             )}
             <button

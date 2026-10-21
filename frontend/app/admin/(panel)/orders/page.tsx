@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, Suspense } from "react";
 import { toast } from "sonner";
 import { useSearchParams } from "next/navigation";
 import { useAdminStore } from "@/library/adminStore";
@@ -24,6 +24,7 @@ import Skeleton, { SkeletonGroup, SkeletonToolbar } from "@/components/ui/Skelet
 import ListPanel from "@/components/admin/ListPanel";
 import { EmptyStateRow } from "@/components/admin/EmptyState";
 import StatTile, { STAT_TONE_CLASSES, STAT_TONE_SHADOW, StatTileTone } from "@/components/admin/StatTile";
+import Modal from "@/components/ui/Modal";
 
 type SortKey = "date-desc" | "date-asc" | "total-desc" | "total-asc";
 
@@ -38,13 +39,17 @@ const STAT_STATUS_TONE: Record<AdminOrderStatus, StatTileTone> = {
     Cancelled: "alert",
 };
 
-export default function OrdersPage() {
+// Pending orders whose payment screenshot has been uploaded and not yet approved or rejected.
+
+function OrdersPageContent() {
     const { orders, updateOrderStatus, bulkUpdateOrderStatus, importOrders, reviewPayment } = useAdminStore();
     const importInputRef = useRef<HTMLInputElement>(null);
     const mounted = useMounted();
     const searchParams = useSearchParams();
     const [search, setSearch] = useState("");
-    const [status, setStatus] = useState<AdminOrderStatus | "All">("All");
+    // The dashboard's "payments to review" card links here with ?filter=review, which opens the Pending tab.
+    const [status, setStatus] = useState<AdminOrderStatus | "All">(() => (searchParams.get("filter") === "review" ? "Pending" : "All"));
+    const [skippedRows, setSkippedRows] = useState<string[] | null>(null);
     const [sort, setSort] = useState<SortKey>("date-desc");
     const [page, setPage] = useState(1);
     const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -149,8 +154,8 @@ export default function OrdersPage() {
         if (!result) return;
         if (result.updated > 0) toast.success(`${result.updated} order${result.updated === 1 ? "" : "s"} updated.`);
         if (result.skipped.length > 0) {
-            console.warn("Order import — skipped rows:", result.skipped);
-            toast.error(`${result.skipped.length} row${result.skipped.length === 1 ? "" : "s"} skipped: ${result.skipped[0]}${result.skipped.length > 1 ? " (see the console for the rest)" : ""}`);
+            setSkippedRows(result.skipped);
+            toast.error(`${result.skipped.length} row${result.skipped.length === 1 ? "" : "s"} skipped. See the list for why.`);
         } else if (result.updated === 0) {
             toast.error("No changes were made.");
         }
@@ -245,7 +250,7 @@ export default function OrdersPage() {
                                     />
                                 </th>
                                 {["Order", "Customer", "Date", "Items", "Total", "Status"].map((h) => (
-                                    <th key={h} scope="col" className="border-b border-ink/10 px-5 py-3.5 text-left font-mono text-[11px] tracking-[.12em] text-grey uppercase">
+                                    <th key={h} scope="col" className="border-b border-ink/10 px-5 py-3.5 text-left font-mono text-label tracking-[.12em] text-grey uppercase">
                                         {h}
                                     </th>
                                 ))}
@@ -253,7 +258,7 @@ export default function OrdersPage() {
                         </thead>
                         <tbody>
                             {paged.length === 0 && (
-                                <EmptyStateRow colSpan={7} variant="filtered" message="No orders match this search." />
+                                <EmptyStateRow colSpan={7} message="No orders match this search." />
                             )}
                             {paged.map((o) => (
                                 <tr
@@ -279,15 +284,15 @@ export default function OrdersPage() {
                                             className="h-4 w-4 accent-pink-btn"
                                         />
                                     </td>
-                                    <td className="border-b border-ink/10 px-5 py-3.5 text-[13px] font-medium text-ink">{o.no}</td>
-                                    <td className="border-b border-ink/10 px-5 py-3.5 text-[13px] text-ink">{o.customer}</td>
-                                    <td className="border-b border-ink/10 px-5 py-3.5 font-mono text-[12px] text-grey">{o.date}</td>
-                                    <td className="border-b border-ink/10 px-5 py-3.5 text-[13px] text-ink">{orderItemCount(o)}</td>
-                                    <td className="border-b border-ink/10 px-5 py-3.5 font-mono text-[12.5px] text-ink">₱{orderTotal(o).toLocaleString()}</td>
+                                    <td className="border-b border-ink/10 px-5 py-3.5 text-small font-medium text-ink">{o.no}</td>
+                                    <td className="border-b border-ink/10 px-5 py-3.5 text-small text-ink">{o.customer}</td>
+                                    <td className="border-b border-ink/10 px-5 py-3.5 font-mono text-meta text-grey">{o.date}</td>
+                                    <td className="border-b border-ink/10 px-5 py-3.5 text-small text-ink">{orderItemCount(o)}</td>
+                                    <td className="border-b border-ink/10 px-5 py-3.5 font-mono text-meta text-ink">₱{orderTotal(o).toLocaleString()}</td>
                                     <td className="border-b border-ink/10 px-5 py-3.5">
                                         <StatusBadge label={o.status} tone={ORDER_STATUS_TONE[o.status]} />
                                         {o.status === "Pending" && o.payment?.state === "review" && (
-                                            <span className="mt-1 block font-mono text-[10px] tracking-[.1em] text-pink-dark uppercase">Payment to review</span>
+                                            <span className="mt-1 block font-mono text-label tracking-[.1em] text-pink-dark uppercase">Payment to review</span>
                                         )}
                                     </td>
                                 </tr>
@@ -302,7 +307,7 @@ export default function OrdersPage() {
                     value={bulkStatus}
                     onChange={(e) => setBulkStatus(e.target.value as AdminOrderStatus)}
                     aria-label="Bulk status to apply"
-                    className="h-9 rounded-none border border-white/25 bg-navy px-3 text-[12px] text-white outline-none transition focus:border-white/60 focus-visible:ring-2 focus-visible:ring-white/60"
+                    className="h-9 rounded-none border border-white/25 bg-navy px-3 text-meta text-white outline-none transition focus:border-white/60 focus-visible:ring-2 focus-visible:ring-white/60"
                 >
                     {ORDER_STATUSES.map((s) => (
                         <option key={s} value={s}>
@@ -317,6 +322,27 @@ export default function OrdersPage() {
                     Export CSV
                 </button>
             </BulkActionBar>
+
+            <Modal
+                open={skippedRows !== null}
+                onClose={() => setSkippedRows(null)}
+                maxWidth="max-w-[520px]"
+                heading="Rows that were skipped"
+                footer={
+                    <button type="button" onClick={() => setSkippedRows(null)} className="ui-btn ui-btn-primary">
+                        Done
+                    </button>
+                }
+            >
+                <p className="m-0 mb-4 text-meta text-grey">The other rows were applied. Fix these in your file and import again.</p>
+                <ul className="m-0 flex list-none flex-col divide-y divide-ink/10 border-y border-ink/10 p-0">
+                    {(skippedRows ?? []).map((row, i) => (
+                        <li key={i} className="py-2.5 text-small text-ink">
+                            {row}
+                        </li>
+                    ))}
+                </ul>
+            </Modal>
 
             <OrderModal open={modalOrder !== null} order={modalOrder} onClose={() => setActiveOrder(null)} onStatusChange={updateOrderStatus} onReviewPayment={reviewPayment} />
 
@@ -379,5 +405,14 @@ function OrdersSkeleton() {
                 <Skeleton tone="outline" className="h-8 w-16" />
             </div>
         </SkeletonGroup>
+    );
+}
+
+// `useSearchParams` needs a Suspense boundary so the route can still be prerendered.
+export default function OrdersPage() {
+    return (
+        <Suspense fallback={<OrdersSkeleton />}>
+            <OrdersPageContent />
+        </Suspense>
     );
 }

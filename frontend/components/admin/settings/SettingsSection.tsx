@@ -17,7 +17,7 @@ export function SettingsSection({
             <PageHeading action={action}>{title}</PageHeading>
             {aside ? (
                 <div>
-                    <p className="mb-7 max-w-[56ch] text-[13px] leading-relaxed text-grey">{aside}</p>
+                    <p className="mb-7 max-w-[56ch] text-small leading-relaxed text-grey">{aside}</p>
                     {children}
                 </div>
             ) : (
@@ -39,8 +39,8 @@ export function SettingsRow({
     return (
         <div className="flex items-center justify-between gap-4 py-4">
             <div>
-                <div className="text-[13.5px] text-ink">{label}</div>
-                {description && <div className="mt-0.5 text-[12px] text-grey">{description}</div>}
+                <div className="text-small text-ink">{label}</div>
+                {description && <div className="mt-0.5 text-meta text-grey">{description}</div>}
             </div>
             {control}
         </div>

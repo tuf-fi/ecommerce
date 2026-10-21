@@ -34,7 +34,7 @@ export default function ProductViewModal({
     const sale = productSalePrice(product);
 
     return (
-        <Modal open={open} onClose={onClose} maxWidth="max-w-[420px]">
+        <Modal open={open} onClose={onClose} maxWidth="max-w-[420px]" titleInBody>
             <ViewHeader
                 title={product.name}
                 caption={

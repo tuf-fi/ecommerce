@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useStore } from "@/library/store";
@@ -22,6 +22,16 @@ const navGroups = [
                 ),
             },
             {
+                label: "Change Password",
+                href: "/account/password",
+                icon: (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                        <rect x="4" y="11" width="16" height="9" rx="1.5" />
+                        <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+                    </svg>
+                ),
+            },
+            {
                 label: "Notifications",
                 href: "/account/notifications",
                 icon: (
@@ -32,7 +42,7 @@ const navGroups = [
                 ),
             },
             {
-                label: "My Purchase",
+                label: "My Orders",
                 href: "/account/purchases",
                 icon: (
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -51,23 +61,13 @@ const navGroups = [
                     </svg>
                 ),
             },
-            {
-                label: "Change Password",
-                href: "/account/password",
-                icon: (
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                        <rect x="4" y="11" width="16" height="9" rx="1.5" />
-                        <path d="M8 11V7a4 4 0 0 1 8 0v4" />
-                    </svg>
-                ),
-            },
         ],
     },
     {
         label: "Rewards",
         items: [
             {
-                label: "My Vouchers",
+                label: "Discount Codes",
                 href: "/account/vouchers",
                 icon: (
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -133,20 +133,38 @@ function initials(name: string) {
 }
 
 export default function AccountShell({ children }: { children: React.ReactNode }) {
-    const { isLoggedIn, sessionChecked, customerName, signOut } = useStore();
+    const { isLoggedIn, sessionChecked, customerName, signOut, openModal } = useStore();
     const pathname = usePathname();
     const router = useRouter();
     const navBox = useRef<HTMLDivElement>(null);
     const ready = sessionChecked && isLoggedIn;
     useScrollActiveIntoView(navBox, [pathname, ready]);
 
-    useEffect(() => {
-        // Wait for the session check: on a reload isLoggedIn starts false, which would otherwise bounce to the homepage.
-        if (sessionChecked && !isLoggedIn) router.replace("/");
-    }, [sessionChecked, isLoggedIn, router]);
-
+    // Wait for the session check: on a reload isLoggedIn starts false, which must not read as "signed out".
     if (!sessionChecked) return <AccountShellSkeleton />;
-    if (!isLoggedIn) return null;
+    if (!isLoggedIn) {
+        return (
+            <div className="-mx-[var(--gutter)] min-h-screen w-[calc(100%+var(--gutter)*2)] bg-white px-[var(--gutter)] pt-[calc(var(--navbar-h,68px)+3rem)] pb-24">
+                <span className="mb-6 block font-mono text-label uppercase tracking-[.16em] text-grey">My account</span>
+                <h1 className="mb-4 text-[clamp(30px,5vw,46px)] leading-[1.05]">Sign in to see your account.</h1>
+                <p className="m-0 mb-8 max-w-[420px] text-small leading-relaxed text-grey">Your orders, saved addresses and discount codes live here.</p>
+                <div className="flex flex-col gap-3 sm:flex-row">
+                    <button type="button" onClick={() => openModal("login")} className="ui-btn ui-btn-primary">
+                        Sign in
+                    </button>
+                    <Link href="/shop" className="ui-btn ui-btn-secondary">
+                        Browse the shop
+                    </Link>
+                </div>
+                <p className="mt-6 text-meta text-grey">
+                    Questions before you buy?{" "}
+                    <Link href="/help" className="tap-area text-pink-dark underline underline-offset-4">
+                        Help &amp; FAQ
+                    </Link>
+                </p>
+            </div>
+        );
+    }
 
     function handleSignOut() {
         signOut();
@@ -155,7 +173,7 @@ export default function AccountShell({ children }: { children: React.ReactNode }
 
     return (
         <div className="-mx-[var(--gutter)] w-[calc(100%+var(--gutter)*2)] pt-[var(--navbar-h,68px)]">
-            <div className="shadow-glow grid grid-cols-1 grid-rows-[auto_1fr] lg:grid-rows-none border-t border-ink/10 bg-white min-h-[calc(100vh-var(--navbar-h,68px)-var(--promo-h,0px))] lg:grid-cols-[260px_1fr]">
+            <div className="grid grid-cols-1 grid-rows-[auto_1fr] lg:grid-rows-none border-t border-ink/10 bg-white min-h-[calc(100vh-var(--navbar-h,68px)-var(--promo-h,0px))] lg:grid-cols-[260px_1fr]">
                 <aside className="relative z-10 flex min-w-0 flex-col border-b border-ink/10 bg-white lg:border-r lg:border-b-0">
                     <div ref={navBox} className="thin-scrollbar min-w-0 overflow-x-hidden px-[var(--gutter)] pt-5 pb-0 lg:px-6 lg:pt-10 lg:pb-6 lg:sticky lg:top-[calc(var(--navbar-h,68px)+var(--promo-h,0px))] lg:max-h-[calc(100vh-var(--navbar-h,68px)-var(--promo-h,0px))] lg:overflow-y-auto">
                         <div className="mb-1 flex items-center justify-between gap-3 border-b border-ink/10 pb-4 lg:mb-4">
@@ -163,12 +181,12 @@ export default function AccountShell({ children }: { children: React.ReactNode }
                             href="/account"
                             className="flex h-10 min-w-0 flex-1 items-center gap-3 transition hover:opacity-80"
                         >
-                            <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-navy font-mono text-[12.5px] text-white">
+                            <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-navy font-mono text-meta text-white">
                                 {initials(customerName)}
                             </span>
-                            <span className="min-w-0 flex-1 truncate text-[13.5px] font-semibold text-ink">{customerName}</span>
+                            <span className="min-w-0 flex-1 truncate text-small font-semibold text-ink">{customerName}</span>
                         </Link>
-                        <button onClick={handleSignOut} className="flex-none px-2 py-2.5 text-[12.5px] text-alert transition hover:bg-alert/5 lg:hidden">
+                        <button onClick={handleSignOut} className="flex-none px-2 py-2.5 text-meta text-alert transition hover:bg-alert/5 lg:hidden">
                             Sign Out
                         </button>
                         </div>
@@ -176,7 +194,7 @@ export default function AccountShell({ children }: { children: React.ReactNode }
                         <nav data-hscroll className="thin-scrollbar -mx-[var(--gutter)] flex flex-row gap-1 overflow-x-auto px-[var(--gutter)] lg:mx-0 lg:flex-col lg:gap-4 lg:overflow-visible lg:px-0">
                             {navGroups.map((group) => (
                                 <div key={group.label} className="flex min-w-0 flex-none flex-row gap-1 lg:block">
-                                    <div className="mb-1 hidden px-2.5 font-mono lg:block text-[10px] uppercase tracking-[.16em] text-grey">
+                                    <div className="mb-1 hidden px-2.5 font-mono lg:block text-label uppercase tracking-[.16em] text-grey">
                                         {group.label}
                                     </div>
                                     <div className="flex flex-row gap-1 lg:flex-col lg:gap-px">
@@ -188,7 +206,7 @@ export default function AccountShell({ children }: { children: React.ReactNode }
                                                     href={item.href}
                                                     aria-current={active ? "page" : undefined}
                                                     // Left accent bar + pink tint matches how the rest of the app marks "current".
-                                                    className={`group flex min-w-0 flex-none items-center gap-2.5 whitespace-nowrap border-b-2 py-3 pr-3 pl-3 text-[12.5px] transition lg:border-b-0 lg:border-l-2 lg:py-1.5 lg:pr-2.5 ${
+                                                    className={`group flex min-w-0 flex-none items-center gap-2.5 whitespace-nowrap border-b-2 py-3 pr-3 pl-3 text-meta transition lg:border-b-0 lg:border-l-2 lg:py-1.5 lg:pr-2.5 ${
                                                         active
                                                             ? "border-pink-btn bg-pink-soft/50 font-semibold text-pink-dark"
                                                             : "border-transparent text-grey hover:border-ink/15 hover:bg-off/70 hover:text-ink"
@@ -209,7 +227,7 @@ export default function AccountShell({ children }: { children: React.ReactNode }
                         <div className="mt-4 hidden lg:block">
                             <button
                                 onClick={handleSignOut}
-                                className="flex w-full min-w-0 items-center gap-2.5 px-2.5 py-1.5 text-[12.5px] text-alert transition hover:bg-alert/5"
+                                className="flex w-full min-w-0 items-center gap-2.5 px-2.5 py-1.5 text-meta text-alert transition hover:bg-alert/5"
                             >
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="flex-none">
                                     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
@@ -231,7 +249,7 @@ export default function AccountShell({ children }: { children: React.ReactNode }
 function AccountShellSkeleton() {
     return (
         <div className="-mx-[var(--gutter)] w-[calc(100%+var(--gutter)*2)] pt-[var(--navbar-h,68px)]">
-            <SkeletonGroup className="shadow-glow grid min-h-[calc(100vh-var(--navbar-h,68px)-var(--promo-h,0px))] grid-cols-1 grid-rows-[auto_1fr] lg:grid-rows-none border-t border-ink/10 bg-white lg:grid-cols-[260px_1fr]">
+            <SkeletonGroup className="grid min-h-[calc(100vh-var(--navbar-h,68px)-var(--promo-h,0px))] grid-cols-1 grid-rows-[auto_1fr] lg:grid-rows-none border-t border-ink/10 bg-white lg:grid-cols-[260px_1fr]">
                 <div className="border-b border-ink/10 px-[var(--gutter)] pt-5 pb-0 lg:border-r lg:border-b-0 lg:px-6 lg:pt-10 lg:pb-6">
                     <div className="mb-1 flex items-center justify-between gap-3 border-b border-ink/10 pb-4 lg:mb-4">
                         <div className="flex h-10 min-w-0 flex-1 items-center gap-3">

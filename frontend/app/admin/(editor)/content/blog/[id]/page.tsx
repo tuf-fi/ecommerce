@@ -79,19 +79,19 @@ function BlogEditorForm({
             dirty={dirty}
             preview={<JournalArticle post={{ id: existing?.id ?? 0, title, excerpt, content, status, image, date: existing?.date ?? "" }} preview />}
             featuredImage={
-                <label className="group relative flex aspect-video w-full cursor-pointer items-center justify-center overflow-hidden border border-dashed border-ink/20 bg-off/50 transition hover:border-ink/35">
+                <label className="focus-within:ring-2 focus-within:ring-navy focus-within:ring-offset-2 group relative flex aspect-video w-full cursor-pointer items-center justify-center overflow-hidden border border-dashed border-ink/20 bg-off/50 transition hover:border-ink/35">
                     {image ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={image} alt="" className="h-full w-full object-cover" />
                     ) : (
-                        <span className="text-center font-mono text-[10px] tracking-[.08em] text-ink/60 uppercase">+ Set image</span>
+                        <span className="text-center font-mono text-label tracking-[.08em] text-ink/60 uppercase">+ Set image</span>
                     )}
                     {image && (
-                        <span className="absolute inset-0 flex items-center justify-center bg-navy/60 text-[11.5px] font-medium text-white opacity-0 transition group-hover:opacity-100">
+                        <span className="absolute inset-0 flex items-center justify-center bg-navy/60 text-label font-medium text-white opacity-0 transition group-hover:opacity-100">
                             Replace
                         </span>
                     )}
-                    <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
+                    <input type="file" aria-label="Upload image" accept="image/*" onChange={handleImageChange} className="sr-only" />
                 </label>
             }
             meta={
@@ -124,9 +124,10 @@ function BlogEditorForm({
                     }}
                     placeholder="e.g. 5 Steps to Layer Your Routine"
                     aria-invalid={errors.title ? true : undefined}
+                    aria-describedby={errors.title ? "blog-title-error" : undefined}
                     className={`${FIELD_INPUT} ${errors.title ? FIELD_INPUT_INVALID : ""}`}
                 />
-                {errors.title && <p className={FIELD_ERROR}>{errors.title}</p>}
+                {errors.title && <p id="blog-title-error" role="alert" className={FIELD_ERROR}>{errors.title}</p>}
             </div>
             <div className="mb-4">
                 <label htmlFor="blog-excerpt" className={FIELD_LABEL}>Excerpt</label>

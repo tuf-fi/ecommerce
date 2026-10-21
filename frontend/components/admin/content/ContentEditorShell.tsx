@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useAdminBack } from "@/library/adminHistory";
 import Link from "next/link";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import LivePreviewPane from "@/components/admin/LivePreviewPane";
@@ -19,7 +19,7 @@ function MetaBox({ label, children }: { label: string; children: React.ReactNode
     // available height instead of overflowing (and scrolling) once their combined content is taller than the rail.
     return (
         <div className="shrink-0 overflow-hidden border border-ink/10 bg-white">
-            <div className="border-b border-ink/10 bg-off/50 px-4 py-2.5 font-mono text-[10px] tracking-[.14em] text-grey uppercase">{label}</div>
+            <div className="border-b border-ink/10 bg-off/50 px-4 py-2.5 font-mono text-label tracking-[.14em] text-grey uppercase">{label}</div>
             <div className="p-4">{children}</div>
         </div>
     );
@@ -108,7 +108,7 @@ export default function ContentEditorShell({
     guide?: React.ReactNode;
     children: React.ReactNode;
 }) {
-    const router = useRouter();
+    const goBack = useAdminBack(backHref);
     const [confirmLeave, setConfirmLeave] = useState(false);
     const [collapsed, setCollapsed] = useState(false);
     const panelWidth = collapsed ? CONTENT_PANEL_WIDTH_COLLAPSED : CONTENT_PANEL_WIDTH_EXPANDED;
@@ -139,7 +139,7 @@ export default function ContentEditorShell({
             setConfirmLeave(true);
             return;
         }
-        router.push(backHref);
+        goBack();
     }
 
     // Shared by both the desktop panel and the mobile stacked fallback below.
@@ -149,7 +149,7 @@ export default function ContentEditorShell({
             {meta && <MetaBox label="Details">{meta}</MetaBox>}
             {showSaveBar && (
                 <MetaBox label="Publish">
-                    <div className="mb-3.5 flex items-center gap-2 font-mono text-[10.5px] tracking-[.06em] uppercase">
+                    <div className="mb-3.5 flex items-center gap-2 font-mono text-label tracking-[.06em] uppercase">
                         {dirty ? (
                             <>
                                 <span className="h-1.5 w-1.5 flex-none rounded-full bg-pink-btn" />
@@ -199,8 +199,8 @@ export default function ContentEditorShell({
                 <div className="flex h-[52px] flex-none items-center justify-between gap-2 border-b border-ink/10 bg-white px-4">
                     {!collapsed && (
                         <div className="flex min-w-0 items-center gap-2.5">
-                            <button onClick={handleBack} className="flex items-center gap-1.5 text-[12px] font-medium text-ink hover:text-pink-dark">
-                                <BackIcon /> Back to {backLabel}
+                            <button onClick={handleBack} className="flex items-center gap-1.5 text-meta font-medium text-ink hover:text-pink-dark">
+                                <BackIcon /> Back
                             </button>
                             {topRightExtra}
                         </div>
@@ -216,8 +216,8 @@ export default function ContentEditorShell({
 
                 {collapsed ? (
                     <div className="flex flex-col items-center gap-3 py-4">
-                        <Tooltip label={`Back to ${backLabel}`} side="left">
-                            <button onClick={handleBack} aria-label={`Back to ${backLabel}`} className="flex h-9 w-9 items-center justify-center rounded-full text-ink/60 transition hover:bg-white hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-1">
+                        <Tooltip label="Back" side="left">
+                            <button onClick={handleBack} aria-label="Back" className="flex h-9 w-9 items-center justify-center rounded-full text-ink/60 transition hover:bg-white hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-1">
                                 <BackIcon />
                             </button>
                         </Tooltip>
@@ -245,8 +245,8 @@ export default function ContentEditorShell({
                 Live Preview bar above (see LivePreviewPane's `label`), not repeated here. */}
             <div className="mt-6 flex flex-col gap-5 px-5 pb-12 sm:px-10 lg:hidden">
                 <div className="flex items-center justify-between gap-4">
-                    <button onClick={handleBack} className="flex items-center gap-1.5 text-[12.5px] font-medium text-ink hover:text-pink-dark">
-                        <BackIcon /> Back to {backLabel}
+                    <button onClick={handleBack} className="flex items-center gap-1.5 text-meta font-medium text-ink hover:text-pink-dark">
+                        <BackIcon /> Back
                     </button>
                     {topRightExtra && <div className="flex items-center gap-2.5">{topRightExtra}</div>}
                 </div>
@@ -258,7 +258,7 @@ export default function ContentEditorShell({
                 title="Discard unsaved changes?"
                 description={`Your edits to this ${backLabel === "Pages" ? "page" : backLabel.toLowerCase().replace(/s$/, "")} haven't been saved and will be lost.`}
                 confirmLabel="Discard"
-                onConfirm={() => router.push(backHref)}
+                onConfirm={goBack}
                 onClose={() => setConfirmLeave(false)}
             />
         </div>
@@ -268,7 +268,7 @@ export default function ContentEditorShell({
 // Shared "not found" state for the single-entity editor routes, so a bad id/slug reads the same way everywhere.
 export function ContentNotFound({ message, backLabel, backHref }: { message: string; backLabel: string; backHref: string }) {
     return (
-        <div className="p-11 text-center text-[13px] text-grey">
+        <div className="p-11 text-center text-small text-grey">
             {message}{" "}
             <Link href={backHref} className="text-pink-dark underline">
                 {backLabel}

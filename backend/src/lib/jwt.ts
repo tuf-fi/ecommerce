@@ -6,6 +6,9 @@ export type TokenKind = "customer" | "staff";
 export const COOKIE_NAMES = { customer: "customer_token", staff: "admin_token" } as const;
 
 export const SESSION_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+// "Remember me" keeps a customer signed in for 30 days; leaving it off gives a browser-session cookie backed by a 24h token.
+export const REMEMBER_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
+const SHORT_SESSION_MS = 24 * 60 * 60 * 1000;
 const CHALLENGE_TTL_SECONDS = 5 * 60;
 
 function secret(): string {
@@ -16,10 +19,10 @@ function secret(): string {
 
 // Staff tokens carry the id of their AdminSession row as `jti`, which is what lets a session be revoked server-side.
 // Customer tokens also carry the customer's tokenVersion (`ver`); raising it on the server signs every device out.
-export function signToken(kind: TokenKind, id: number, sessionId?: string, version?: number): string {
+export function signToken(kind: TokenKind, id: number, sessionId?: string, version?: number, ttlMs: number = SESSION_MAX_AGE_MS): string {
   return jwt.sign(version === undefined ? { kind } : { kind, ver: version }, secret(), {
     subject: String(id),
-    expiresIn: SESSION_MAX_AGE_MS / 1000,
+    expiresIn: ttlMs / 1000,
     ...(sessionId ? { jwtid: sessionId } : {}),
   });
 }
@@ -60,8 +63,24 @@ const cookieOptions: CookieOptions = {
   domain: process.env.COOKIE_DOMAIN || undefined,
 };
 
-export function setAuthCookie(res: Response, kind: TokenKind, id: number, sessionId?: string, version?: number) {
-  res.cookie(COOKIE_NAMES[kind], signToken(kind, id, sessionId, version), { ...cookieOptions, maxAge: SESSION_MAX_AGE_MS });
+// `remember`: true = 30-day persistent cookie, false = session cookie (gone when the browser closes), undefined = the 7-day default.
+export function setAuthCookie(res: Response, kind: TokenKind, id: number, sessionId?: string, version?: number, remember?: boolean) {
+  if (remember === false) {
+    res.cookie(COOKIE_NAMES[kind], signToken(kind, id, sessionId, version, SHORT_SESSION_MS), cookieOptions);
+    return;
+  }
+  const maxAge = remember ? REMEMBER_MAX_AGE_MS : SESSION_MAX_AGE_MS;
+  res.cookie(COOKIE_NAMES[kind], signToken(kind, id, sessionId, version, maxAge), { ...cookieOptions, maxAge });
+}
+
+// Reads the "remember me" choice back out of an existing token's lifetime, so re-issuing a cookie keeps it.
+export function rememberOfToken(token: string | undefined): boolean | undefined {
+  const p = token ? (jwt.decode(token) as jwt.JwtPayload | null) : null;
+  if (!p?.exp || !p.iat) return undefined;
+  const ms = (p.exp - p.iat) * 1000;
+  if (ms >= REMEMBER_MAX_AGE_MS) return true;
+  if (ms <= SHORT_SESSION_MS) return false;
+  return undefined;
 }
 
 export function clearAuthCookie(res: Response, kind: TokenKind) {

@@ -25,7 +25,7 @@ export default function JournalPostPage() {
     if (!post) {
         return (
             <div className="-mx-[var(--gutter)] w-[calc(100%+var(--gutter)*2)] min-h-screen bg-white px-[var(--gutter)] pt-[calc(var(--navbar-h,68px)+1.5rem)] pb-20 text-center">
-                <p className="text-[13px] text-grey">
+                <p className="text-small text-grey">
                     That post doesn&apos;t exist.{" "}
                     <Link href="/journal" className="text-pink-dark underline">
                         Back to Journal
@@ -51,7 +51,7 @@ export default function JournalPostPage() {
             )}
 
             {morePosts.length > 0 && (
-                <div className="mx-auto mt-24 max-w-[1100px] border-t border-ink/10 pt-14">
+                <div className="mx-auto mt-24 max-w-[1100px]">
                     <SectionTitle num="—" title="More from the Journal" />
 
                     <div className="mt-8 grid grid-cols-1 gap-x-8 gap-y-12 sm:grid-cols-3">
@@ -79,10 +79,10 @@ function PostNavLink({
     if (!post) {
         return (
             <div className={`flex flex-col items-start gap-1.5 px-4 py-6 text-left opacity-30 ${align}`}>
-                <span className="font-mono text-[10.5px] uppercase tracking-[.16em] text-grey">
+                <span className="font-mono text-label uppercase tracking-[.16em] text-grey">
                     {direction === "prev" ? `${arrow} ${label}` : `${label} ${arrow}`}
                 </span>
-                <span className="text-[14px] font-medium text-ink">Nothing more yet</span>
+                <span className="text-body font-medium text-ink">Nothing more yet</span>
             </div>
         );
     }
@@ -92,10 +92,10 @@ function PostNavLink({
             href={`/journal/${slugify(post.title)}`}
             className={`group flex flex-col items-start gap-1.5 px-4 py-6 text-left transition-colors hover:bg-pink-soft/30 ${align}`}
         >
-            <span className="font-mono text-[10.5px] uppercase tracking-[.16em] text-grey transition group-hover:text-pink-dark">
+            <span className="font-mono text-label uppercase tracking-[.16em] text-grey transition group-hover:text-pink-dark">
                 {direction === "prev" ? `${arrow} ${label}` : `${label} ${arrow}`}
             </span>
-            <span className="text-[14px] font-medium leading-snug text-ink transition group-hover:text-pink-dark">{post.title}</span>
+            <span className="text-body font-medium leading-snug text-ink transition group-hover:text-pink-dark">{post.title}</span>
         </Link>
     );
 }
@@ -144,7 +144,7 @@ function JournalPostSkeleton() {
                     ))}
                 </div>
 
-                <div className="mx-auto mt-24 max-w-[1100px] border-t border-ink/10 pt-14">
+                <div className="mx-auto mt-24 max-w-[1100px]">
                     <div className="mb-8 flex items-center gap-x-4 sm:gap-x-5 md:mb-11">
                         <Skeleton className="h-[10.5px] w-3" />
                         <Skeleton className="h-[10.5px] w-40" />

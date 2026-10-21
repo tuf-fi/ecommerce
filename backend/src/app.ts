@@ -57,6 +57,7 @@ app.use((err: unknown, _req: express.Request, res: express.Response, _next: expr
   if (code === "P2003") return res.status(409).json({ error: "This record is referenced by other data" });
   if (err instanceof SyntaxError && "body" in err) return res.status(400).json({ error: "Invalid JSON" });
   if (code === "LIMIT_FILE_SIZE") return res.status(413).json({ error: "File too large" });
+  if (code === "LIMIT_UNEXPECTED_FILE" || code === "LIMIT_FILE_COUNT") return res.status(400).json({ error: "Too many files attached" });
   console.error(err);
   res.status(500).json({ error: "Internal server error" });
 });
